@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'TopDownVoxelsEngine'">
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+</Project>

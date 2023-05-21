@@ -1,0 +1,20 @@
+{
+    "name": "TopDownVoxelsEngine",
+    "rootNamespace": "VoxelsEngine",
+    "references": [
+        "MessagePack",
+        "MessagePack.Annotations",
+        "DOTweenPro.Scripts",
+        "DOTweenTimeline.Scripts",
+        "DOTween.Modules"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
