@@ -161,28 +161,22 @@ MonoBehaviour:
     - SNOW
     - WOOD
     valueData:
-    - Texture: {fileID: 0}
-      Prefab: {fileID: 0}
+    - TextureIndex: 0
       MiningLevel: 0
       RequiredEquipment: 0
-    - Texture: {fileID: 2800000, guid: 049662f5ca555804eb36d39c6b063187, type: 3}
-      Prefab: {fileID: 2868597229033292532, guid: 4b3e83c472dc3e64598f66d159a94a1a, type: 3}
+    - TextureIndex: 0
       MiningLevel: 1
       RequiredEquipment: 0
-    - Texture: {fileID: 2800000, guid: 32c83ee190e34bf4fb294bda0f9d0b49, type: 3}
-      Prefab: {fileID: 7134021332214735789, guid: fbe746412331d004a913adf48149ce9a, type: 3}
+    - TextureIndex: 2
       MiningLevel: 2
       RequiredEquipment: 0
-    - Texture: {fileID: 2800000, guid: 17d30093d5f486c4c812446b5a2b4571, type: 3}
-      Prefab: {fileID: 5190047298365417881, guid: a26b6d2e42de0114aab8d1f8b6d3001e, type: 3}
+    - TextureIndex: 1
       MiningLevel: 1
       RequiredEquipment: 0
-    - Texture: {fileID: 2800000, guid: 8614b8323b0650d49b71e7ab9ebed56e, type: 3}
-      Prefab: {fileID: 1660004071894072528, guid: b90d40cf2b40b1d4199cff1f3a3c8b5f, type: 3}
+    - TextureIndex: 3
       MiningLevel: 1
       RequiredEquipment: 0
-    - Texture: {fileID: 2800000, guid: 7d3d1a0e38553df4fb8796d5afd31b3d, type: 3}
-      Prefab: {fileID: 7258301586874961596, guid: af38d7a1f3bcc1e42a34b58712a913f5, type: 3}
+    - TextureIndex: 4
       MiningLevel: 1
       RequiredEquipment: 1
 --- !u!4 &149498319
@@ -232,7 +226,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55c27b8755004d118b527e7495292a24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 12
+  Speed: 18
   Acceleration: {x: 0, y: 0, z: 0}
   CameraTransform: {fileID: 963194228}
 --- !u!136 &497083708
@@ -461,6 +455,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 655f80dcdf984dc998e6fc278744f1b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Cube: {fileID: 7950762048030746375, guid: 00fc76e626480f24da0613775331018f, type: 3}
   Player: {fileID: 497083707}
 --- !u!1 &963194225
 GameObject:
@@ -547,14 +542,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.2588191, y: 0, z: 0, w: 0.9659258}
-  m_LocalPosition: {x: 0, y: 50, z: -80}
+  m_LocalRotation: {x: 0.37460655, y: 0, z: 0, w: 0.9271839}
+  m_LocalPosition: {x: 0, y: 50, z: -48.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 30, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 44, y: 0, z: 0}
 --- !u!114 &963194229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -568,6 +563,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 497083711}
-  offset: {x: 0, y: 50, z: -80}
+  offset: {x: 0, y: 50, z: -50}
   trackingDistance: 1
   stiffness: 0.05
