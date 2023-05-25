@@ -455,7 +455,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 655f80dcdf984dc998e6fc278744f1b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Cube: {fileID: 7950762048030746375, guid: 00fc76e626480f24da0613775331018f, type: 3}
+  SaveId: test
+  LevelId: 0
+  BlockMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
   Player: {fileID: 497083707}
 --- !u!1 &963194225
 GameObject:
