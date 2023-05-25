@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-namespace MessagePack.Unity.Editor
-{
-    internal class MessagePackWindow : EditorWindow
-    {
+namespace MessagePack.Unity.Editor {
+    internal class MessagePackWindow : EditorWindow {
         static MessagePackWindow window;
 
         bool processInitialized;
@@ -25,10 +23,8 @@ namespace MessagePack.Unity.Editor
         MpcArgument mpcArgument;
 
         [MenuItem("Window/MessagePack/CodeGenerator")]
-        public static void OpenWindow()
-        {
-            if (window != null)
-            {
+        public static void OpenWindow() {
+            if (window != null) {
                 window.Close();
             }
 
@@ -36,78 +32,63 @@ namespace MessagePack.Unity.Editor
             GetWindow<MessagePackWindow>("MessagePack CodeGen").Show();
         }
 
-        async void OnEnable()
-        {
+        async void OnEnable() {
             window = this; // set singleton.
-            try
-            {
+            try {
                 var dotnet = await ProcessHelper.FindDotnetAsync();
                 isDotnetInstalled = dotnet.found;
                 dotnetVersion = dotnet.version;
 
-                if (isDotnetInstalled)
-                {
+                if (isDotnetInstalled) {
                     isInstalledMpc = await ProcessHelper.IsInstalledMpc();
                 }
-            }
-            finally
-            {
+            } finally {
                 mpcArgument = MpcArgument.Restore();
                 processInitialized = true;
             }
         }
 
-        async void OnGUI()
-        {
-            if (!processInitialized)
-            {
+        async void OnGUI() {
+            if (!processInitialized) {
                 GUILayout.Label("Check .NET Core SDK/CodeGen install status.");
                 return;
             }
-            if (mpcArgument == null)
-            {
+
+            if (mpcArgument == null) {
                 return;
             }
 
-            if (!isDotnetInstalled)
-            {
+            if (!isDotnetInstalled) {
                 GUILayout.Label(".NET Core SDK not found.");
                 GUILayout.Label("MessagePack CodeGen requires .NET Core Runtime.");
-                if (GUILayout.Button("Open .NET Core install page."))
-                {
+                if (GUILayout.Button("Open .NET Core install page.")) {
                     Application.OpenURL("https://dotnet.microsoft.com/download");
                 }
+
                 return;
             }
 
-            if (!isInstalledMpc)
-            {
+            if (!isInstalledMpc) {
                 GUILayout.Label("MessagePack CodeGen is not installed.");
                 EditorGUI.BeginDisabledGroup(installingMpc);
 
-                if (GUILayout.Button("Install MessagePack CodeGen."))
-                {
+                if (GUILayout.Button("Install MessagePack CodeGen.")) {
                     installingMpc = true;
-                    try
-                    {
+                    try {
                         var log = await ProcessHelper.InstallMpc();
-                        if (!string.IsNullOrWhiteSpace(log))
-                        {
+                        if (!string.IsNullOrWhiteSpace(log)) {
                             UnityEngine.Debug.Log(log);
                         }
-                        if (log != null && log.Contains("error"))
-                        {
+
+                        if (log != null && log.Contains("error")) {
                             isInstalledMpc = false;
-                        }
-                        else
-                        {
+                        } else {
                             isInstalledMpc = true;
                         }
-                    }
-                    finally
-                    {
+                    } finally {
                         installingMpc = false;
                     }
+
                     return;
                 }
 
@@ -123,8 +104,7 @@ namespace MessagePack.Unity.Editor
 
             EditorGUILayout.LabelField("-m(optional) use map mode:");
             var newToggle = EditorGUILayout.Toggle(mpcArgument.UseMapMode);
-            if (mpcArgument.UseMapMode != newToggle)
-            {
+            if (mpcArgument.UseMapMode != newToggle) {
                 mpcArgument.UseMapMode = newToggle;
                 mpcArgument.Save();
             }
@@ -142,39 +122,33 @@ namespace MessagePack.Unity.Editor
             TextField(mpcArgument, x => x.MultipleIfDirectiveOutputSymbols, (x, y) => x.MultipleIfDirectiveOutputSymbols = y);
 
             EditorGUI.BeginDisabledGroup(invokingMpc);
-            if (GUILayout.Button("Generate"))
-            {
+            if (GUILayout.Button("Generate")) {
                 var commnadLineArguments = mpcArgument.ToString();
                 UnityEngine.Debug.Log("Generate MessagePack Files, command:" + commnadLineArguments);
 
                 invokingMpc = true;
-                try
-                {
+                try {
                     var log = await ProcessHelper.InvokeProcessStartAsync("mpc", commnadLineArguments);
                     UnityEngine.Debug.Log(log);
-                }
-                finally
-                {
+                } finally {
                     invokingMpc = false;
                 }
             }
+
             EditorGUI.EndDisabledGroup();
         }
 
-        void TextField(MpcArgument args, Func<MpcArgument, string> getter, Action<MpcArgument, string> setter)
-        {
+        void TextField(MpcArgument args, Func<MpcArgument, string> getter, Action<MpcArgument, string> setter) {
             var current = getter(args);
             var newValue = EditorGUILayout.TextField(current);
-            if (newValue != current)
-            {
+            if (newValue != current) {
                 setter(args, newValue);
                 args.Save();
             }
         }
     }
 
-    internal class MpcArgument
-    {
+    internal class MpcArgument {
         public string Input;
         public string Output;
         public string ConditionalSymbol;
@@ -185,94 +159,81 @@ namespace MessagePack.Unity.Editor
 
         static string Key => "MessagePackCodeGen." + Application.productName;
 
-        public static MpcArgument Restore()
-        {
-            if (EditorPrefs.HasKey(Key))
-            {
+        public static MpcArgument Restore() {
+            if (EditorPrefs.HasKey(Key)) {
                 var json = EditorPrefs.GetString(Key);
                 return JsonUtility.FromJson<MpcArgument>(json);
-            }
-            else
-            {
+            } else {
                 return new MpcArgument();
             }
         }
 
-        public void Save()
-        {
+        public void Save() {
             var json = JsonUtility.ToJson(this);
             EditorPrefs.SetString(Key, json);
         }
 
-        public override string ToString()
-        {
+        public override string ToString() {
             var sb = new StringBuilder();
-            sb.Append("-i "); sb.Append(Input);
-            sb.Append(" -o "); sb.Append(Output);
-            if (!string.IsNullOrWhiteSpace(ConditionalSymbol))
-            {
-                sb.Append(" -c "); sb.Append(ConditionalSymbol);
+            sb.Append("-i ");
+            sb.Append(Input);
+            sb.Append(" -o ");
+            sb.Append(Output);
+            if (!string.IsNullOrWhiteSpace(ConditionalSymbol)) {
+                sb.Append(" -c ");
+                sb.Append(ConditionalSymbol);
             }
-            if (!string.IsNullOrWhiteSpace(ResolverName))
-            {
-                sb.Append(" -r "); sb.Append(ResolverName);
+
+            if (!string.IsNullOrWhiteSpace(ResolverName)) {
+                sb.Append(" -r ");
+                sb.Append(ResolverName);
             }
-            if (UseMapMode)
-            {
+
+            if (UseMapMode) {
                 sb.Append(" -m");
             }
-            if (!string.IsNullOrWhiteSpace(Namespace))
-            {
-                sb.Append(" -n "); sb.Append(Namespace);
+
+            if (!string.IsNullOrWhiteSpace(Namespace)) {
+                sb.Append(" -n ");
+                sb.Append(Namespace);
             }
-            if (!string.IsNullOrWhiteSpace(MultipleIfDirectiveOutputSymbols))
-            {
-                sb.Append(" -ms "); sb.Append(MultipleIfDirectiveOutputSymbols);
+
+            if (!string.IsNullOrWhiteSpace(MultipleIfDirectiveOutputSymbols)) {
+                sb.Append(" -ms ");
+                sb.Append(MultipleIfDirectiveOutputSymbols);
             }
 
             return sb.ToString();
         }
     }
 
-    internal static class ProcessHelper
-    {
+    internal static class ProcessHelper {
         const string InstallName = "messagepack.generator";
 
-        public static async Task<bool> IsInstalledMpc()
-        {
+        public static async Task<bool> IsInstalledMpc() {
             var list = await InvokeProcessStartAsync("dotnet", "tool list -g");
-            if (list.Contains(InstallName))
-            {
+            if (list.Contains(InstallName)) {
                 return true;
-            }
-            else
-            {
+            } else {
                 return false;
             }
         }
 
-        public static async Task<string> InstallMpc()
-        {
+        public static async Task<string> InstallMpc() {
             return await InvokeProcessStartAsync("dotnet", "tool install --global " + InstallName);
         }
 
-        public static async Task<(bool found, string version)> FindDotnetAsync()
-        {
-            try
-            {
+        public static async Task<(bool found, string version)> FindDotnetAsync() {
+            try {
                 var version = await InvokeProcessStartAsync("dotnet", "--version");
                 return (true, version);
-            }
-            catch
-            {
+            } catch {
                 return (false, null);
             }
         }
 
-        public static Task<string> InvokeProcessStartAsync(string fileName, string arguments)
-        {
-            var psi = new ProcessStartInfo()
-            {
+        public static Task<string> InvokeProcessStartAsync(string fileName, string arguments) {
+            var psi = new ProcessStartInfo() {
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
                 StandardOutputEncoding = Encoding.UTF8,
@@ -286,19 +247,15 @@ namespace MessagePack.Unity.Editor
             };
 
             Process p;
-            try
-            {
+            try {
                 p = Process.Start(psi);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 return Task.FromException<string>(ex);
             }
 
             var tcs = new TaskCompletionSource<string>();
             p.EnableRaisingEvents = true;
-            p.Exited += (object sender, System.EventArgs e) =>
-            {
+            p.Exited += (object sender, System.EventArgs e) => {
                 var data = p.StandardOutput.ReadToEnd();
                 p.Dispose();
                 p = null;

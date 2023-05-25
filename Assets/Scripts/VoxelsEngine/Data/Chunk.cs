@@ -9,6 +9,7 @@ public class Chunk {
     public int ChZ;
     public Cell[,,] Cells;
     public bool IsLoaded;
+    public bool IsGenerated;
 
     public IEnumerable<CellPosition> GetCellPositions() {
         for (int y = 6; y >= 0; y--) {
@@ -30,7 +31,7 @@ public class Chunk {
             Cells[x, y, z] = new Cell("AIR");
         }
 
-        IsLoaded = false;
+        IsGenerated = false;
     }
 
     public string GetKey() {
@@ -57,6 +58,6 @@ public class Chunk {
         ChX = chunk.ChX;
         ChZ = chunk.ChZ;
         Cells = chunk.Cells;
-        IsLoaded = true;
+        IsGenerated = true;
     }
 }

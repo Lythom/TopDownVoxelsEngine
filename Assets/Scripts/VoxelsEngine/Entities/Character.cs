@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace VoxelsEngine {
     public class Character : MonoBehaviour {
         public float Speed = 5.0f;
         public Vector3 Acceleration = new(0, 0, 0);
-        public Transform CameraTransform;
+
+        [Required]
+        public Transform CameraTransform = null!;
 
         private void Update() {
             // Get the input on the x and z axis

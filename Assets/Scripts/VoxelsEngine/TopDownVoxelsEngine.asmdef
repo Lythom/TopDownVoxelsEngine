@@ -6,7 +6,8 @@
         "MessagePack.Annotations",
         "DOTweenPro.Scripts",
         "DOTweenTimeline.Scripts",
-        "DOTween.Modules"
+        "DOTween.Modules",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -2,6 +2,12 @@
 
 namespace VoxelsEngine {
     internal static class CubeMeshData {
+        //        4-------5
+        //          `.    |
+        //     2-------3  |
+        //     |  7-------6
+        //     |          
+        //     1-------0 
         public static readonly Vector3[] Vertices = {
             new(0.5f, -0.5f, -0.5f),
             new(-0.5f, -0.5f, -0.5f),

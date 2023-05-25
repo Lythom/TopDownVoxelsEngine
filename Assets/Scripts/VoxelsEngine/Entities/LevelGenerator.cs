@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -20,20 +22,30 @@ namespace VoxelsEngine {
             _level = new LevelData(SaveId, LevelId);
         }
 
-        public async void Update() {
+        public void Update() {
             var playerPos = Player.transform.position;
             float cX = Mathf.Floor(playerPos.x);
             float cY = Mathf.Floor(playerPos.z);
             int chX = Mathf.FloorToInt(cX / 16);
             int chY = Mathf.FloorToInt(cY / 16);
-            string currentChunkKey = Chunk.GetKey("test", "0", chX, chY);
 
-            Chunk? currentChunk = await _level.GetOrGenerateChunk(chX, chY, Mathf.RoundToInt(playerPos.x), Mathf.RoundToInt(playerPos.y), 1337 + chX + 100000 * chY);
-            if (!Chunks.ContainsKey(currentChunkKey) && currentChunk != null) {
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    var key = Chunk.GetKey(SaveId, LevelId, chX + x, chY + y);
+                    if (!Chunks.ContainsKey(key)) {
+                        GenerateNearChunk(chX + x, chY + y, playerPos, key).Forget();
+                    }
+                }
+            }
+        }
+
+        private async UniTask GenerateNearChunk(int chX, int chY, Vector3 playerPos, string key) {
+            Chunk? currentChunk = await _level.GetOrGenerateChunk(chX, chY, 1337 + chX + 100000 * chY);
+            if (currentChunk != null) {
                 var chunkGen = GenerateChunkRenderer(currentChunk, chX, chY);
                 chunkGen.transform.SetParent(transform, true);
-                chunkGen.Redraw(_level);
-                Chunks.Add(currentChunkKey, chunkGen);
+                await chunkGen.Redraw(_level);
+                Chunks.Add(key, chunkGen);
             }
         }
 

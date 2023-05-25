@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace VoxelsEngine {
@@ -17,7 +19,7 @@ namespace VoxelsEngine {
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
         }
 
-        public void Redraw(LevelData level) {
+        public async UniTask Redraw(LevelData level) {
             if (_mesh == null) return;
             if (Chunk == null) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -30,17 +32,18 @@ namespace VoxelsEngine {
                 var cell = Chunk.Cells[x, y, z];
                 if (cell.BlockDefinition != "AIR") {
                     var blockDef = Configurator.Instance.BlocksLibrary[cell.BlockDefinition];
-                    MakeCube(x, y, z, blockDef, level);
+                    await MakeCube(x, y, z, blockDef, level);
                 }
             }
 
             UpdateMesh();
+            Chunk.IsGenerated = true;
         }
 
-        private void MakeCube(int x, int y, int z, BlockDefinition blockDef, LevelData level) {
+        private async UniTask MakeCube(int x, int y, int z, BlockDefinition blockDef, LevelData level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) i;
-                var n = level.GetNeighbor(x, y, z, dir);
+                var n = await level.GetNeighbor(x, y, z, dir);
                 if (n == null || n.Value.BlockDefinition == "AIR") {
                     MakeFace(dir, x, y, z, blockDef.TextureIndex);
                 }
