@@ -7,7 +7,9 @@
         "DOTweenPro.Scripts",
         "DOTweenTimeline.Scripts",
         "DOTween.Modules",
-        "UniTask"
+        "UniTask",
+        "UniTask.TextMeshPro",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

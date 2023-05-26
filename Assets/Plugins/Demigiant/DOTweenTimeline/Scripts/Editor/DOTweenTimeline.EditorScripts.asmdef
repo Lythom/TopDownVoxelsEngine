@@ -1,0 +1,13 @@
+{
+	"name": "DOTweenTimeline.EditorScripts",
+	"references": [
+		"Unity.TextMeshPro",
+		"DOTweenPro.Scripts",
+		"DOTween.Modules",
+		"DOTweenTimeline.Scripts"
+	],
+	"includePlatforms": [
+		"Editor"
+	],
+	"autoReferenced": false
+}
