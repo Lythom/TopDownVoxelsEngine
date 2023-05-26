@@ -1,19 +1,47 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VoxelsEngine;
 using Random = System.Random;
 
-public class LevelData {
-    public Dictionary<string, Chunk> Chunks = new();
+public class LevelData : IDisposable {
+    public ConcurrentDictionary<ChunkKey, ChunkData> Chunks = new();
+    public ConcurrentQueue<ChunkKey> CreationQueue = new();
     public string SaveId;
     public string LevelId;
+
+    private CancellationTokenSource cts = new();
 
     public LevelData(string saveId, string levelId) {
         LevelId = levelId;
         SaveId = saveId;
+        GenerateChunksFromQueue(cts.Token).Forget();
+    }
+
+
+    public void Dispose() {
+        cts.Cancel(false);
+    }
+
+    private async UniTaskVoid GenerateChunksFromQueue(CancellationToken cancellationToken) {
+        while (!cancellationToken.IsCancellationRequested) {
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            // dequeue until all is generated
+            while (CreationQueue.TryDequeue(out ChunkKey key)) {
+                try {
+                    UniTask
+                        .RunOnThreadPool(() => GenerateChunk(key), true, cancellationToken)
+                        .Forget();
+                } catch (Exception e) {
+                    Debug.LogException(e);
+                }
+            }
+        }
     }
 
     public async UniTask<Cell?> GetNeighbor(int x, int y, int z, Direction dir) {
@@ -23,10 +51,11 @@ public class LevelData {
         return await GetOrCreateCell(x + offset.x, offsetY, z - offset.z);
     }
 
-    public Chunk GenerateChunk(int chX, int chZ, int seed) {
+    public ChunkData GenerateChunk(ChunkKey key) {
+        var seed = GetChunkSeed(key);
         var rng = new Random(seed);
         // Generate a new chunk
-        var chunk = new Chunk(SaveId, LevelId, chX, chZ);
+        var chunk = new ChunkData(key);
         // ... chunk generation code
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -61,18 +90,17 @@ public class LevelData {
         }
 
         chunk.IsGenerated = true;
-        var key = chunk.GetKey();
         // Please: save to file
         Chunks[key] = chunk;
         return chunk;
     }
 
-    public async UniTask<Chunk?> GetChunkFromFile(string saveId, string levelId, int chX, int chZ) {
-        var key = Chunk.GetKey(saveId, levelId, chX, chZ);
+    public async UniTask<ChunkData?> GetChunkFromFile(string saveId, string levelId, int chX, int chZ) {
+        var key = ChunkData.GetKey(saveId, levelId, chX, chZ);
         var savePath = GetSavePath(saveId, key);
         if (File.Exists(savePath)) {
             Console.WriteLine($"loading from file {chX},{chZ}");
-            var chunk = new Chunk(saveId, levelId, chX, chZ);
+            var chunk = new ChunkData(saveId, levelId, chX, chZ);
             chunk.UnserializeChunk(await File.ReadAllBytesAsync(savePath));
             return chunk;
         } else {
@@ -81,21 +109,30 @@ public class LevelData {
         }
     }
 
-    private static string GetSavePath(string saveId, string key) {
-        var filePath = Path.Join(Application.persistentDataPath, "Saves/" + saveId, key);
+    private static string GetSavePath(string saveId, ChunkKey key) {
+        var filePath = Path.Join(Application.persistentDataPath, "Saves/" + saveId, key.ToString());
         return filePath;
     }
 
-    public async UniTask<Chunk?> GetOrGenerateChunk(int chX, int chZ, int seed) {
-        var key = Chunk.GetKey(SaveId, LevelId, chX, chZ);
+    public int GetChunkSeed(ChunkKey key) {
+        return 1337 + key.ChX + 100000 * key.ChZ + key.LevelId.GetHashCode() * 13 + key.SaveId.GetHashCode() * 7;
+    }
+
+    public async UniTask<ChunkData?> GetOrGenerateChunk(int chX, int chZ) {
+        var key = ChunkData.GetKey(SaveId, LevelId, chX, chZ);
+        if (CreationQueue.Contains(key)) await UniTask.WaitUntil(() => !CreationQueue.Contains(key));
+
         if (Chunks.ContainsKey(key)) {
             var chunk = Chunks[key];
             return chunk;
         } else {
-            Chunk? chunk = await GetChunkFromFile(SaveId, LevelId, chX, chZ);
-            if (chunk == null) {
-                chunk = GenerateChunk(chX, chZ, seed);
-            }
+            ChunkData? chunk = null;
+            // ChunkData? chunk = await GetChunkFromFile(SaveId, LevelId, chX, chZ);
+            // if (chunk == null) {
+            CreationQueue.Enqueue(new(SaveId, LevelId, chX, chZ));
+            await UniTask.WaitUntil(() => Chunks.ContainsKey(key));
+            return Chunks[key];
+            // }
 
             Chunks[key] = chunk;
             return chunk;
@@ -109,7 +146,7 @@ public class LevelData {
         if (y < 0) return null;
         var chX = (int) Math.Floor((double) x / 16);
         var chZ = (int) Math.Floor((double) z / 16);
-        var key = Chunk.GetKey(SaveId, LevelId, chX, chZ);
+        var key = ChunkData.GetKey(SaveId, LevelId, chX, chZ);
         if (Chunks.ContainsKey(key)) {
             var chunk = Chunks[key];
             return chunk.Cells[x % 16, y, z % 16];
@@ -121,7 +158,7 @@ public class LevelData {
     public async UniTask<Cell?> GetOrCreateCell(int x, int y, int z) {
         var chX = (int) Math.Floor((double) x / 16);
         var chZ = (int) Math.Floor((double) z / 16);
-        var chunk = await GetOrGenerateChunk(chX, chZ, 1337 + chX + 1777777 * chZ);
+        var chunk = await GetOrGenerateChunk(chX, chZ);
         if (chunk != null) {
             return chunk.Cells[mod(x, 16), y, mod(z, 16)];
         }

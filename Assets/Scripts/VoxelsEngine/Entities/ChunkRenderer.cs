@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace VoxelsEngine {
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
-        public Chunk? Chunk;
+        public ChunkData? Chunk;
+
         private Mesh _mesh = null!;
         private readonly List<int> _triangles = new();
         private readonly List<Vector3> _vertices = new();
@@ -19,7 +19,7 @@ namespace VoxelsEngine {
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
         }
 
-        public async UniTask Redraw(LevelData level) {
+        public async UniTask ReCalculateMesh(LevelData level) {
             if (_mesh == null) return;
             if (Chunk == null) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -28,22 +28,18 @@ namespace VoxelsEngine {
             _uvs.Clear();
             _uvs2.Clear();
             foreach (var (x, y, z) in Chunk.GetCellPositions()) {
-                string key = $"{x}_{y}_{z}";
                 var cell = Chunk.Cells[x, y, z];
                 if (cell.BlockDefinition != "AIR") {
                     var blockDef = Configurator.Instance.BlocksLibrary[cell.BlockDefinition];
                     await MakeCube(x, y, z, blockDef, level);
                 }
             }
-
-            UpdateMesh();
-            Chunk.IsGenerated = true;
         }
 
         private async UniTask MakeCube(int x, int y, int z, BlockDefinition blockDef, LevelData level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) i;
-                var n = await level.GetNeighbor(x, y, z, dir);
+                var n = await level.GetNeighbor(x + Chunk!.ChX * 16, y, z + Chunk.ChZ * 16, dir);
                 if (n == null || n.Value.BlockDefinition == "AIR") {
                     MakeFace(dir, x, y, z, blockDef.TextureIndex);
                 }
@@ -51,7 +47,7 @@ namespace VoxelsEngine {
         }
 
         private void MakeFace(Direction dir, int x, int y, int z, float textureIndex) {
-            _vertices.AddRange(CubeMeshData.FaceVertices((int) dir, x % 16, y, z % 16));
+            _vertices.AddRange(CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8));
             int vCount = _vertices.Count;
             _uvs.Add(new(0, 0, textureIndex));
             _uvs.Add(new(1, 0, textureIndex));
@@ -77,7 +73,6 @@ namespace VoxelsEngine {
             _mesh.SetTriangles(_triangles, 0);
             _mesh.SetUVs(0, _uvs);
             _mesh.RecalculateNormals();
-            _mesh.RecalculateTangents();
         }
     }
 }

@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 
-public class Chunk {
+public class ChunkData {
     public string SaveId;
     public string LevelId;
     public int ChX;
     public int ChZ;
     public Cell[,,] Cells;
-    public bool IsLoaded;
     public bool IsGenerated;
 
     public IEnumerable<CellPosition> GetCellPositions() {
@@ -21,7 +21,10 @@ public class Chunk {
         }
     }
 
-    public Chunk(string saveId, string levelId, int chX, int chZ) {
+    public ChunkData(ChunkKey key) : this(key.SaveId, key.LevelId, key.ChX, key.ChZ) {
+    }
+
+    public ChunkData(string saveId, string levelId, int chX, int chZ) {
         SaveId = saveId;
         LevelId = levelId;
         ChX = chX;
@@ -34,12 +37,12 @@ public class Chunk {
         IsGenerated = false;
     }
 
-    public string GetKey() {
-        return GetKey(SaveId, LevelId, ChX, ChZ);
+    public ChunkKey GetKey() {
+        return new ChunkKey(SaveId, LevelId, ChX, ChZ);
     }
 
-    public static string GetKey(string saveId, string levelId, int chX, int chZ) {
-        return $"{saveId}_{levelId}_{chX}_{chZ}";
+    public static ChunkKey GetKey(string saveId, string levelId, int chX, int chZ) {
+        return new ChunkKey(saveId, levelId, chX, chZ);
     }
 
     // Note: this requires additional work to handle the serialization
@@ -54,7 +57,7 @@ public class Chunk {
     public void UnserializeChunk(byte[] data) {
         MemoryStream ms = new MemoryStream(data);
         BinaryFormatter formatter = new BinaryFormatter();
-        var chunk = (Chunk) formatter.Deserialize(ms);
+        var chunk = (ChunkData) formatter.Deserialize(ms);
         ChX = chunk.ChX;
         ChZ = chunk.ChZ;
         Cells = chunk.Cells;
