@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Sirenix.OdinInspector;
@@ -10,6 +11,7 @@ namespace VoxelsEngine {
         private LevelData _level = null!;
 
         public readonly List<ChunkKey> QueriedChunks = new();
+        public readonly Queue<ChunkKey> ToBeRendererQueue = new();
 
         public string SaveId = "test";
         public string LevelId = "0";
@@ -20,8 +22,10 @@ namespace VoxelsEngine {
         [Required, SceneObjectsOnly]
         public Character Player = null!;
 
+
         private void Awake() {
             _level = new LevelData(SaveId, LevelId);
+            RenderChunksFromQueue(gameObject.GetCancellationTokenOnDestroy()).Forget();
         }
 
         private void OnDestroy() {
@@ -40,7 +44,24 @@ namespace VoxelsEngine {
                     var key = ChunkData.GetKey(SaveId, LevelId, chX + x, chZ + z);
                     if (!QueriedChunks.Contains(key)) {
                         QueriedChunks.Add(key);
-                        GenerateNearChunk(chX + x, chZ + z).Forget();
+                        ToBeRendererQueue.Enqueue(key);
+                    }
+                }
+            }
+        }
+
+
+        private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
+            while (!cancellationToken.IsCancellationRequested) {
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                // dequeue until all is generated
+                while (ToBeRendererQueue.TryDequeue(out ChunkKey k)) {
+                    try {
+                        await GenerateNearChunk(k.ChX, k.ChZ);
+                        // max 1 per frame
+                        await UniTask.NextFrame(cancellationToken);
+                    } catch (Exception e) {
+                        Debug.LogException(e);
                     }
                 }
             }
@@ -52,7 +73,8 @@ namespace VoxelsEngine {
                 if (currentChunk != null) {
                     var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chY);
                     chunkRenderer.transform.SetParent(transform, true);
-                    await UniTask.RunOnThreadPool(() => chunkRenderer.ReCalculateMesh(_level), true, gameObject.GetCancellationTokenOnDestroy());
+                    await chunkRenderer.ReCalculateMesh(_level);
+                    await UniTask.NextFrame();
                     // we return to MainThread here thanks to configureAwait: true, so we can update the mesh
                     chunkRenderer.UpdateMesh();
                     chunkRenderer.transform.localScale = Vector3.zero;

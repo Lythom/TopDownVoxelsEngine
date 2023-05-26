@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,7 +10,10 @@ using Random = System.Random;
 
 public class LevelData : IDisposable {
     public ConcurrentDictionary<ChunkKey, ChunkData> Chunks = new();
-    public ConcurrentQueue<ChunkKey> CreationQueue = new();
+
+    public ConcurrentQueue<ChunkKey> CreationQueue = new() {
+    };
+
     public string SaveId;
     public string LevelId;
 
@@ -34,9 +36,8 @@ public class LevelData : IDisposable {
             // dequeue until all is generated
             while (CreationQueue.TryDequeue(out ChunkKey key)) {
                 try {
-                    UniTask
-                        .RunOnThreadPool(() => GenerateChunk(key), true, cancellationToken)
-                        .Forget();
+                    GenerateChunk(key);
+                    await UniTask.NextFrame(cancellationToken);
                 } catch (Exception e) {
                     Debug.LogException(e);
                 }
@@ -48,6 +49,7 @@ public class LevelData : IDisposable {
         var offset = dir.GetOffset();
         var offsetY = y + offset.y;
         if (offsetY < 0 || offsetY > 6) return null;
+        return TryGetExistingCell(x + offset.x, offsetY, z - offset.z);
         return await GetOrCreateCell(x + offset.x, offsetY, z - offset.z);
     }
 
@@ -118,6 +120,7 @@ public class LevelData : IDisposable {
         return 1337 + key.ChX + 100000 * key.ChZ + key.LevelId.GetHashCode() * 13 + key.SaveId.GetHashCode() * 7;
     }
 
+    // TODO: this is way too slow. Find a way without so many lookups ! MortonCode with lot of preassigned chunks like 128 x 128 ?
     public async UniTask<ChunkData?> GetOrGenerateChunk(int chX, int chZ) {
         var key = ChunkData.GetKey(SaveId, LevelId, chX, chZ);
         if (CreationQueue.Contains(key)) await UniTask.WaitUntil(() => !CreationQueue.Contains(key));
@@ -141,15 +144,12 @@ public class LevelData : IDisposable {
 
 
     public Cell? TryGetExistingCell(int x, int y, int z) {
-        if (x < 0) return null;
-        if (z < 0) return null;
-        if (y < 0) return null;
         var chX = (int) Math.Floor((double) x / 16);
         var chZ = (int) Math.Floor((double) z / 16);
         var key = ChunkData.GetKey(SaveId, LevelId, chX, chZ);
         if (Chunks.ContainsKey(key)) {
             var chunk = Chunks[key];
-            return chunk.Cells[x % 16, y, z % 16];
+            return chunk.Cells[mod(x, 16), y, mod(z, 16)];
         }
 
         return null;
