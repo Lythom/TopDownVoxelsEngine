@@ -142,8 +142,6 @@ public class LevelData : IDisposable {
     }
 
     public async UniTask<ChunkData> GetOrGenerateChunk(int chX, int chZ) {
-        Debug.Log($"GetOrGenerateChunk({chX}, {chZ})");
-
         var key = ChunkData.GetKey(SaveId, LevelId, chX, chZ);
         if (CreationQueue.Contains(key)) await UniTask.WaitUntil(() => !CreationQueue.Contains(key));
 

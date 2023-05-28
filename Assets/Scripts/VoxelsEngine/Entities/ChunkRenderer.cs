@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace VoxelsEngine {
@@ -10,9 +8,12 @@ namespace VoxelsEngine {
         public ChunkKey ChunkKey;
 
         private Mesh _mesh = null!;
-        private readonly List<int> _triangles = new();
-        private readonly List<Vector3> _vertices = new();
-        private readonly List<Vector4> _uvs = new();
+        private readonly int[] _triangles = new int[20000];
+        private int _trianglesCount = 0;
+        private readonly Vector3[] _vertices = new Vector3[10000];
+        private int _verticesCount = 0;
+        private readonly Vector4[] _uvs = new Vector4[10000];
+        private int _uvsCount = 0;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
@@ -24,9 +25,9 @@ namespace VoxelsEngine {
             var chunk = Level.Chunks[ChunkKey.ChX, ChunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
-            _vertices.Clear();
-            _triangles.Clear();
-            _uvs.Clear();
+            _trianglesCount = 0;
+            _verticesCount = 0;
+            _uvsCount = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
                 if (cell.BlockDef != BlockDefId.Air) {
@@ -47,26 +48,31 @@ namespace VoxelsEngine {
         }
 
         private void MakeFace(Direction dir, int x, int y, int z, float textureIndex) {
-            _vertices.AddRange(CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8));
-            int vCount = _vertices.Count;
-            _uvs.Add(new(0, 0, textureIndex));
-            _uvs.Add(new(1, 0, textureIndex));
-            _uvs.Add(new(1, 1, textureIndex));
-            _uvs.Add(new(0, 1, textureIndex));
+            CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8, _vertices, ref _verticesCount);
+            //
+            // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
+            //     _vertices[_verticesCount] = faceVertex;
+            //     _verticesCount++;
+            // }
 
-            _triangles.Add(vCount - 4);
-            _triangles.Add(vCount - 4 + 1);
-            _triangles.Add(vCount - 4 + 2);
-            _triangles.Add(vCount - 4);
-            _triangles.Add(vCount - 4 + 2);
-            _triangles.Add(vCount - 4 + 3);
+            _uvs[_uvsCount++] = new(0, 0, textureIndex);
+            _uvs[_uvsCount++] = new(1, 0, textureIndex);
+            _uvs[_uvsCount++] = new(1, 1, textureIndex);
+            _uvs[_uvsCount++] = new(0, 1, textureIndex);
+
+            _triangles[_trianglesCount++] = _verticesCount - 4;
+            _triangles[_trianglesCount++] = _verticesCount - 4 + 1;
+            _triangles[_trianglesCount++] = _verticesCount - 4 + 2;
+            _triangles[_trianglesCount++] = _verticesCount - 4;
+            _triangles[_trianglesCount++] = _verticesCount - 4 + 2;
+            _triangles[_trianglesCount++] = _verticesCount - 4 + 3;
         }
 
         public void UpdateMesh() {
             _mesh.Clear();
-            _mesh.SetVertices(_vertices);
-            _mesh.SetTriangles(_triangles, 0);
-            _mesh.SetUVs(0, _uvs);
+            _mesh.SetVertices(_vertices, 0, _verticesCount);
+            _mesh.SetTriangles(_triangles, 0, _trianglesCount, 0);
+            _mesh.SetUVs(0, _uvs, 0, _uvsCount);
             _mesh.RecalculateNormals();
         }
     }

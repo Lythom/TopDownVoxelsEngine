@@ -36,5 +36,21 @@ namespace VoxelsEngine {
 
             return faceVertices;
         }
+
+
+        /// <summary>
+        /// Will provide the vertices for the face. The provided array must have enough room.
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="vertices">Array where to add the faces to.</param>
+        /// <param name="verticesCount">current count of vertices = location where to add the new vertices. Will be updated by this function.</param>
+        public static void FaceVertices(int dir, int x, int y, int z, Vector3[] vertices, ref int verticesCount) {
+            for (int i = 0; i < 4; i++) {
+                vertices[verticesCount++] = Vertices[FaceTriangles[dir][i]] + new Vector3(x, y, z);
+            }
+        }
     }
 }

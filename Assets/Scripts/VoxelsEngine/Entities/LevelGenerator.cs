@@ -22,10 +22,13 @@ namespace VoxelsEngine {
         [Required, SceneObjectsOnly]
         public Character Player = null!;
 
+        private CancellationToken _cancellationTokenOnDestroy;
+
 
         private void Awake() {
             _level = new LevelData(SaveId, LevelId);
-            RenderChunksFromQueue(gameObject.GetCancellationTokenOnDestroy()).Forget();
+            _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
+            RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
         private void OnDestroy() {
@@ -72,10 +75,9 @@ namespace VoxelsEngine {
         }
 
         private async UniTask GenerateNearChunk(int chX, int chY) {
-            Debug.Log("GenerateNearChunk");
             try {
                 ChunkData currentChunk = await _level.GetOrGenerateChunk(chX, chY);
-                if (currentChunk.IsGenerated) {
+                if (currentChunk.IsGenerated && !_cancellationTokenOnDestroy.IsCancellationRequested) {
                     var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chY);
                     chunkRenderer.transform.SetParent(transform, true);
                     chunkRenderer.ReCalculateMesh(_level);
