@@ -20,13 +20,11 @@ public struct CellPosition {
 }
 
 public struct Cell {
-    public string BlockDefinition;
-    public int DamageLevel;
-    public Vector3[] Neighbours;
+    public BlockDefId BlockDef;
+    public byte DamageLevel;
 
-    public Cell(string idx) {
-        BlockDefinition = idx;
+    public Cell(BlockDefId idx) {
+        BlockDef = idx;
         DamageLevel = 0;
-        Neighbours = new Vector3[6];
     }
 }

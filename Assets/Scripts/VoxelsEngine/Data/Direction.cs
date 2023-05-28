@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace VoxelsEngine {
     public enum Direction {
         North,
@@ -18,6 +20,7 @@ namespace VoxelsEngine {
             (0, -1, 0),
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (int x, int y, int z) GetOffset(this Direction dir) {
             return Offsets[(int) dir];
         }

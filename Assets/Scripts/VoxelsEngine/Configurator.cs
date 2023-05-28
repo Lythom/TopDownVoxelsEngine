@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -9,15 +10,11 @@ using UnityEngine.Analytics;
 
 namespace VoxelsEngine {
     [Serializable]
-    public class BlocksDefinitionLibrary : SerializedDictionary<String, BlockDefinition> {
-    }
-
-    [Serializable]
     public class Configurator : MonoBehaviour {
         private static Configurator? _instance;
 
         [SerializeField]
-        public BlocksDefinitionLibrary BlocksLibrary = new();
+        public List<BlockDefinition> BlocksLibrary = new();
 
 #if UNITY_EDITOR
         [InitializeOnLoadMethod]

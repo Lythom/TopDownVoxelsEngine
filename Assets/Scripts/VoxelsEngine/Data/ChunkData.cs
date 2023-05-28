@@ -1,14 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 
-public class ChunkData {
-    public string SaveId;
-    public string LevelId;
+public struct ChunkData {
     public int ChX;
     public int ChZ;
-    public Cell[,,] Cells;
+    public Cell[,,]? Cells;
     public bool IsGenerated;
 
     public IEnumerable<CellPosition> GetCellPositions() {
@@ -21,24 +18,15 @@ public class ChunkData {
         }
     }
 
-    public ChunkData(ChunkKey key) : this(key.SaveId, key.LevelId, key.ChX, key.ChZ) {
-    }
-
-    public ChunkData(string saveId, string levelId, int chX, int chZ) {
-        SaveId = saveId;
-        LevelId = levelId;
+    public ChunkData(int chX, int chZ) {
         ChX = chX;
         ChZ = chZ;
         Cells = new Cell[16, 7, 16];
-        foreach (var (x, y, z) in GetCellPositions()) {
-            Cells[x, y, z] = new Cell("AIR");
-        }
-
         IsGenerated = false;
     }
 
-    public ChunkKey GetKey() {
-        return new ChunkKey(SaveId, LevelId, ChX, ChZ);
+    public ChunkKey GetKey(string saveId, string levelId) {
+        return new ChunkKey(saveId, levelId, ChX, ChZ);
     }
 
     public static ChunkKey GetKey(string saveId, string levelId, int chX, int chZ) {

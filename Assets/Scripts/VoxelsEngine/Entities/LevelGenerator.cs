@@ -52,6 +52,8 @@ namespace VoxelsEngine {
 
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
+            Debug.Log("Start job rendering chunks.");
+
             while (!cancellationToken.IsCancellationRequested) {
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
                 // dequeue until all is generated
@@ -65,17 +67,18 @@ namespace VoxelsEngine {
                     }
                 }
             }
+
+            Debug.Log("Stop job rendering chunks. Cancellation was requested.");
         }
 
         private async UniTask GenerateNearChunk(int chX, int chY) {
+            Debug.Log("GenerateNearChunk");
             try {
-                ChunkData? currentChunk = await _level.GetOrGenerateChunk(chX, chY);
-                if (currentChunk != null) {
+                ChunkData currentChunk = await _level.GetOrGenerateChunk(chX, chY);
+                if (currentChunk.IsGenerated) {
                     var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chY);
                     chunkRenderer.transform.SetParent(transform, true);
-                    await chunkRenderer.ReCalculateMesh(_level);
-                    await UniTask.NextFrame();
-                    // we return to MainThread here thanks to configureAwait: true, so we can update the mesh
+                    chunkRenderer.ReCalculateMesh(_level);
                     chunkRenderer.UpdateMesh();
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
@@ -93,7 +96,8 @@ namespace VoxelsEngine {
             r.sharedMaterial = BlockMaterial;
             var chunkGen = go.AddComponent<ChunkRenderer>();
             chunkGen.transform.localPosition = new Vector3(chX * 16, 0, chY * 16);
-            chunkGen.Chunk = currentChunk;
+            chunkGen.Level = _level;
+            chunkGen.ChunkKey = currentChunk.GetKey(_level.SaveId, _level.LevelId);
             return chunkGen;
         }
     }

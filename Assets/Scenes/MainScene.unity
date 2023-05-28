@@ -153,32 +153,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BlocksLibrary:
-    keyData:
-    - AIR
-    - DIRT
-    - STONE
-    - GRASS
-    - SNOW
-    - WOOD
-    valueData:
-    - TextureIndex: 0
-      MiningLevel: 0
-      RequiredEquipment: 0
-    - TextureIndex: 0
-      MiningLevel: 1
-      RequiredEquipment: 0
-    - TextureIndex: 2
-      MiningLevel: 2
-      RequiredEquipment: 0
-    - TextureIndex: 1
-      MiningLevel: 1
-      RequiredEquipment: 0
-    - TextureIndex: 3
-      MiningLevel: 1
-      RequiredEquipment: 0
-    - TextureIndex: 4
-      MiningLevel: 1
-      RequiredEquipment: 1
+  - Id: 0
+    MiningLevel: 0
+    RequiredEquipment: 0
+  - Id: 1
+    MiningLevel: 0
+    RequiredEquipment: 0
+  - Id: 2
+    MiningLevel: 0
+    RequiredEquipment: 0
+  - Id: 3
+    MiningLevel: 0
+    RequiredEquipment: 0
+  - Id: 4
+    MiningLevel: 0
+    RequiredEquipment: 0
+  - Id: 5
+    MiningLevel: 0
+    RequiredEquipment: 0
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0
@@ -310,7 +302,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 497083706}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4, z: 0}
+  m_LocalPosition: {x: 2048, y: 4, z: 2048}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -545,7 +537,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0.37460655, y: 0, z: 0, w: 0.9271839}
-  m_LocalPosition: {x: 0, y: 50, z: -48.3}
+  m_LocalPosition: {x: 2047.7324, y: 50, z: 2002.69}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -564,7 +556,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8408be2c17534813aca51c0a5445b3af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 497083711}
-  offset: {x: 0, y: 50, z: -50}
-  trackingDistance: 1
-  stiffness: 0.05
+  Target: {fileID: 928272618}
+  TrackingDistance: 1
+  LerpFactor: 0.1
+  Offset: {x: 0, y: 50, z: -50}
