@@ -67,7 +67,7 @@ public class LevelData : IDisposable {
         var offset = dir.GetOffset();
         var yWithOffset = y + offset.y;
         if (yWithOffset < 0 || yWithOffset > 6) return null;
-        return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z);
+        return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z, out _, out _, out _);
         // return await GetOrCreateCell(x + offset.x, offsetY, z - offset.z);
     }
 
@@ -175,14 +175,20 @@ public class LevelData : IDisposable {
         return false;
     }
 
-    public Cell? TryGetExistingCell(int x, int y, int z) {
+    public Cell? TryGetExistingCell(int x, int y, int z, out int cx, out int cy, out int cz) {
         var chX = (int) Math.Floor((double) x / 16);
         var chZ = (int) Math.Floor((double) z / 16);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
-            return chunk.Cells![Mod(x, 16), y, Mod(z, 16)];
+            cx = Mod(x, 16);
+            cy = y;
+            cz = Mod(z, 16);
+            return chunk.Cells![cx, cy, cz];
         }
 
+        cx = 0;
+        cy = 0;
+        cz = 0;
         return null;
     }
 

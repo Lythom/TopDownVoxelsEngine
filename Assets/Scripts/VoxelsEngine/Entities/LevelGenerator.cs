@@ -124,5 +124,14 @@ namespace VoxelsEngine {
             chunkGen.ChunkKey = currentChunk.GetKey(_level.SaveId, _level.LevelId);
             return chunkGen;
         }
+
+        public Cell? GetCellAt(Vector3 worldPosition, out int cx, out int cy, out int cz) {
+            return _level.TryGetExistingCell(
+                Mathf.RoundToInt(worldPosition.x),
+                Mathf.RoundToInt(worldPosition.y),
+                Mathf.RoundToInt(worldPosition.z),
+                out cx, out cy, out cz
+            );
+        }
     }
 }

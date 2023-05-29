@@ -2,13 +2,15 @@
 using UnityEngine;
 
 namespace VoxelsEngine {
-    public class Track : MonoBehaviour {
-        public GameObject? Target; // The object to follow
+    public class CameraTracker : MonoBehaviour {
+        public Character? Target; // The object to follow
         public float OrbitDistance = 50f;
-        public float TrackingDistance = 10.0f; // The tracking distance
+        public float TrackingDistance = 1.0f; // The tracking distance
+        public float MaxTrackingDistance = 3.0f; // The tracking distance
         public float LerpFactor = 0.1f; // The lerp factor (for smooth follow)
         public float LerpFactorDuringRotations = 0.5f; // The lerp factor (for smooth follow)
         public float RotationDuration = 0.2f;
+        public float ForwardAnticipationDistance = 2f;
 
         private bool _isRotating = false;
 
@@ -26,10 +28,12 @@ namespace VoxelsEngine {
             if (Target == null) return; // Do nothing if target is null
 
             var t = transform;
+            var pos = t.position;
 
             // Calculer le vecteur direction de la caméra vers le joueur
-            var targetPosition = Target.transform.position;
-            Vector3 directionToPlayer = (targetPosition - t.position).normalized;
+            var targetTransform = Target.transform;
+
+            var targetPosition = targetTransform.position + targetTransform.rotation * Vector3.forward * ForwardAnticipationDistance;
 
             // Créez un vecteur direction qui pointe dans la direction "avant" du quaternion de rotation, 
             // puis multipliez par la distance pour obtenir le vecteur déplacement.
@@ -38,21 +42,24 @@ namespace VoxelsEngine {
 
             if (_isRotating) {
                 // during rotation, track closely
-                t.position = Vector3.Lerp(t.position, targetCenterPosition, LerpFactorDuringRotations);
+                t.position = Vector3.Lerp(pos, targetCenterPosition, LerpFactorDuringRotations);
             } else {
                 // normal situation, track smoothly
                 var distanceToTarget = Vector3.Distance(targetCenterPosition, t.position);
+                var targetEdgePosition = Vector3.Lerp(pos, targetCenterPosition, (distanceToTarget - TrackingDistance) / distanceToTarget);
+                var targetMaxEdgePosition = Vector3.Lerp(pos, targetCenterPosition, (distanceToTarget - (MaxTrackingDistance - 0.1f)) / distanceToTarget);
 
-                if (distanceToTarget > TrackingDistance) {
-                    var targetEdgePosition = Vector3.Lerp(t.position, targetCenterPosition, (distanceToTarget - TrackingDistance) / distanceToTarget);
+                if (distanceToTarget <= MaxTrackingDistance) {
                     // Use Lerp for a smooth follow
-                    if (distanceToTarget > TrackingDistance * 1.9f) {
+                    if (distanceToTarget > TrackingDistance) {
                         // far from target, configured Lerp
-                        t.position = Vector3.Lerp(t.position, targetEdgePosition, LerpFactor);
+                        t.position = Vector3.Lerp(pos, targetEdgePosition, LerpFactor);
                     } else {
-                        // far to target, snap
-                        t.position = targetEdgePosition;
+                        // inside tracking deadzone, no move
                     }
+                } else {
+                    // too far, snap to edge
+                    t.position = targetMaxEdgePosition;
                 }
             }
         }

@@ -9,7 +9,9 @@
         "DOTween.Modules",
         "UniTask",
         "UniTask.TextMeshPro",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.InputSystem",
+        "Popcron.Gizmos"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

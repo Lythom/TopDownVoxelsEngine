@@ -218,8 +218,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55c27b8755004d118b527e7495292a24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 18
+  Speed: 11
   Acceleration: {x: 0, y: 0, z: 0}
+  Level: {fileID: 928272620}
   CameraTransform: {fileID: 963194228}
 --- !u!136 &497083708
 CapsuleCollider:
@@ -556,9 +557,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8408be2c17534813aca51c0a5445b3af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Target: {fileID: 497083706}
+  Target: {fileID: 497083707}
   OrbitDistance: 50
   TrackingDistance: 1
-  LerpFactor: 0.1
+  MaxTrackingDistance: 4
+  LerpFactor: 0.013
   LerpFactorDuringRotations: 0.95
-  RotationDuration: 0.2
+  RotationDuration: 0.25
+  ForwardAnticipationDistance: 1
