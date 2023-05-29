@@ -27,13 +27,17 @@ Material:
         m_Texture: {fileID: 18700000, guid: 22e61109670f65b4cb61ad3782d03684, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 18700000, guid: 8a4928241d3df754c815148f01ca8fbe, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Glossiness: 0.5
+    - _Glossiness: 0.362
     - _Metallic: 0
     - _TextureIndex: 0
     - _Tiling: 1

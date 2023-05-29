@@ -33,6 +33,16 @@ public struct ChunkData {
         return new ChunkKey(saveId, levelId, chX, chZ);
     }
 
+    public static int GetFlatIndex(int chX, int chZ) {
+        return chX + LevelData.LevelChunkSize * chZ;
+    }
+
+    public static (int chX, int chZ) GetCoordsFromIndex(int flatIndex) {
+        var chX = flatIndex % LevelData.LevelChunkSize;
+        var chZ = flatIndex / LevelData.LevelChunkSize;
+        return (chX, chZ);
+    }
+
     // Note: this requires additional work to handle the serialization
     public byte[] SerializeChunk() {
         MemoryStream ms = new MemoryStream();

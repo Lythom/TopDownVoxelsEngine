@@ -10,8 +10,8 @@ namespace VoxelsEngine {
     public class LevelGenerator : MonoBehaviour {
         private LevelData _level = null!;
 
-        public readonly List<ChunkKey> QueriedChunks = new();
-        public readonly Queue<ChunkKey> ToBeRendererQueue = new();
+        public readonly HashSet<int> RendererChunks = new();
+        public readonly Queue<int> ToBeRendererQueue = new();
 
         public string SaveId = "test";
         public string LevelId = "0";
@@ -37,34 +37,49 @@ namespace VoxelsEngine {
 
         public void Update() {
             var playerPos = Player.transform.position;
-            float cX = Mathf.Floor(playerPos.x);
-            float cZ = Mathf.Floor(playerPos.z);
-            int chX = Mathf.FloorToInt(cX / 16);
-            int chZ = Mathf.FloorToInt(cZ / 16);
+            int cX = Mathf.RoundToInt(playerPos.x + 8);
+            int cZ = Mathf.RoundToInt(playerPos.z + 8);
+            int chX = cX / 16;
+            int chZ = cZ / 16;
 
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    var key = ChunkData.GetKey(SaveId, LevelId, chX + x, chZ + z);
-                    if (!QueriedChunks.Contains(key)) {
-                        QueriedChunks.Add(key);
+            var range = 2;
+            for (int x = -range; x <= range; x++) {
+                for (int z = -range; z <= range; z++) {
+                    var key = ChunkData.GetFlatIndex(chX + x, chZ + z);
+                    if (!RendererChunks.Contains(key)) {
+                        RendererChunks.Add(key);
                         ToBeRendererQueue.Enqueue(key);
                     }
                 }
             }
         }
 
+        private void OnDrawGizmos() {
+            var playerPos = Player.transform.position;
+            int cX = Mathf.RoundToInt(playerPos.x + 8);
+            int cZ = Mathf.RoundToInt(playerPos.z + 8);
+            int chX = cX / 16;
+            int chZ = cZ / 16;
+            Gizmos.DrawWireCube(new Vector3(chX * 16, 0, chZ * 16), new Vector3(16, 16, 16));
+        }
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
             Debug.Log("Start job rendering chunks.");
 
             while (!cancellationToken.IsCancellationRequested) {
+                var renderedThisFrame = 0;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
                 // dequeue until all is generated
-                while (ToBeRendererQueue.TryDequeue(out ChunkKey k)) {
+                while (ToBeRendererQueue.TryDequeue(out int chunkFlatIndex)) {
                     try {
-                        await GenerateNearChunk(k.ChX, k.ChZ);
-                        // max 1 per frame
-                        await UniTask.NextFrame(cancellationToken);
+                        var (chX, chZ) = ChunkData.GetCoordsFromIndex(chunkFlatIndex);
+                        await RenderChunk(chX, chZ);
+                        renderedThisFrame++;
+
+                        if (renderedThisFrame >= 1) {
+                            // max 1 per frame
+                            await UniTask.NextFrame(cancellationToken);
+                        }
                     } catch (Exception e) {
                         Debug.LogException(e);
                     }
@@ -74,11 +89,18 @@ namespace VoxelsEngine {
             Debug.Log("Stop job rendering chunks. Cancellation was requested.");
         }
 
-        private async UniTask GenerateNearChunk(int chX, int chY) {
+        private async UniTask RenderChunk(int chX, int chZ) {
             try {
-                ChunkData currentChunk = await _level.GetOrGenerateChunk(chX, chY);
+                ChunkData currentChunk = await _level.GetOrGenerateChunk(chX, chZ);
+                // preload outbounds chunk content
+                for (int x = -1; x <= 1; x++) {
+                    for (int z = -1; z <= 1; z++) {
+                        await _level.GetOrGenerateChunk(chX + x, chZ + z);
+                    }
+                }
+
                 if (currentChunk.IsGenerated && !_cancellationTokenOnDestroy.IsCancellationRequested) {
-                    var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chY);
+                    var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chZ);
                     chunkRenderer.transform.SetParent(transform, true);
                     chunkRenderer.ReCalculateMesh(_level);
                     chunkRenderer.UpdateMesh();

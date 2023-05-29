@@ -1,0 +1,318 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace VoxelsEngine.Rendering {
+    public static class AutoTile48Blob {
+        public static Dictionary<int, int> BitmaskToBlobMappings = new() {
+            {Convert.ToInt32("00111000", 2), 0},
+            {Convert.ToInt32("00111001", 2), 0},
+            {Convert.ToInt32("00111100", 2), 0},
+            {Convert.ToInt32("00111101", 2), 0},
+            {Convert.ToInt32("01111000", 2), 0},
+            {Convert.ToInt32("01111001", 2), 0},
+            {Convert.ToInt32("01111100", 2), 0},
+            {Convert.ToInt32("01111101", 2), 0},
+
+            {Convert.ToInt32("11111000", 2), 1},
+            {Convert.ToInt32("11111001", 2), 1},
+            {Convert.ToInt32("11111100", 2), 1},
+            {Convert.ToInt32("11111101", 2), 1},
+
+            {Convert.ToInt32("11100000", 2), 2},
+            {Convert.ToInt32("11100001", 2), 2},
+            {Convert.ToInt32("11100100", 2), 2},
+            {Convert.ToInt32("11100101", 2), 2},
+            {Convert.ToInt32("11110000", 2), 2},
+            {Convert.ToInt32("11110001", 2), 2},
+            {Convert.ToInt32("11110100", 2), 2},
+            {Convert.ToInt32("11110101", 2), 2},
+
+            {Convert.ToInt32("00100000", 2), 3},
+            {Convert.ToInt32("00100001", 2), 3},
+            {Convert.ToInt32("00100100", 2), 3},
+            {Convert.ToInt32("00100101", 2), 3},
+            {Convert.ToInt32("00110000", 2), 3},
+            {Convert.ToInt32("00110001", 2), 3},
+            {Convert.ToInt32("00110100", 2), 3},
+            {Convert.ToInt32("00110101", 2), 3},
+            {Convert.ToInt32("01100000", 2), 3},
+            {Convert.ToInt32("01100001", 2), 3},
+            {Convert.ToInt32("01100100", 2), 3},
+            {Convert.ToInt32("01100101", 2), 3},
+            {Convert.ToInt32("01110000", 2), 3},
+            {Convert.ToInt32("01110001", 2), 3},
+            {Convert.ToInt32("01110100", 2), 3},
+            {Convert.ToInt32("01110101", 2), 3},
+
+            {Convert.ToInt32("00101000", 2), 4},
+            {Convert.ToInt32("00101001", 2), 4},
+            {Convert.ToInt32("00101100", 2), 4},
+            {Convert.ToInt32("00101101", 2), 4},
+            {Convert.ToInt32("01101000", 2), 4},
+            {Convert.ToInt32("01101001", 2), 4},
+            {Convert.ToInt32("01101100", 2), 4},
+            {Convert.ToInt32("01101101", 2), 4},
+
+            {Convert.ToInt32("11101000", 2), 5},
+            {Convert.ToInt32("11101001", 2), 5},
+            {Convert.ToInt32("11101100", 2), 5},
+            {Convert.ToInt32("11101101", 2), 5},
+
+            {Convert.ToInt32("10111000", 2), 6},
+            {Convert.ToInt32("10111001", 2), 6},
+            {Convert.ToInt32("10111100", 2), 6},
+            {Convert.ToInt32("10111101", 2), 6},
+
+            {Convert.ToInt32("10100000", 2), 7},
+            {Convert.ToInt32("10100001", 2), 7},
+            {Convert.ToInt32("10100100", 2), 7},
+            {Convert.ToInt32("10100101", 2), 7},
+            {Convert.ToInt32("10110000", 2), 7},
+            {Convert.ToInt32("10110001", 2), 7},
+            {Convert.ToInt32("10110100", 2), 7},
+            {Convert.ToInt32("10110101", 2), 7},
+
+            {Convert.ToInt32("10101000", 2), 8},
+            {Convert.ToInt32("10101001", 2), 8},
+            {Convert.ToInt32("10101100", 2), 8},
+            {Convert.ToInt32("10101101", 2), 8},
+
+            {Convert.ToInt32("10111011", 2), 9},
+
+
+            {Convert.ToInt32("00111110", 2), 11},
+            {Convert.ToInt32("00111111", 2), 11},
+            {Convert.ToInt32("01111110", 2), 11},
+            {Convert.ToInt32("01111111", 2), 11},
+
+            {Convert.ToInt32("11111111", 2), 12},
+
+            {Convert.ToInt32("11100011", 2), 13},
+            {Convert.ToInt32("11100111", 2), 13},
+            {Convert.ToInt32("11110011", 2), 13},
+            {Convert.ToInt32("11110111", 2), 13},
+
+            {Convert.ToInt32("00100010", 2), 14},
+            {Convert.ToInt32("00100011", 2), 14},
+            {Convert.ToInt32("00100110", 2), 14},
+            {Convert.ToInt32("00100111", 2), 14},
+            {Convert.ToInt32("00110010", 2), 14},
+            {Convert.ToInt32("00110011", 2), 14},
+            {Convert.ToInt32("00110110", 2), 14},
+            {Convert.ToInt32("00110111", 2), 14},
+            {Convert.ToInt32("01100010", 2), 14},
+            {Convert.ToInt32("01100011", 2), 14},
+            {Convert.ToInt32("01100110", 2), 14},
+            {Convert.ToInt32("01100111", 2), 14},
+            {Convert.ToInt32("01110010", 2), 14},
+            {Convert.ToInt32("01110011", 2), 14},
+            {Convert.ToInt32("01110110", 2), 14},
+            {Convert.ToInt32("01110111", 2), 14},
+
+            {Convert.ToInt32("00101110", 2), 15},
+            {Convert.ToInt32("00101111", 2), 15},
+            {Convert.ToInt32("01101110", 2), 15},
+            {Convert.ToInt32("01101111", 2), 15},
+
+            {Convert.ToInt32("11101111", 2), 16},
+            {Convert.ToInt32("10111111", 2), 17},
+
+            {Convert.ToInt32("10100011", 2), 18},
+            {Convert.ToInt32("10100111", 2), 18},
+            {Convert.ToInt32("10110011", 2), 18},
+            {Convert.ToInt32("10110111", 2), 18},
+
+            {Convert.ToInt32("10101111", 2), 19},
+            {Convert.ToInt32("11101110", 2), 20},
+
+            {Convert.ToInt32("00001110", 2), 22},
+            {Convert.ToInt32("00001111", 2), 22},
+            {Convert.ToInt32("00011110", 2), 22},
+            {Convert.ToInt32("00011111", 2), 22},
+            {Convert.ToInt32("01001110", 2), 22},
+            {Convert.ToInt32("01001111", 2), 22},
+            {Convert.ToInt32("01011110", 2), 22},
+            {Convert.ToInt32("01011111", 2), 22},
+
+            {Convert.ToInt32("10001111", 2), 23},
+            {Convert.ToInt32("10011111", 2), 23},
+            {Convert.ToInt32("11001111", 2), 23},
+            {Convert.ToInt32("11011111", 2), 23},
+
+            {Convert.ToInt32("10000011", 2), 24},
+            {Convert.ToInt32("10000111", 2), 24},
+            {Convert.ToInt32("10010011", 2), 24},
+            {Convert.ToInt32("10010111", 2), 24},
+            {Convert.ToInt32("11000011", 2), 24},
+            {Convert.ToInt32("11000111", 2), 24},
+            {Convert.ToInt32("11010011", 2), 24},
+            {Convert.ToInt32("11010111", 2), 24},
+
+            {Convert.ToInt32("00000010", 2), 25},
+            {Convert.ToInt32("00000011", 2), 25},
+            {Convert.ToInt32("00000110", 2), 25},
+            {Convert.ToInt32("00000111", 2), 25},
+            {Convert.ToInt32("00010010", 2), 25},
+            {Convert.ToInt32("00010011", 2), 25},
+            {Convert.ToInt32("00010110", 2), 25},
+            {Convert.ToInt32("00010111", 2), 25},
+            {Convert.ToInt32("01000010", 2), 25},
+            {Convert.ToInt32("01000011", 2), 25},
+            {Convert.ToInt32("01000110", 2), 25},
+            {Convert.ToInt32("01000111", 2), 25},
+            {Convert.ToInt32("01010010", 2), 25},
+            {Convert.ToInt32("01010011", 2), 25},
+            {Convert.ToInt32("01010110", 2), 25},
+            {Convert.ToInt32("01010111", 2), 25},
+
+            {Convert.ToInt32("00111010", 2), 26},
+            {Convert.ToInt32("00111011", 2), 26},
+            {Convert.ToInt32("01111010", 2), 26},
+            {Convert.ToInt32("01111011", 2), 26},
+
+            {Convert.ToInt32("11111011", 2), 27},
+            {Convert.ToInt32("11111110", 2), 28},
+
+            {Convert.ToInt32("11100010", 2), 29},
+            {Convert.ToInt32("11100110", 2), 29},
+            {Convert.ToInt32("11110010", 2), 29},
+            {Convert.ToInt32("11110110", 2), 29},
+
+            {Convert.ToInt32("11111010", 2), 30},
+            {Convert.ToInt32("10111010", 2), 31},
+            {Convert.ToInt32("11101010", 2), 32},
+
+            {Convert.ToInt32("00001000", 2), 33},
+            {Convert.ToInt32("00001001", 2), 33},
+            {Convert.ToInt32("00001100", 2), 33},
+            {Convert.ToInt32("00001101", 2), 33},
+            {Convert.ToInt32("00011000", 2), 33},
+            {Convert.ToInt32("00011001", 2), 33},
+            {Convert.ToInt32("00011100", 2), 33},
+            {Convert.ToInt32("00011101", 2), 33},
+            {Convert.ToInt32("01001000", 2), 33},
+            {Convert.ToInt32("01001001", 2), 33},
+            {Convert.ToInt32("01001100", 2), 33},
+            {Convert.ToInt32("01001101", 2), 33},
+            {Convert.ToInt32("01011000", 2), 33},
+            {Convert.ToInt32("01011001", 2), 33},
+            {Convert.ToInt32("01011100", 2), 33},
+            {Convert.ToInt32("01011101", 2), 33},
+
+            {Convert.ToInt32("10001000", 2), 34},
+            {Convert.ToInt32("10001001", 2), 34},
+            {Convert.ToInt32("10001100", 2), 34},
+            {Convert.ToInt32("10001101", 2), 34},
+            {Convert.ToInt32("10011000", 2), 34},
+            {Convert.ToInt32("10011001", 2), 34},
+            {Convert.ToInt32("10011100", 2), 34},
+            {Convert.ToInt32("10011101", 2), 34},
+            {Convert.ToInt32("11001000", 2), 34},
+            {Convert.ToInt32("11001001", 2), 34},
+            {Convert.ToInt32("11001100", 2), 34},
+            {Convert.ToInt32("11001101", 2), 34},
+            {Convert.ToInt32("11011000", 2), 34},
+            {Convert.ToInt32("11011001", 2), 34},
+            {Convert.ToInt32("11011100", 2), 34},
+            {Convert.ToInt32("11011101", 2), 34},
+
+            {Convert.ToInt32("10000000", 2), 35},
+            {Convert.ToInt32("10000001", 2), 35},
+            {Convert.ToInt32("10000100", 2), 35},
+            {Convert.ToInt32("10000101", 2), 35},
+            {Convert.ToInt32("10010000", 2), 35},
+            {Convert.ToInt32("10010001", 2), 35},
+            {Convert.ToInt32("10010100", 2), 35},
+            {Convert.ToInt32("10010101", 2), 35},
+            {Convert.ToInt32("11000000", 2), 35},
+            {Convert.ToInt32("11000001", 2), 35},
+            {Convert.ToInt32("11000100", 2), 35},
+            {Convert.ToInt32("11000101", 2), 35},
+            {Convert.ToInt32("11010000", 2), 35},
+            {Convert.ToInt32("11010001", 2), 35},
+            {Convert.ToInt32("11010100", 2), 35},
+            {Convert.ToInt32("11010101", 2), 35},
+
+            {Convert.ToInt32("00000000", 2), 36},
+            {Convert.ToInt32("00000001", 2), 36},
+            {Convert.ToInt32("00000100", 2), 36},
+            {Convert.ToInt32("00000101", 2), 36},
+            {Convert.ToInt32("00010000", 2), 36},
+            {Convert.ToInt32("00010001", 2), 36},
+            {Convert.ToInt32("00010100", 2), 36},
+            {Convert.ToInt32("00010101", 2), 36},
+            {Convert.ToInt32("01000000", 2), 36},
+            {Convert.ToInt32("01000001", 2), 36},
+            {Convert.ToInt32("01000100", 2), 36},
+            {Convert.ToInt32("01000101", 2), 36},
+            {Convert.ToInt32("01010000", 2), 36},
+            {Convert.ToInt32("01010001", 2), 36},
+            {Convert.ToInt32("01010100", 2), 36},
+            {Convert.ToInt32("01010101", 2), 36},
+
+            {Convert.ToInt32("00001010", 2), 37},
+            {Convert.ToInt32("00001011", 2), 37},
+            {Convert.ToInt32("00011010", 2), 37},
+            {Convert.ToInt32("00011011", 2), 37},
+            {Convert.ToInt32("01001010", 2), 37},
+            {Convert.ToInt32("01001011", 2), 37},
+            {Convert.ToInt32("01011010", 2), 37},
+            {Convert.ToInt32("01011011", 2), 37},
+
+            {Convert.ToInt32("10001011", 2), 38},
+            {Convert.ToInt32("11001011", 2), 38},
+            {Convert.ToInt32("10011011", 2), 38},
+            {Convert.ToInt32("11011011", 2), 38},
+
+            {Convert.ToInt32("10001110", 2), 39},
+            {Convert.ToInt32("11001110", 2), 39},
+            {Convert.ToInt32("10011110", 2), 39},
+            {Convert.ToInt32("11011110", 2), 39},
+
+            {Convert.ToInt32("10000010", 2), 40},
+            {Convert.ToInt32("10000110", 2), 40},
+            {Convert.ToInt32("10010010", 2), 40},
+            {Convert.ToInt32("10010110", 2), 40},
+            {Convert.ToInt32("11000010", 2), 40},
+            {Convert.ToInt32("11000110", 2), 40},
+            {Convert.ToInt32("11010010", 2), 40},
+            {Convert.ToInt32("11010110", 2), 40},
+
+            {Convert.ToInt32("10001010", 2), 41},
+            {Convert.ToInt32("11001010", 2), 41},
+            {Convert.ToInt32("10011010", 2), 41},
+            {Convert.ToInt32("11011010", 2), 41},
+
+            {Convert.ToInt32("10101110", 2), 42},
+            {Convert.ToInt32("10101011", 2), 43},
+
+            {Convert.ToInt32("00101010", 2), 48},
+            {Convert.ToInt32("00101011", 2), 48},
+            {Convert.ToInt32("01101010", 2), 48},
+            {Convert.ToInt32("01101011", 2), 48},
+
+            {Convert.ToInt32("11101011", 2), 49},
+            {Convert.ToInt32("10111110", 2), 50},
+
+            {Convert.ToInt32("10100010", 2), 51},
+            {Convert.ToInt32("10100110", 2), 51},
+            {Convert.ToInt32("10110010", 2), 51},
+            {Convert.ToInt32("10110110", 2), 51},
+
+            {Convert.ToInt32("10101010", 2), 52},
+        };
+
+        // Bitmask expected weights depending on "linked" adjacent tiles
+        // 0    2   4
+        // 128  x   8
+        // 64  32  16
+        // x, y, z are positive when going right, up and forward in unity
+        /// <param name="bitMask"></param>
+        /// <returns></returns>
+        public static int GetBlobIndex(int bitMask) {
+            var found = BitmaskToBlobMappings.TryGetValue(bitMask, out var blobIndex);
+            if (!found) return 12;
+            return blobIndex;
+        }
+    }
+}

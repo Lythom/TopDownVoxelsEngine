@@ -4,6 +4,7 @@ Shader "Custom/TextureArray"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2DArray) = "white" {}
+        _NormalMap ("NormalMap", 2DArray) = "bump" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
     }
@@ -23,11 +24,13 @@ Shader "Custom/TextureArray"
         #pragma target 3.0
 
         UNITY_DECLARE_TEX2DARRAY(_MainTex);
+        UNITY_DECLARE_TEX2DARRAY(_NormalMap);
 
         struct Input
         {
             float2 textCoords;
             float textureIndex;
+            float normalMapTile;
         };
 
         half _Glossiness;
@@ -42,6 +45,9 @@ Shader "Custom/TextureArray"
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
             o.Alpha = c.a;
+            fixed4 n = UNITY_SAMPLE_TEX2DARRAY(_NormalMap, float3(IN.textCoords, IN.normalMapTile));
+            const float3 normal = UnpackNormal(n);
+            o.Normal = normal;
         }
 
         void vert(inout appdata_full v, out Input o)
@@ -49,6 +55,7 @@ Shader "Custom/TextureArray"
             UNITY_INITIALIZE_OUTPUT(Input, o);
             o.textCoords = v.texcoord.xy;
             o.textureIndex = v.texcoord.z;
+            o.normalMapTile = v.texcoord.w;
         }
         ENDCG
     }
