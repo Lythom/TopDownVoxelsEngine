@@ -63,7 +63,7 @@ namespace VoxelsEngine {
         /// <param name="textureIndex">Index of the texture to use</param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, float textureIndex, int bitMask) {
-            CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8, _vertices, ref _verticesCount);
+            CubeMeshData.FaceVertices((int) dir, x % 16 , y, z % 16, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
             //     _vertices[_verticesCount] = faceVertex;

@@ -163,7 +163,7 @@ public class LevelData : IDisposable {
     }
 
 
-    private bool CellMatchDefinition(Vector3Int position, BlockDefId referenceBlock) {
+    public bool CellMatchDefinition(Vector3Int position, BlockDefId referenceBlock) {
         if (position.y < 0 || position.y >= 7 || position.x < 0 || position.x >= LevelChunkSize * 16 || position.z < 0 || position.z >= LevelChunkSize * 16) return false;
         var chX = (int) Math.Floor((double) position.x / 16);
         var chZ = (int) Math.Floor((double) position.z / 16);

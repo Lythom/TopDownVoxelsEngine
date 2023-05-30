@@ -37,10 +37,7 @@ namespace VoxelsEngine {
 
         public void Update() {
             var playerPos = Player.transform.position;
-            int cX = Mathf.RoundToInt(playerPos.x + 8);
-            int cZ = Mathf.RoundToInt(playerPos.z + 8);
-            int chX = cX / 16;
-            int chZ = cZ / 16;
+            var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
             var range = 2;
             for (int x = -range; x <= range; x++) {
@@ -56,11 +53,8 @@ namespace VoxelsEngine {
 
         private void OnDrawGizmos() {
             var playerPos = Player.transform.position;
-            int cX = Mathf.RoundToInt(playerPos.x + 8);
-            int cZ = Mathf.RoundToInt(playerPos.z + 8);
-            int chX = cX / 16;
-            int chZ = cZ / 16;
-            Gizmos.DrawWireCube(new Vector3(chX * 16, 0, chZ * 16), new Vector3(16, 16, 16));
+            var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
+            Gizmos.DrawWireCube(new Vector3(chX * 16 + 8, 0, chZ * 16 + 8), new Vector3(16, 16, 16));
         }
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
@@ -125,12 +119,14 @@ namespace VoxelsEngine {
             return chunkGen;
         }
 
-        public Cell? GetCellAt(Vector3 worldPosition, out int cx, out int cy, out int cz) {
+        public Cell? GetCellAt(Vector3 worldPosition) {
             return _level.TryGetExistingCell(
                 Mathf.RoundToInt(worldPosition.x),
                 Mathf.RoundToInt(worldPosition.y),
                 Mathf.RoundToInt(worldPosition.z),
-                out cx, out cy, out cz
+                out _,
+                out _,
+                out _
             );
         }
     }
