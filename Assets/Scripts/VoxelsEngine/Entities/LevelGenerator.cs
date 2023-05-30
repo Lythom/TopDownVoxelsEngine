@@ -9,6 +9,7 @@ using UnityEngine;
 namespace VoxelsEngine {
     public class LevelGenerator : MonoBehaviour {
         private LevelData _level = null!;
+        public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelData.LevelChunkSize, LevelData.LevelChunkSize];
 
         public readonly HashSet<int> RendererChunks = new();
         public readonly Queue<int> ToBeRendererQueue = new();
@@ -83,6 +84,14 @@ namespace VoxelsEngine {
             Debug.Log("Stop job rendering chunks. Cancellation was requested.");
         }
 
+        public void UpdateChunk(int chX, int chZ) {
+            ChunkRenderer cr = ChunkRenderers[chX, chZ];
+            if (cr != null) {
+                cr.ReCalculateMesh(_level);
+                cr.UpdateMesh();
+            }
+        }
+
         private async UniTask RenderChunk(int chX, int chZ) {
             try {
                 ChunkData currentChunk = await _level.GetOrGenerateChunk(chX, chZ);
@@ -100,6 +109,7 @@ namespace VoxelsEngine {
                     chunkRenderer.UpdateMesh();
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
+                    ChunkRenderers[chX, chZ] = chunkRenderer;
                 }
             } catch (Exception e) {
                 Debug.LogException(e);
@@ -127,6 +137,15 @@ namespace VoxelsEngine {
                 out _,
                 out _,
                 out _
+            );
+        }
+
+        public bool SetCellAt(Vector3 worldPosition, BlockDefId blockDef) {
+            return _level.TrySetExistingCell(
+                Mathf.RoundToInt(worldPosition.x),
+                Mathf.RoundToInt(worldPosition.y),
+                Mathf.RoundToInt(worldPosition.z),
+                blockDef
             );
         }
     }

@@ -7,8 +7,12 @@ namespace VoxelsEngine {
         }
 
         public static (int chX, int chZ) GetChunkPosition(Vector3 worldPosition) {
-            int cX = Mathf.FloorToInt(worldPosition.x);
-            int cZ = Mathf.FloorToInt(worldPosition.z);
+            return GetChunkPosition(worldPosition.x, worldPosition.z);
+        }
+
+        public static (int chX, int chZ) GetChunkPosition(float x, float z) {
+            int cX = Mathf.FloorToInt(x);
+            int cZ = Mathf.FloorToInt(z);
             int chX = Mathf.FloorToInt(cX / 16f);
             int chZ = Mathf.FloorToInt(cZ / 16f);
             return (chX, chZ);

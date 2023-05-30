@@ -48,7 +48,8 @@ namespace VoxelsEngine {
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.BlockDef == BlockDefId.Air) {
                     var bitMask = Level.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id);
-                    MakeFace(dir, x, y, z, (int) blockDef.Id, bitMask);
+                    var textureIndex = (int) blockDef.Id - 1; // air as no texture, skip
+                    MakeFace(dir, x, y, z, textureIndex, bitMask);
                 }
             }
         }
@@ -63,7 +64,7 @@ namespace VoxelsEngine {
         /// <param name="textureIndex">Index of the texture to use</param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, float textureIndex, int bitMask) {
-            CubeMeshData.FaceVertices((int) dir, x % 16 , y, z % 16, _vertices, ref _verticesCount);
+            CubeMeshData.FaceVertices((int) dir, x % 16, y, z % 16, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
             //     _vertices[_verticesCount] = faceVertex;

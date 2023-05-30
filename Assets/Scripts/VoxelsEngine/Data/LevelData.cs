@@ -175,9 +175,29 @@ public class LevelData : IDisposable {
         return false;
     }
 
+
+    public bool TrySetExistingCell(int x, int y, int z, BlockDefId blockDef) {
+        if (y < 0 || y > 7) return false;
+        var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
+        var chunk = Chunks[chX, chZ];
+        if (chunk.IsGenerated) {
+            var cx = Mod(x, 16);
+            var cy = y;
+            var cz = Mod(z, 16);
+            chunk.Cells![cx, cy, cz].BlockDef = blockDef;
+            return true;
+        }
+
+        return false;
+    }
+
     public Cell? TryGetExistingCell(int x, int y, int z, out int cx, out int cy, out int cz) {
-        var chX = (int) Math.Floor((double) x / 16);
-        var chZ = (int) Math.Floor((double) z / 16);
+        cx = 0;
+        cy = 0;
+        cz = 0;
+
+        if (y < 0 || y >= 7) return null;
+        var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
             cx = Mod(x, 16);
@@ -186,9 +206,6 @@ public class LevelData : IDisposable {
             return chunk.Cells![cx, cy, cz];
         }
 
-        cx = 0;
-        cy = 0;
-        cz = 0;
         return null;
     }
 
