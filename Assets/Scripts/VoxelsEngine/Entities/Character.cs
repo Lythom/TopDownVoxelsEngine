@@ -1,13 +1,15 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using Popcron;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Gizmos = Popcron.Gizmos;
 
 namespace VoxelsEngine {
     public class Character : MonoBehaviour {
         public float Speed = 5.0f;
         public Vector3 Acceleration = new(0, 0, 0);
+
+        public AsyncReactiveProperty<BlockDefId> CurrentBlock = new(BlockDefId.Dirt);
 
         [Required]
         public LevelGenerator Level = null!;
@@ -30,6 +32,12 @@ namespace VoxelsEngine {
         }
 
         private void Update() {
+            if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
+                if (CurrentBlock.Value > 0) CurrentBlock.Value--;
+            } else if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
+                if ((int) CurrentBlock.Value < Enum.GetNames(typeof(BlockDefId)).Length) CurrentBlock.Value++;
+            }
+
             // Get the input on the x and z axis
             Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();
 
@@ -56,9 +64,9 @@ namespace VoxelsEngine {
             pos += Acceleration;
             t.position = pos;
 
-            var facingPosition = pos + t.rotation * Vector3.forward;
+            var facingPosition = pos + t.rotation * Vector3.forward * 1.5f;
             // var cell = Level.GetCellAt(facingPosition, out _, out _, out _);
-            BetterCubeDrawer.Cube(
+            BCubeDrawer.Cube(
                 new Vector3(Mathf.Round(facingPosition.x), Mathf.Round(facingPosition.y), Mathf.Round(facingPosition.z)),
                 Quaternion.identity,
                 Vector3.one

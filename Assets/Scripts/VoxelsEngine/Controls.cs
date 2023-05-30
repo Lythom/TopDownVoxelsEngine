@@ -71,6 +71,24 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""SelectNextItem"",
+                    ""type"": ""Button"",
+                    ""id"": ""b3b08f25-4afd-4639-aa57-5e6aa63ea059"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SelectPrevItem"",
+                    ""type"": ""Button"",
+                    ""id"": ""00af5088-83c7-439e-9b63-67ef6929c177"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -227,6 +245,28 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""action"": ""Jump"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""94a5655f-f2b2-40f6-b9f6-83f6aa838e20"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SelectNextItem"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c422dbac-0f68-4841-bd49-5b57f1c69db0"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SelectPrevItem"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -240,6 +280,8 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         m_Gameplay_Jump = m_Gameplay.FindAction("Jump", throwIfNotFound: true);
         m_Gameplay_Move = m_Gameplay.FindAction("Move", throwIfNotFound: true);
         m_Gameplay_Look = m_Gameplay.FindAction("Look", throwIfNotFound: true);
+        m_Gameplay_SelectNextItem = m_Gameplay.FindAction("SelectNextItem", throwIfNotFound: true);
+        m_Gameplay_SelectPrevItem = m_Gameplay.FindAction("SelectPrevItem", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -306,6 +348,8 @@ public partial class @Controls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_Jump;
     private readonly InputAction m_Gameplay_Move;
     private readonly InputAction m_Gameplay_Look;
+    private readonly InputAction m_Gameplay_SelectNextItem;
+    private readonly InputAction m_Gameplay_SelectPrevItem;
     public struct GameplayActions
     {
         private @Controls m_Wrapper;
@@ -315,6 +359,8 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         public InputAction @Jump => m_Wrapper.m_Gameplay_Jump;
         public InputAction @Move => m_Wrapper.m_Gameplay_Move;
         public InputAction @Look => m_Wrapper.m_Gameplay_Look;
+        public InputAction @SelectNextItem => m_Wrapper.m_Gameplay_SelectNextItem;
+        public InputAction @SelectPrevItem => m_Wrapper.m_Gameplay_SelectPrevItem;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -339,6 +385,12 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
+            @SelectNextItem.started += instance.OnSelectNextItem;
+            @SelectNextItem.performed += instance.OnSelectNextItem;
+            @SelectNextItem.canceled += instance.OnSelectNextItem;
+            @SelectPrevItem.started += instance.OnSelectPrevItem;
+            @SelectPrevItem.performed += instance.OnSelectPrevItem;
+            @SelectPrevItem.canceled += instance.OnSelectPrevItem;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -358,6 +410,12 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
+            @SelectNextItem.started -= instance.OnSelectNextItem;
+            @SelectNextItem.performed -= instance.OnSelectNextItem;
+            @SelectNextItem.canceled -= instance.OnSelectNextItem;
+            @SelectPrevItem.started -= instance.OnSelectPrevItem;
+            @SelectPrevItem.performed -= instance.OnSelectPrevItem;
+            @SelectPrevItem.canceled -= instance.OnSelectPrevItem;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -382,5 +440,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         void OnJump(InputAction.CallbackContext context);
         void OnMove(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);
+        void OnSelectNextItem(InputAction.CallbackContext context);
+        void OnSelectPrevItem(InputAction.CallbackContext context);
     }
 }

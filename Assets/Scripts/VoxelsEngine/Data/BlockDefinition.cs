@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 [Serializable]
@@ -10,11 +11,13 @@ public struct BlockDefinition {
 
     public int MiningLevel;
     public Equipment RequiredEquipment;
+    public Sprite? ItemPreview;
 
     public BlockDefinition(BlockDefId id, int miningLevel = 0, Equipment requiredEquipment = Equipment.None) {
         Id = id;
         MiningLevel = miningLevel;
         RequiredEquipment = requiredEquipment;
+        ItemPreview = null;
     }
 }
 
