@@ -55,7 +55,7 @@ namespace VoxelsEngine {
         private void OnDrawGizmos() {
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
-            Gizmos.DrawWireCube(new Vector3(chX * 16 + 8, 0, chZ * 16 + 8), new Vector3(16, 16, 16));
+            Gizmos.DrawWireCube(new Vector3(chX * ChunkData.Size + ChunkData.Size / 2, 0, chZ * ChunkData.Size + ChunkData.Size / 2), new Vector3(ChunkData.Size, ChunkData.Size, ChunkData.Size));
         }
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
@@ -123,7 +123,7 @@ namespace VoxelsEngine {
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = BlockMaterial;
             var chunkGen = go.AddComponent<ChunkRenderer>();
-            chunkGen.transform.localPosition = new Vector3(chX * 16, 0, chY * 16);
+            chunkGen.transform.localPosition = new Vector3(chX * ChunkData.Size, 0, chY * ChunkData.Size);
             chunkGen.Level = _level;
             chunkGen.ChunkKey = currentChunk.GetKey(_level.SaveId, _level.LevelId);
             return chunkGen;

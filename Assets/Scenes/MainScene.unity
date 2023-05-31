@@ -292,10 +292,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55c27b8755004d118b527e7495292a24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 11
+  Speed: 6
   Acceleration: {x: 0, y: 0, z: 0}
-  JumpForce: 0.15
-  JumpChargeIntensity: 0.2
+  JumpForce: 0.03
+  JumpChargeIntensity: 0.17
+  Gravity: 0.2
   SelectedItem:
     latestValue: 1
   Level: {fileID: 928272620}

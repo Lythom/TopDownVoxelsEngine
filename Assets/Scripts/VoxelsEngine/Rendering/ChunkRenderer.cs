@@ -4,6 +4,12 @@ using UnityEngine;
 using VoxelsEngine.Rendering;
 
 namespace VoxelsEngine {
+    
+    /// <summary>
+    /// Generate a mesh for the chunk ChunkKey of Level.
+    /// The renderer game object should be placed at (chX * ChunkData.Size, 0, chY * ChunkData.Size).
+    /// The rendered cells are centered, which means cell at (0,0,0) boundaries are visually at (-0.5,-0.5,-0.5)->(0.5,0.5,0.5).
+    /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
         public LevelData Level = null!;
@@ -42,9 +48,9 @@ namespace VoxelsEngine {
         private void MakeCube(int cX, int cY, int cZ, BlockDefinition blockDef, ChunkData chunkData, LevelData level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) i;
-                var x = cX + chunkData.ChX * 16;
+                var x = cX + chunkData.ChX * ChunkData.Size;
                 var y = cY;
-                var z = cZ + chunkData.ChZ * 16;
+                var z = cZ + chunkData.ChZ * ChunkData.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.BlockDef == BlockDefId.Air) {
                     var bitMask = Level.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id);
@@ -64,7 +70,7 @@ namespace VoxelsEngine {
         /// <param name="textureIndex">Index of the texture to use</param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, float textureIndex, int bitMask) {
-            CubeMeshData.FaceVertices((int) dir, x % 16, y, z % 16, _vertices, ref _verticesCount);
+            CubeMeshData.FaceVertices((int) dir, x % ChunkData.Size, y, z % ChunkData.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
             //     _vertices[_verticesCount] = faceVertex;

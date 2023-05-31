@@ -3,15 +3,17 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
 public struct ChunkData {
+    public const int Size = 16;
+
     public int ChX;
     public int ChZ;
     public Cell[,,]? Cells;
     public bool IsGenerated;
 
     public IEnumerable<CellPosition> GetCellPositions() {
-        for (int y = 6; y >= 0; y--) {
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
+        for (int y = Size - 1; y >= 0; y--) {
+            for (int x = 0; x < Size; x++) {
+                for (int z = 0; z < Size; z++) {
                     yield return new(x, y, z);
                 }
             }
@@ -21,7 +23,7 @@ public struct ChunkData {
     public ChunkData(int chX, int chZ) {
         ChX = chX;
         ChZ = chZ;
-        Cells = new Cell[16, 7, 16];
+        Cells = new Cell[Size, Size, Size];
         IsGenerated = false;
     }
 

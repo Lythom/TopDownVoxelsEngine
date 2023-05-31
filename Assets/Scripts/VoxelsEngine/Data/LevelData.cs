@@ -51,7 +51,7 @@ public class LevelData : IDisposable {
                     var (chX, chZ) = ChunkData.GetCoordsFromIndex(flatIndex);
                     GenerateChunk(chX, chZ);
                     generatedThisFrame++;
-                    if (generatedThisFrame >= 16) {
+                    if (generatedThisFrame >= 15) {
                         await UniTask.NextFrame(cancellationToken);
                     }
                 } catch (Exception e) {
@@ -66,7 +66,7 @@ public class LevelData : IDisposable {
     public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
         var offset = dir.GetOffset();
         var yWithOffset = y + offset.y;
-        if (yWithOffset < 0 || yWithOffset > 6) return null;
+        if (yWithOffset < 0 || yWithOffset >= ChunkData.Size) return null;
         return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z, out _, out _, out _);
         // return await GetOrCreateCell(x + offset.x, offsetY, z - offset.z);
     }
@@ -77,45 +77,43 @@ public class LevelData : IDisposable {
         // Generate a new chunk
         var chunk = Chunks[chX, chZ];
         if (chunk.Cells == null) {
-            chunk.Cells = new Cell[16, 7, 16];
+            chunk.Cells = new Cell[ChunkData.Size, ChunkData.Size, ChunkData.Size];
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 chunk.Cells[x, y, z] = new Cell(BlockDefId.Air);
             }
         }
-        // TODO: debug why rendering doesn work anymore now we moved to the "middle" of the grid
-        //     TODO: prevent bug when reching borders (return and handle null instead of generating)
-        //         TODO: teleport player and camera during awake dynamically
 
         // ... chunk generation code
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
+        for (int x = 0; x < ChunkData.Size; x++) {
+            for (int z = 0; z < ChunkData.Size; z++) {
+                var groundLevel = 5;
                 // Put a wall sometimes
-                var cell = chunk.Cells[x, 4, z];
+                var cell = chunk.Cells[x, groundLevel + 1, z];
                 double chances = 0.08;
                 if (x > 0) {
-                    var left = chunk.Cells[x - 1, 4, z];
+                    var left = chunk.Cells[x - 1, groundLevel + 1, z];
                     if (left.BlockDef != BlockDefId.Air)
                         chances = 0.6;
                 }
 
                 cell.BlockDef = rng.NextDouble() < chances ? BlockDefId.Stone : BlockDefId.Air;
-                chunk.Cells[x, 4, z] = cell;
+                chunk.Cells[x, groundLevel + 1, z] = cell;
                 if (cell.BlockDef == BlockDefId.Stone) {
-                    var wallTop = chunk.Cells[x, 5, z];
+                    var wallTop = chunk.Cells[x, groundLevel + 2, z];
                     wallTop.BlockDef = rng.NextDouble() < 0.9 ? BlockDefId.Stone : BlockDefId.Air;
-                    chunk.Cells[x, 5, z] = wallTop;
+                    chunk.Cells[x, groundLevel + 2, z] = wallTop;
                     if (wallTop.BlockDef == BlockDefId.Stone) {
-                        var wallTipTop = chunk.Cells[x, 6, z];
+                        var wallTipTop = chunk.Cells[x, groundLevel + 3, z];
                         wallTipTop.BlockDef = rng.NextDouble() < 0.75 ? BlockDefId.Snow : BlockDefId.Air;
-                        chunk.Cells[x, 6, z] = wallTipTop;
+                        chunk.Cells[x, groundLevel + 3, z] = wallTipTop;
                     }
                 }
 
                 // Ground everywhere
-                chunk.Cells[x, 3, z].BlockDef = BlockDefId.Grass;
-                chunk.Cells[x, 2, z].BlockDef = BlockDefId.Dirt;
-                chunk.Cells[x, 1, z].BlockDef = BlockDefId.Dirt;
-                chunk.Cells[x, 0, z].BlockDef = BlockDefId.Dirt;
+                chunk.Cells[x, groundLevel, z].BlockDef = BlockDefId.Grass;
+                for (int i = groundLevel - 1; i >= 0; i--) {
+                    chunk.Cells[x, i, z].BlockDef = BlockDefId.Dirt;
+                }
             }
         }
 
@@ -164,12 +162,12 @@ public class LevelData : IDisposable {
 
 
     public bool CellMatchDefinition(Vector3Int position, BlockDefId referenceBlock) {
-        if (position.y < 0 || position.y >= 7 || position.x < 0 || position.x >= LevelChunkSize * 16 || position.z < 0 || position.z >= LevelChunkSize * 16) return false;
-        var chX = (int) Math.Floor((double) position.x / 16);
-        var chZ = (int) Math.Floor((double) position.z / 16);
+        if (position.y < 0 || position.y >= ChunkData.Size || position.x < 0 || position.x >= LevelChunkSize * ChunkData.Size || position.z < 0 || position.z >= LevelChunkSize * ChunkData.Size) return false;
+        var chX = (int) Math.Floor((double) position.x/ ChunkData.Size);
+        var chZ = (int) Math.Floor((double) position.z/ ChunkData.Size);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
-            return chunk.Cells![Mod(position.x, 16), position.y, Mod(position.z, 16)].BlockDef == referenceBlock;
+            return chunk.Cells![Mod(position.x, ChunkData.Size), position.y, Mod(position.z, ChunkData.Size)].BlockDef == referenceBlock;
         }
 
         return false;
@@ -177,13 +175,13 @@ public class LevelData : IDisposable {
 
 
     public bool TrySetExistingCell(int x, int y, int z, BlockDefId blockDef) {
-        if (y < 0 || y > 7) return false;
+        if (y < 0 || y >= ChunkData.Size) return false;
         var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
-            var cx = Mod(x, 16);
+            var cx = Mod(x, ChunkData.Size);
             var cy = y;
-            var cz = Mod(z, 16);
+            var cz = Mod(z, ChunkData.Size);
             chunk.Cells![cx, cy, cz].BlockDef = blockDef;
             return true;
         }
@@ -196,13 +194,13 @@ public class LevelData : IDisposable {
         cy = 0;
         cz = 0;
 
-        if (y < 0 || y >= 7) return null;
+        if (y < 0 || y >= ChunkData.Size) return null;
         var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
-            cx = Mod(x, 16);
+            cx = Mod(x, ChunkData.Size);
             cy = y;
-            cz = Mod(z, 16);
+            cz = Mod(z, ChunkData.Size);
             return chunk.Cells![cx, cy, cz];
         }
 
@@ -210,10 +208,10 @@ public class LevelData : IDisposable {
     }
 
     public async UniTask<Cell?> GetOrCreateCell(int x, int y, int z) {
-        var chX = (int) Math.Floor((double) x / 16);
-        var chZ = (int) Math.Floor((double) z / 16);
+        var chX = (int) Math.Floor((double) x/ ChunkData.Size);
+        var chZ = (int) Math.Floor((double) z/ ChunkData.Size);
         var chunk = await GetOrGenerateChunk(chX, chZ);
-        return chunk.Cells?[Mod(x, 16), y, Mod(z, 16)];
+        return chunk.Cells?[Mod(x, ChunkData.Size), y, Mod(z, ChunkData.Size)];
     }
 
     /// <summary>
