@@ -10,6 +10,8 @@ namespace VoxelsEngine {
         public float LerpFactor = 0.1f; // The lerp factor (for smooth follow)
         public float LerpFactorDuringRotations = 0.5f; // The lerp factor (for smooth follow)
         public float RotationDuration = 0.2f;
+        public float RotationAngle = 45f;
+
         public float ForwardAnticipationDistance = 2f;
 
         private bool _isRotating = false;
@@ -18,9 +20,9 @@ namespace VoxelsEngine {
             if (Target == null || _isRotating) return;
 
             if (Input.GetKeyDown(KeyCode.Q)) {
-                RotateCamera(90);
+                RotateCamera(RotationAngle);
             } else if (Input.GetKeyDown(KeyCode.E)) {
-                RotateCamera(-90);
+                RotateCamera(-RotationAngle);
             }
         }
 

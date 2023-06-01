@@ -3,8 +3,6 @@ using Cysharp.Threading.Tasks;
 using Popcron;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 using UnityEngine.Serialization;
 using VoxelsEngine.Tools;
 
@@ -17,6 +15,8 @@ namespace VoxelsEngine {
         public float JumpChargeIntensity = 1f;
         public float Gravity = 0.2f;
 
+        public int PlacementRadius = 4;
+
         [FormerlySerializedAs("SelectedTool")]
         [FormerlySerializedAs("CurrentBlock")]
         public AsyncReactiveProperty<BlockDefId> SelectedItem = new(BlockDefId.Dirt);
@@ -28,7 +28,7 @@ namespace VoxelsEngine {
         public Transform CameraTransform = null!;
 
         private Controls _controls;
-        private readonly Cooldown _placeCooldown = new(0.2f);
+        private readonly Cooldown _placeCooldown = new(0.06f);
         private readonly Cooldown _jumpCooldown = new(0.5f);
         private float _jumpChargeStart;
         private float _spawnedTime;
@@ -121,7 +121,12 @@ namespace VoxelsEngine {
 
             // var facingPosition = (pos + t.rotation * Vector3.forward * 1.5f).WorldToCell();
             // var targetPosition = facingPosition;
-            var targetPosition = GetCollidedBlockPosition(Level, _cam.ScreenPointToRay(Input.mousePosition));
+            var (collidingBlockPos, targetPosition) = GetCollidedBlockPosition(
+                Level,
+                _cam.ScreenPointToRay(Input.mousePosition),
+                pos,
+                PlacementRadius
+            );
 
 
             //     var c = Level.GetCellAt(facingPosition);
@@ -165,20 +170,50 @@ namespace VoxelsEngine {
 
         private Plane _wkPlane;
 
-        private Vector3? GetCollidedBlockPosition(LevelGenerator level, Ray mouseRay) {
-            for (int y = ChunkData.Size - 1; y >= 0; y--) {
-                _wkPlane.SetNormalAndPosition(Vector3.up, new Vector3(0, y + 0.5f, 0));
+
+        private (Vector3Int? collidingBlock, Vector3Int? facingBlock) GetCollidedBlockPosition(LevelGenerator level, Ray mouseRay, Vector3 position, int radius = 4) {
+            var (up, upC, upF) = GetCollidedBlockPosition(level, mouseRay, Vector3.up, Mathf.RoundToInt(position.y), radius);
+            var (right, rightC, rightF) = GetCollidedBlockPosition(level, mouseRay, Vector3.right, Mathf.RoundToInt(position.x), radius);
+            var (forward, forwardC, forwardF) = GetCollidedBlockPosition(level, mouseRay, Vector3.forward, Mathf.RoundToInt(position.z), radius);
+            var min = Mathf.Min(up, right, forward);
+            if (up > 0 && up == min) return (upC, upF);
+            if (right > 0 && right == min) return (rightC, rightF);
+            if (forward > 0 && forward == min) return (forwardC, forwardF);
+            return (null, null);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="mouseRay"></param>
+        /// <param name="axis">Should be the positive vector indicating the Plane orientation. ie. Vector3.up, Vector3.right or Vector3.forward.</param>
+        /// <param name="playerPosition"></param>
+        /// <param name="radius"></param>
+        /// <returns>The block that faces the colliding face, and the block colliding)</returns>
+        private (float rayEnter, Vector3Int? collidingBlock, Vector3Int? facingBlock) GetCollidedBlockPosition(LevelGenerator level, Ray mouseRay, Vector3 axis, int playerPosition, int radius = 4) {
+            var start = playerPosition - radius;
+            var stop = playerPosition + radius;
+            // 
+            var dimensionValue = Vector3.Dot(mouseRay.direction, axis);
+            int directionValue = dimensionValue > 0 ? 1 : -1;
+            if (directionValue < 0) (start, stop) = (stop, start);
+
+            for (int pos = start; pos != stop; pos += directionValue) {
+                //
+                _wkPlane.SetNormalAndPosition(axis, axis * (pos + directionValue * 0.5f));
+                //
                 if (_wkPlane.Raycast(mouseRay, out var enter)) {
                     Vector3 position = mouseRay.GetPoint(enter);
-                    var bottomCell = level.GetCellAt(position + Vector3.down * 0.5f);
-                    if (!bottomCell.IsAir()) {
-                        // Debug.Log((position + Vector3.down * 0.5f) + "/" + (position + Vector3.down * 0.5f).WorldToCell());
-                        return (position + Vector3.up * 0.5f).WorldToCell();
+                    var insidePosition = (position + axis * (0.5f * directionValue)).WorldToCell();
+                    var inside = level.GetCellAt(insidePosition);
+                    if (!inside.IsAir()) {
+                        return (enter, insidePosition, (position - axis * (0.5f * directionValue)).WorldToCell());
                     }
                 }
             }
 
-            return null;
+            return (float.MaxValue, null, null);
         }
     }
 }

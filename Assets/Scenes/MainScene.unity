@@ -642,7 +642,7 @@ MonoBehaviour:
   MaxTrackingDistance: 4
   LerpFactor: 0.013
   LerpFactorDuringRotations: 0.95
-  RotationDuration: 0.25
+  RotationDuration: 0.15
   ForwardAnticipationDistance: 1
 --- !u!1 &1307387711
 GameObject:

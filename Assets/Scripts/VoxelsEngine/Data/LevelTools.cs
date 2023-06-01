@@ -7,7 +7,7 @@ namespace VoxelsEngine {
         /// This function gives the cell position (in LevelData) from a world position.
         /// </summary>
         /// <param name="worldPosition"></param>
-        /// <returns></returns>
+        /// <returns>World position of the center of a cell</returns>
         public static Vector3Int WorldToCell(this Vector3 worldPosition) {
             // cells are visually centered, so a positions between the boundaries (-0.5,-0.5,-0.5)->(0.5,0.5,0.5)
             // should snap to 0.
