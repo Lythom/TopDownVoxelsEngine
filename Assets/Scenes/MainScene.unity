@@ -154,29 +154,41 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BlocksLibrary:
   - Id: 0
+    FrameTextureIndex: -1
+    MainTextureIndex: -1
     MiningLevel: 0
     RequiredEquipment: 0
     ItemPreview: {fileID: 0}
   - Id: 1
+    FrameTextureIndex: -1
+    MainTextureIndex: 0
     MiningLevel: 0
     RequiredEquipment: 0
-    ItemPreview: {fileID: 21300000, guid: 049662f5ca555804eb36d39c6b063187, type: 3}
+    ItemPreview: {fileID: 21300000, guid: b20b9bff53fd4e049b1fdd7771c62f7f, type: 3}
   - Id: 2
+    FrameTextureIndex: -1
+    MainTextureIndex: 1
     MiningLevel: 0
     RequiredEquipment: 0
-    ItemPreview: {fileID: 21300000, guid: 17d30093d5f486c4c812446b5a2b4571, type: 3}
+    ItemPreview: {fileID: 21300000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
   - Id: 3
+    FrameTextureIndex: -1
+    MainTextureIndex: 2
     MiningLevel: 0
     RequiredEquipment: 0
-    ItemPreview: {fileID: 21300000, guid: 32c83ee190e34bf4fb294bda0f9d0b49, type: 3}
+    ItemPreview: {fileID: 21300000, guid: 517e489fd968a254a9da4b024cdca27f, type: 3}
   - Id: 4
+    FrameTextureIndex: -1
+    MainTextureIndex: 3
     MiningLevel: 0
     RequiredEquipment: 0
-    ItemPreview: {fileID: 21300000, guid: 8614b8323b0650d49b71e7ab9ebed56e, type: 3}
+    ItemPreview: {fileID: 21300000, guid: 98bdd6592fb4b1444b3e0a75a047c082, type: 3}
   - Id: 5
+    FrameTextureIndex: 1
+    MainTextureIndex: 4
     MiningLevel: 0
     RequiredEquipment: 0
-    ItemPreview: {fileID: 21300000, guid: 7d3d1a0e38553df4fb8796d5afd31b3d, type: 3}
+    ItemPreview: {fileID: 21300000, guid: 9ac4899ad9d1d964e8cdeffb6b253224, type: 3}
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0
@@ -297,6 +309,7 @@ MonoBehaviour:
   JumpForce: 0.03
   JumpChargeIntensity: 0.17
   Gravity: 0.2
+  PlacementRadius: 4
   SelectedItem:
     latestValue: 1
   Level: {fileID: 928272620}
@@ -643,6 +656,7 @@ MonoBehaviour:
   LerpFactor: 0.013
   LerpFactorDuringRotations: 0.95
   RotationDuration: 0.15
+  RotationAngle: 45
   ForwardAnticipationDistance: 1
 --- !u!1 &1307387711
 GameObject:

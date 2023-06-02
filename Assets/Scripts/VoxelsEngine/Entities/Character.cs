@@ -66,7 +66,7 @@ namespace VoxelsEngine {
             Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
             Vector3 movement = CameraTransform.rotation * move;
             movement.y = 0;
-            movement = movement.normalized * (Speed * Time.deltaTime);
+            movement = movement.normalized * (Speed * Time.fixedDeltaTime);
 
             // If we have some input
             if (move != Vector3.zero) {
@@ -115,7 +115,7 @@ namespace VoxelsEngine {
             if (Time.time - _spawnedTime > 1) {
                 if (!groundCell.HasValue || groundCell.Value.BlockDef == BlockDefId.Air) {
                     // fall if no ground under
-                    Acceleration.y -= Gravity * Time.deltaTime;
+                    Acceleration.y -= Gravity * Time.fixedDeltaTime;
                     if (Acceleration.y < -0.9f) Acceleration.y = -0.9f;
                 } else if (Acceleration.y < 0) {
                     Acceleration.y = 0;
@@ -167,7 +167,7 @@ namespace VoxelsEngine {
 
             if (_controls.Gameplay.Jump.IsPressed()) {
                 var jumpCharge = Time.time - _jumpChargeStart;
-                Acceleration.y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
+                Acceleration.y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
             }
 
 

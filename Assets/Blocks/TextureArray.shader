@@ -4,7 +4,7 @@ Shader "Custom/TextureArray"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2DArray) = "white" {}
-        _NormalMap ("NormalMap", 2DArray) = "bump" {}
+        _FrameTex ("Frame Albedo (RGB)", 2DArray) = "white" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
     }
@@ -24,13 +24,14 @@ Shader "Custom/TextureArray"
         #pragma target 3.0
 
         UNITY_DECLARE_TEX2DARRAY(_MainTex);
-        UNITY_DECLARE_TEX2DARRAY(_NormalMap);
+        UNITY_DECLARE_TEX2DARRAY(_FrameTex);
 
         struct Input
         {
             float2 textCoords;
-            float textureIndex;
-            float normalMapTile;
+            float mainTextureIndex;
+            float frameTextureIndex;
+            float tileIndex;
         };
 
         half _Glossiness;
@@ -39,13 +40,22 @@ Shader "Custom/TextureArray"
 
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 c = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(IN.textCoords, IN.textureIndex));
+            fixed4 c = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(IN.textCoords, IN.mainTextureIndex));
+            if (IN.frameTextureIndex >= 0)
+            {
+                // 55 frames per collection of autotile, skip to offset to the start of the designated collection
+                // then pick the right tile in that collection
+                fixed4 fc = UNITY_SAMPLE_TEX2DARRAY(
+                    _FrameTex, float3(IN.textCoords, IN.frameTextureIndex * 55 + IN.tileIndex));
+                c = lerp(c, fc, fc.a);
+            }
             o.Albedo = c * _Color;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
             o.Alpha = c.a;
-            fixed4 n = UNITY_SAMPLE_TEX2DARRAY(_NormalMap, float3(IN.textCoords, IN.normalMapTile));
+            // First texture of the FrameTexture is the autotile normal map.
+            fixed4 n = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, IN.tileIndex));
             const float3 normal = UnpackNormal(n);
             o.Normal = normal;
         }
@@ -54,8 +64,9 @@ Shader "Custom/TextureArray"
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
             o.textCoords = v.texcoord.xy;
-            o.textureIndex = v.texcoord.z;
-            o.normalMapTile = v.texcoord.w;
+            o.mainTextureIndex = v.texcoord.z;
+            o.frameTextureIndex = v.texcoord.w;
+            o.tileIndex = v.texcoord2.x;
         }
         ENDCG
     }

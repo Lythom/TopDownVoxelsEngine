@@ -21,7 +21,9 @@ namespace VoxelsEngine {
         private readonly Vector3[] _vertices = new Vector3[10000];
         private int _verticesCount = 0;
         private readonly Vector4[] _uvs = new Vector4[10000];
+        private readonly Vector2[] _uvs2 = new Vector2[10000];
         private int _uvsCount = 0;
+        private int _uvs2Count = 0;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
@@ -36,6 +38,7 @@ namespace VoxelsEngine {
             _trianglesCount = 0;
             _verticesCount = 0;
             _uvsCount = 0;
+            _uvs2Count = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
                 if (cell.BlockDef != BlockDefId.Air) {
@@ -54,8 +57,7 @@ namespace VoxelsEngine {
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.BlockDef == BlockDefId.Air) {
                     var bitMask = Level.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id);
-                    var textureIndex = (int) blockDef.Id - 1; // air as no texture, skip
-                    MakeFace(dir, x, y, z, textureIndex, bitMask);
+                    MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
             }
         }
@@ -69,7 +71,7 @@ namespace VoxelsEngine {
         /// <param name="z"></param>
         /// <param name="textureIndex">Index of the texture to use</param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
-        private void MakeFace(Direction dir, int x, int y, int z, float textureIndex, int bitMask) {
+        private void MakeFace(Direction dir, int x, int y, int z, BlockDefinition blockDefinition, int bitMask) {
             CubeMeshData.FaceVertices((int) dir, x % ChunkData.Size, y, z % ChunkData.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
@@ -78,10 +80,14 @@ namespace VoxelsEngine {
             // }
             int blobIndex = AutoTile48Blob.GetBlobIndex(bitMask);
 
-            _uvs[_uvsCount++] = new(1, 0, textureIndex, blobIndex);
-            _uvs[_uvsCount++] = new(0, 0, textureIndex, blobIndex);
-            _uvs[_uvsCount++] = new(0, 1, textureIndex, blobIndex);
-            _uvs[_uvsCount++] = new(1, 1, textureIndex, blobIndex);
+            _uvs[_uvsCount++] = new(1, 0, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(0, 0, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(0, 1, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(1, 1, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;
@@ -96,6 +102,7 @@ namespace VoxelsEngine {
             _mesh.SetVertices(_vertices, 0, _verticesCount);
             _mesh.SetTriangles(_triangles, 0, _trianglesCount, 0);
             _mesh.SetUVs(0, _uvs, 0, _uvsCount);
+            _mesh.SetUVs(1, _uvs2, 0, _uvs2Count);
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
         }

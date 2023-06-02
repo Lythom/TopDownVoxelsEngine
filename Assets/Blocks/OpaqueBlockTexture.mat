@@ -23,12 +23,16 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _FrameTex:
+        m_Texture: {fileID: 18700000, guid: 7533607c1f494b243b4f0ccb7cfeb480, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 18700000, guid: 22e61109670f65b4cb61ad3782d03684, type: 3}
+        m_Texture: {fileID: 18700000, guid: 736a0ca581a20ad459e3f2e8fddbdd06, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 18700000, guid: 8a4928241d3df754c815148f01ca8fbe, type: 3}
+        m_Texture: {fileID: 18700000, guid: 7533607c1f494b243b4f0ccb7cfeb480, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
