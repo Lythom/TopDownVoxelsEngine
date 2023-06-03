@@ -84,10 +84,10 @@ namespace VoxelsEngine {
             _uvs[_uvsCount++] = new(0, 0, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
             _uvs[_uvsCount++] = new(0, 1, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
             _uvs[_uvsCount++] = new(1, 1, blockDefinition.MainTextureIndex, blockDefinition.FrameTextureIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, blockDefinition.FrameNormalIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, blockDefinition.FrameNormalIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, blockDefinition.FrameNormalIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, blockDefinition.FrameNormalIndex);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;
