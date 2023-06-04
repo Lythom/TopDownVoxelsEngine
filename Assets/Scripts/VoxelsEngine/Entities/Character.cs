@@ -27,12 +27,12 @@ namespace VoxelsEngine {
         [Required]
         public Transform CameraTransform = null!;
 
-        private Controls _controls;
+        private Controls _controls = null!;
         private readonly Cooldown _placeCooldown = new(0.1f);
         private readonly Cooldown _jumpCooldown = new(0.5f);
         private float _jumpChargeStart;
         private float _spawnedTime;
-        private Camera _cam;
+        private Camera _cam = null!;
 
         private Plane _wkPlane;
         private Plane? _draggingPlane = null;
@@ -41,6 +41,7 @@ namespace VoxelsEngine {
         private void Awake() {
             _controls = new Controls();
             _spawnedTime = Time.time;
+            if (Camera.main == null) throw new ApplicationException("No camera found");
             _cam = Camera.main;
             var position = transform.position;
             transform.position = new Vector3(position.x, 10, position.z);
@@ -66,7 +67,7 @@ namespace VoxelsEngine {
             Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
             Vector3 movement = CameraTransform.rotation * move;
             movement.y = 0;
-            movement = movement.normalized * (Speed * Time.fixedDeltaTime);
+            movement = movement.normalized * (Speed * Time.deltaTime);
 
             // If we have some input
             if (move != Vector3.zero) {
@@ -115,7 +116,7 @@ namespace VoxelsEngine {
             if (Time.time - _spawnedTime > 1) {
                 if (!groundCell.HasValue || groundCell.Value.BlockDef == BlockDefId.Air) {
                     // fall if no ground under
-                    Acceleration.y -= Gravity * Time.fixedDeltaTime;
+                    Acceleration.y -= Gravity * Time.deltaTime;
                     if (Acceleration.y < -0.9f) Acceleration.y = -0.9f;
                 } else if (Acceleration.y < 0) {
                     Acceleration.y = 0;
@@ -167,7 +168,7 @@ namespace VoxelsEngine {
 
             if (_controls.Gameplay.Jump.IsPressed()) {
                 var jumpCharge = Time.time - _jumpChargeStart;
-                Acceleration.y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
+                Acceleration.y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
             }
 
 

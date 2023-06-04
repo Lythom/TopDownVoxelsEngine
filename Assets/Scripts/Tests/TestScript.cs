@@ -1,21 +1,36 @@
+using System;
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using VoxelsEngine.Rendering;
 
 public class NewTestScript {
-    // A Test behaves as an ordinary method
     [Test]
     public void NewTestScriptSimplePasses() {
         // Use the Assert class to test conditions
         int bitmask = 0;
         for (var i = 0; i <= 7; i++) {
-            int isSameBlock = i%2;
+            int isSameBlock = i % 2;
             bitmask |= isSameBlock << i;
         }
 
         Debug.Log(bitmask);
+    }
+
+    [Test]
+    public void TestBitmaskTables() {
+        // Use the Assert class to test conditions
+        // string s = "";
+        // for (var i = 0; i < 256; i++) {
+        //     s += $"/* {Convert.ToString(i, 2).PadLeft(8, '0')} */ {AutoTile48Blob.BitmaskToBlobMappingsDic[i]},\n";
+        // }
+        // Debug.Log(s);
+        
+        int bitmask = 0;
+        for (var i = 0; i < 256; i++) {
+            Assert.AreEqual(AutoTile48Blob.BitmaskToBlobMappingsDic[i], AutoTile48Blob.BitmaskToBlobMappings[i], "Error at index " + i);
+        }
     }
 
     // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use

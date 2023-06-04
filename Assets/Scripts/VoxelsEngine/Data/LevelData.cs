@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using log4net.Core;
 using UnityEngine;
 using VoxelsEngine;
-using Random = System.Random;
 
 public class LevelData : IDisposable {
     public const int LevelChunkSize = 256;
@@ -49,7 +46,7 @@ public class LevelData : IDisposable {
             while (GenerationQueue.TryDequeue(out int flatIndex)) {
                 try {
                     var (chX, chZ) = ChunkData.GetCoordsFromIndex(flatIndex);
-                    GenerateChunk(chX, chZ);
+                    LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, SaveId, ref Chunks[chX, chZ]);
                     generatedThisFrame++;
                     if (generatedThisFrame >= 15) {
                         await UniTask.NextFrame(cancellationToken);
@@ -71,58 +68,6 @@ public class LevelData : IDisposable {
         // return await GetOrCreateCell(x + offset.x, offsetY, z - offset.z);
     }
 
-    public ChunkData GenerateChunk(int chX, int chZ) {
-        var seed = GetChunkSeed(chX, chZ);
-        var rng = new Random(seed);
-        // Generate a new chunk
-        var chunk = Chunks[chX, chZ];
-        if (chunk.Cells == null) {
-            chunk.Cells = new Cell[ChunkData.Size, ChunkData.Size, ChunkData.Size];
-            foreach (var (x, y, z) in chunk.GetCellPositions()) {
-                chunk.Cells[x, y, z] = new Cell(BlockDefId.Air);
-            }
-        }
-
-        // ... chunk generation code
-        for (int x = 0; x < ChunkData.Size; x++) {
-            for (int z = 0; z < ChunkData.Size; z++) {
-                var groundLevel = 5;
-                // Put a wall sometimes
-                var cell = chunk.Cells[x, groundLevel + 1, z];
-                double chances = 0.08;
-                if (x > 0) {
-                    var left = chunk.Cells[x - 1, groundLevel + 1, z];
-                    if (left.BlockDef != BlockDefId.Air)
-                        chances = 0.6;
-                }
-
-                cell.BlockDef = rng.NextDouble() < chances ? BlockDefId.Stone : BlockDefId.Air;
-                chunk.Cells[x, groundLevel + 1, z] = cell;
-                if (cell.BlockDef == BlockDefId.Stone) {
-                    var wallTop = chunk.Cells[x, groundLevel + 2, z];
-                    wallTop.BlockDef = rng.NextDouble() < 0.9 ? BlockDefId.Stone : BlockDefId.Air;
-                    chunk.Cells[x, groundLevel + 2, z] = wallTop;
-                    if (wallTop.BlockDef == BlockDefId.Stone) {
-                        var wallTipTop = chunk.Cells[x, groundLevel + 3, z];
-                        wallTipTop.BlockDef = rng.NextDouble() < 0.75 ? BlockDefId.Snow : BlockDefId.Air;
-                        chunk.Cells[x, groundLevel + 3, z] = wallTipTop;
-                    }
-                }
-
-                // Ground everywhere
-                chunk.Cells[x, groundLevel, z].BlockDef = BlockDefId.Grass;
-                for (int i = groundLevel - 1; i >= 0; i--) {
-                    chunk.Cells[x, i, z].BlockDef = BlockDefId.Dirt;
-                }
-            }
-        }
-
-        chunk.IsGenerated = true;
-        // Please: save to file
-        Chunks[chX, chZ] = chunk;
-        return chunk;
-    }
-
     public async UniTask<ChunkData?> GetChunkFromFile(string saveId, string levelId, int chX, int chZ) {
         var key = ChunkData.GetKey(saveId, levelId, chX, chZ);
         var savePath = GetSavePath(saveId, key);
@@ -142,10 +87,6 @@ public class LevelData : IDisposable {
         return filePath;
     }
 
-    public int GetChunkSeed(int chX, int chZ) {
-        return 1337 + chX + 100000 * chZ + LevelId.GetHashCode() * 13 + SaveId.GetHashCode() * 7;
-    }
-
     public async UniTask<ChunkData> GetOrGenerateChunk(int chX, int chZ) {
         var key = ChunkData.GetFlatIndex(chX, chZ);
         if (GenerationQueue.Contains(key)) await UniTask.WaitUntil(() => !GenerationQueue.Contains(key));
@@ -163,8 +104,8 @@ public class LevelData : IDisposable {
 
     public bool CellMatchDefinition(Vector3Int position, BlockDefId referenceBlock) {
         if (position.y < 0 || position.y >= ChunkData.Size || position.x < 0 || position.x >= LevelChunkSize * ChunkData.Size || position.z < 0 || position.z >= LevelChunkSize * ChunkData.Size) return false;
-        var chX = (int) Math.Floor((double) position.x/ ChunkData.Size);
-        var chZ = (int) Math.Floor((double) position.z/ ChunkData.Size);
+        var chX = (int) Math.Floor((double) position.x / ChunkData.Size);
+        var chZ = (int) Math.Floor((double) position.z / ChunkData.Size);
         var chunk = Chunks[chX, chZ];
         if (chunk.IsGenerated) {
             return chunk.Cells![Mod(position.x, ChunkData.Size), position.y, Mod(position.z, ChunkData.Size)].BlockDef == referenceBlock;
@@ -208,8 +149,8 @@ public class LevelData : IDisposable {
     }
 
     public async UniTask<Cell?> GetOrCreateCell(int x, int y, int z) {
-        var chX = (int) Math.Floor((double) x/ ChunkData.Size);
-        var chZ = (int) Math.Floor((double) z/ ChunkData.Size);
+        var chX = (int) Math.Floor((double) x / ChunkData.Size);
+        var chZ = (int) Math.Floor((double) z / ChunkData.Size);
         var chunk = await GetOrGenerateChunk(chX, chZ);
         return chunk.Cells?[Mod(x, ChunkData.Size), y, Mod(z, ChunkData.Size)];
     }
@@ -223,107 +164,5 @@ public class LevelData : IDisposable {
     static int Mod(int value, int modulo) {
         int r = value % modulo;
         return r < 0 ? r + modulo : r;
-    }
-
-    public int Get8SurroundingsBitmask(Direction dir, int x, int y, int z, BlockDefId referenceBlock) {
-        // take the surrounding blocks positions from "top left" like if we are facing the side.
-        // 0 1 2
-        // 7 x 3
-        // 6 5 4
-        // x, y, z are positive when going right, up and forward in unity
-        var positions = new List<Vector3Int>(8);
-        if (dir == Direction.Up) {
-            // For the side facing up, we are looking down
-            // z
-            // ^
-            // |
-            // -----> x
-            positions.Add(new(x - 1, y, z + 1));
-            positions.Add(new(x, y, z + 1));
-            positions.Add(new(x + 1, y, z + 1));
-            positions.Add(new(x + 1, y, z));
-            positions.Add(new(x + 1, y, z - 1));
-            positions.Add(new(x, y, z - 1));
-            positions.Add(new(x - 1, y, z - 1));
-            positions.Add(new(x - 1, y, z));
-        } else if (dir == Direction.Down) {
-            // For the side facing down, we are looking up
-            // -----> x
-            // |
-            // v
-            // z
-            positions.Add(new(x - 1, y, z - 1));
-            positions.Add(new(x, y, z - 1));
-            positions.Add(new(x + 1, y, z - 1));
-            positions.Add(new(x + 1, y, z));
-            positions.Add(new(x + 1, y, z + 1));
-            positions.Add(new(x, y, z + 1));
-            positions.Add(new(x - 1, y, z + 1));
-            positions.Add(new(x - 1, y, z));
-        } else if (dir == Direction.South) {
-            // For the side facing North (Forward), we are looking south
-            //      y
-            //      ^
-            //      |
-            // x <---
-            positions.Add(new(x + 1, y + 1, z));
-            positions.Add(new(x, y + 1, z));
-            positions.Add(new(x - 1, y + 1, z));
-            positions.Add(new(x - 1, y, z));
-            positions.Add(new(x - 1, y - 1, z));
-            positions.Add(new(x, y - 1, z));
-            positions.Add(new(x + 1, y - 1, z));
-            positions.Add(new(x + 1, y, z));
-        } else if (dir == Direction.North) {
-            // For the side facing South (Backward), we are looking north
-            // y
-            // ^
-            // |
-            // -----> x
-            positions.Add(new(x - 1, y + 1, z));
-            positions.Add(new(x, y + 1, z));
-            positions.Add(new(x + 1, y + 1, z));
-            positions.Add(new(x + 1, y, z));
-            positions.Add(new(x + 1, y - 1, z));
-            positions.Add(new(x, y - 1, z));
-            positions.Add(new(x - 1, y - 1, z));
-            positions.Add(new(x - 1, y, z));
-        } else if (dir == Direction.West) {
-            // For the side facing West (Left), we are looking East
-            //      y
-            //      ^
-            //      |
-            // z <---
-            positions.Add(new(x, y + 1, z + 1));
-            positions.Add(new(x, y + 1, z));
-            positions.Add(new(x, y + 1, z - 1));
-            positions.Add(new(x, y, z - 1));
-            positions.Add(new(x, y - 1, z - 1));
-            positions.Add(new(x, y - 1, z));
-            positions.Add(new(x, y - 1, z + 1));
-            positions.Add(new(x, y, z + 1));
-        } else if (dir == Direction.East) {
-            // For the side facing East (Right), we are looking West
-            // y
-            // ^
-            // |
-            // -----> z
-            positions.Add(new(x, y + 1, z - 1));
-            positions.Add(new(x, y + 1, z));
-            positions.Add(new(x, y + 1, z + 1));
-            positions.Add(new(x, y, z + 1));
-            positions.Add(new(x, y - 1, z + 1));
-            positions.Add(new(x, y - 1, z));
-            positions.Add(new(x, y - 1, z - 1));
-            positions.Add(new(x, y, z - 1));
-        }
-
-        int bitmask = 0;
-        for (var i = 0; i < positions.Count; i++) {
-            int isSameBlock = CellMatchDefinition(positions[i], referenceBlock) ? 1 : 0;
-            bitmask |= isSameBlock << i;
-        }
-
-        return bitmask;
     }
 }

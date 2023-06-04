@@ -40,7 +40,7 @@ namespace VoxelsEngine {
             _uvsCount = 0;
             _uvs2Count = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
-                var cell = chunk.Cells[x, y, z];
+                var cell = chunk.Cells![x, y, z];
                 if (cell.BlockDef != BlockDefId.Air) {
                     var blockDef = Configurator.Instance.BlocksLibrary[(int) cell.BlockDef];
                     MakeCube(x, y, z, blockDef, chunk, level);
@@ -56,7 +56,7 @@ namespace VoxelsEngine {
                 var z = cZ + chunkData.ChZ * ChunkData.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.BlockDef == BlockDefId.Air) {
-                    var bitMask = Level.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id);
+                    var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
             }
