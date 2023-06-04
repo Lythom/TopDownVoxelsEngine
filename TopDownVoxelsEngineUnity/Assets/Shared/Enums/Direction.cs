@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace VoxelsEngine {
+namespace Shared {
     public enum Direction {
         North,
         South,

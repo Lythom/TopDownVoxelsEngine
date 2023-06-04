@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+#nullable disable
 
 /// <summary>
 /// At runtime, this component simply displays the value of its public properties, updating them every frame

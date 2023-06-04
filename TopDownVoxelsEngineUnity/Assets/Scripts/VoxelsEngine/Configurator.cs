@@ -3,46 +3,56 @@ using System.Collections.Generic;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using MessagePack.Resolvers;
+using Shared;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Analytics;
 
-namespace VoxelsEngine {
+namespace VoxelsEngine
+{
     [Serializable]
-    public class Configurator : MonoBehaviour {
+    public class Configurator : MonoBehaviour
+    {
         private static Configurator? _instance;
 
-        [SerializeField]
-        public List<BlockDefinition> BlocksLibrary = new();
+        [SerializeField] public List<BlockData> BlocksLibrary = new();
+
+        [SerializeField] public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
 
 #if UNITY_EDITOR
         [InitializeOnLoadMethod]
-        static void EditorInitialize() {
+        static void EditorInitialize()
+        {
             Initialize();
         }
 #endif
 
         [Button]
-        private void ForceReload() {
+        private void ForceReload()
+        {
             _serializerRegistered = false;
             Initialize();
         }
 
-        public static Configurator Instance {
-            get {
+        public static Configurator Instance
+        {
+            get
+            {
                 if (_instance != null) return _instance;
 
 #if UNITY_EDITOR
                 // If we're in the editor find a ref in the scene
                 _instance = FindObjectOfType<Configurator>();
-                if (_instance != null) {
+                if (_instance != null)
+                {
                     FillLibrary();
                 }
 
 #endif
 
-                if (_instance == null) {
+                if (_instance == null)
+                {
                     throw new InvalidOperationException("No Configurator found! Please add one in the scene and configure the required fields.");
                 }
 
@@ -50,8 +60,10 @@ namespace VoxelsEngine {
             }
         }
 
-        private void Awake() {
-            if (_instance != null && _instance.isActiveAndEnabled) {
+        private void Awake()
+        {
+            if (_instance != null && _instance.isActiveAndEnabled)
+            {
                 Destroy(gameObject);
                 return;
             }
@@ -62,7 +74,8 @@ namespace VoxelsEngine {
             FillLibrary();
         }
 
-        private static void FillLibrary() {
+        private static void FillLibrary()
+        {
             if (_instance == null) return;
         }
 
@@ -73,10 +86,12 @@ namespace VoxelsEngine {
             .WithCompression(MessagePackCompression.Lz4BlockArray);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Initialize() {
+        static void Initialize()
+        {
             DisableUnityAnalytics();
 
-            if (!_serializerRegistered) {
+            if (!_serializerRegistered)
+            {
                 StaticCompositeResolver.Instance.Register(
                     DynamicEnumAsStringResolver.Instance,
                     StandardResolver.Instance
@@ -89,7 +104,8 @@ namespace VoxelsEngine {
             FillLibrary();
         }
 
-        private static void DisableUnityAnalytics() {
+        private static void DisableUnityAnalytics()
+        {
             Analytics.initializeOnStartup = false;
             Analytics.deviceStatsEnabled = false;
             PerformanceReporting.enabled = false;

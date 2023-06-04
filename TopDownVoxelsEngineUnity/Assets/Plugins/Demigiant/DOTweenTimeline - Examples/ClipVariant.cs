@@ -1,5 +1,6 @@
 ﻿// Author: Daniele Giardini - http://www.demigiant.com
 // Created: 2020/09/15
+#nullable disable
 
 using System;
 using System.Collections;

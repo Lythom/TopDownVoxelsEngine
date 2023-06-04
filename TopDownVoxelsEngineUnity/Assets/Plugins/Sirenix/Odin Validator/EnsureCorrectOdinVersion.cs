@@ -4,6 +4,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 #if UNITY_EDITOR
+#nullable disable
 
 namespace Sirenix.OdinValidator.Editor
 {

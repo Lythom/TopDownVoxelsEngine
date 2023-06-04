@@ -1,6 +1,7 @@
 ﻿using System;
 using DG.Tweening.Timeline.Core.Plugins;
 using UnityEngine;
+#nullable disable
 
 /// <summary>
 /// Copy paste this code to create a custom plugin (including all #if etc which are very important)

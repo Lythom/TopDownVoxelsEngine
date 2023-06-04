@@ -1,5 +1,3 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
 
 public struct CellPosition {
     public int X;
@@ -16,15 +14,5 @@ public struct CellPosition {
         x = X;
         y = Y;
         z = Z;
-    }
-}
-
-public struct Cell {
-    public BlockDefId BlockDef;
-    public byte DamageLevel;
-
-    public Cell(BlockDefId idx) {
-        BlockDef = idx;
-        DamageLevel = 0;
     }
 }

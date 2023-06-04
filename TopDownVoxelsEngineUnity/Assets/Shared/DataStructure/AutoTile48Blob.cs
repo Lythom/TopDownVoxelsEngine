@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Shared;
 
-namespace VoxelsEngine.Rendering {
+namespace Shared {
     public static class AutoTile48Blob {
         public static readonly Dictionary<int, int> BitmaskToBlobMappingsDic = new() {
             {Convert.ToInt32("00111000", 2), 0},
@@ -576,7 +576,7 @@ namespace VoxelsEngine.Rendering {
 
         private static readonly Vector3Int[] Positions = new Vector3Int[8];
 
-        public static int Get8SurroundingsBitmask(Direction dir, int x, int y, int z, BlockDefId referenceBlock, Func<Vector3Int, BlockDefId, bool> isBlockMatching) {
+        public static int Get8SurroundingsBitmask(Direction dir, int x, int y, int z, BlockId referenceBlock, Func<Vector3Int, BlockId, bool> isBlockMatching) {
             // take the surrounding blocks positions from "top left" like if we are facing the side.
             // 0 1 2
             // 7 x 3

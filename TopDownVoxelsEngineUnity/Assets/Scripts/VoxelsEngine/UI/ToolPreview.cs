@@ -15,7 +15,7 @@ namespace VoxelsEngine.UI {
             Character.SelectedItem.ForEachAsync(v => {
                 int id = (int) v;
 
-                var lib = Configurator.Instance.BlocksLibrary;
+                var lib = Configurator.Instance.BlocksRenderingLibrary;
                 Preview.sprite = (id >= 0 && id < lib.Count ? lib[id].ItemPreview : null)!;
             });
         }

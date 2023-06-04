@@ -12,7 +12,8 @@
         "Unity.TextMeshPro",
         "Unity.InputSystem",
         "Popcron.Gizmos",
-        "UniTask.Linq"
+        "UniTask.Linq",
+        "Shared"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

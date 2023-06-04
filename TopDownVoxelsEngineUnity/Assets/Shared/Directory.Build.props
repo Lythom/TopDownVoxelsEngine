@@ -1,0 +1,6 @@
+<Project>
+    <PropertyGroup>
+        <BaseIntermediateOutputPath>$(SolutionDir)SharedBin\$(MSBuildProjectName)\obj</BaseIntermediateOutputPath>
+        <BaseOutputPath>$(SolutionDir)SharedBin\$(MSBuildProjectName)\bin</BaseOutputPath>
+    </PropertyGroup>
+</Project>

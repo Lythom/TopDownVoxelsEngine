@@ -1,5 +1,6 @@
 ﻿// Author: Daniele Giardini - http://www.demigiant.com
 // Created: 2020/09/17
+#nullable disable
 
 using DG.Tweening.Timeline;
 using UnityEngine;
