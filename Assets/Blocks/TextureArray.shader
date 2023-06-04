@@ -41,12 +41,11 @@ Shader "Custom/TextureArray"
         half _Metallic;
         fixed4 _Color;
 
-        void surf(Input IN, inout SurfaceOutputStandard o)
+        fixed4 triplanarAlbedo(Input IN, float scaleFactor)
         {
-            float scaleFactor = 1.0 / 2.5;
             // Triplanar sampling
             fixed4 mainAlbedoX = UNITY_SAMPLE_TEX2DARRAY(
-                _MainTex, float3(IN.worldPos.yz * scaleFactor, IN.mainTextureIndex));
+                _MainTex, float3(IN.worldPos.zy * scaleFactor, IN.mainTextureIndex));
             fixed4 mainAlbedoY = UNITY_SAMPLE_TEX2DARRAY(
                 _MainTex, float3(IN.worldPos.xz * scaleFactor, IN.mainTextureIndex));
             fixed4 mainAlbedoZ = UNITY_SAMPLE_TEX2DARRAY(
@@ -62,16 +61,25 @@ Shader "Custom/TextureArray"
             blendY /= totalBlend;
             blendZ /= totalBlend;
 
-            fixed4 mainAlbedo = blendX * mainAlbedoX + blendY * mainAlbedoY + blendZ * mainAlbedoZ;
+            return blendX * mainAlbedoX + blendY * mainAlbedoY + blendZ * mainAlbedoZ;
+        }
+
+        void surf(Input IN, inout SurfaceOutputStandard o)
+        {
+            float scaleFactor = 1.0 / 2.5;
+            fixed4 mainAlbedo = triplanarAlbedo(IN, scaleFactor);
             // First texture of the FrameTexture is the autotile normal map.
             fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, IN.tileIndex));
             if (IN.frameTextureIndex >= 0)
             {
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
-                fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, IN.frameTextureIndex * 55 + IN.tileIndex));
+                float frameAlbedoIndex = IN.frameTextureIndex * 55 + IN.tileIndex;
+                float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
+                fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, frameAlbedoIndex));
+                fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, frameNormalIndex));
+                // Use frame in priority, and mainAlbedo if frame alpha is smaller
                 mainAlbedo = lerp(mainAlbedo, frameAlbedo, frameAlbedo.a);
-                fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, IN.frameNormalIndex * 55 + IN.tileIndex));
                 normals = lerp(normals, frameNormals, frameAlbedo.a);
             }
             o.Albedo = mainAlbedo * _Color;
