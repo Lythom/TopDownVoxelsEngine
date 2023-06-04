@@ -49,19 +49,19 @@ namespace VoxelsEngine
                 if (cell.Block != BlockId.Air)
                 {
                     var blockDef = Configurator.Instance.BlocksRenderingLibrary[(int) cell.Block];
-                    MakeCube(x, y, z, blockDef, chunk, level);
+                    MakeCube(x, y, z, ChunkKey, blockDef, chunk, level);
                 }
             }
         }
 
-        private void MakeCube(int cX, int cY, int cZ, BlockRenderingConfiguration blockDef, ChunkData chunkData, LevelData level)
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, ChunkData chunkData, LevelData level)
         {
             for (int i = 0; i < 6; i++)
             {
                 var dir = (Direction) i;
-                var x = cX + chunkData.ChX * ChunkData.Size;
+                var x = cX + chunkKey.ChX * ChunkData.Size;
                 var y = cY;
-                var z = cZ + chunkData.ChZ * ChunkData.Size;
+                var z = cZ + chunkKey.ChZ * ChunkData.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.Block == BlockId.Air)
                 {
@@ -78,7 +78,7 @@ namespace VoxelsEngine
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="z"></param>
-        /// <param name="textureIndex">Index of the texture to use</param>
+        /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask)
         {

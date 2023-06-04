@@ -7,9 +7,6 @@ namespace Shared
     public struct ChunkData
     {
         public const int Size = 16;
-
-        public int ChX;
-        public int ChZ;
         public Cell[,,]? Cells;
         public bool IsGenerated;
 
@@ -25,24 +22,6 @@ namespace Shared
                     }
                 }
             }
-        }
-
-        public ChunkData(int chX, int chZ)
-        {
-            ChX = chX;
-            ChZ = chZ;
-            Cells = new Cell[Size, Size, Size];
-            IsGenerated = false;
-        }
-
-        public ChunkKey GetKey(string saveId, string levelId)
-        {
-            return new ChunkKey(saveId, levelId, ChX, ChZ);
-        }
-
-        public static ChunkKey GetKey(string saveId, string levelId, int chX, int chZ)
-        {
-            return new ChunkKey(saveId, levelId, chX, chZ);
         }
 
         public static int GetFlatIndex(int chX, int chZ)
@@ -72,8 +51,6 @@ namespace Shared
             MemoryStream ms = new MemoryStream(data);
             BinaryFormatter formatter = new BinaryFormatter();
             var chunk = (ChunkData) formatter.Deserialize(ms);
-            ChX = chunk.ChX;
-            ChZ = chunk.ChZ;
             Cells = chunk.Cells;
             IsGenerated = true;
         }

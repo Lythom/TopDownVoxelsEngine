@@ -53,6 +53,7 @@ namespace VoxelsEngine
                     var key = ChunkData.GetFlatIndex(chX + x, chZ + z);
                     if (!RendererChunks.Contains(key))
                     {
+                        if (chX + x < 0 || chX + x >= _level.Chunks.GetLength(0) || chZ + z < 0 || chZ + z >= _level.Chunks.GetLength(1)) continue;
                         RendererChunks.Add(key);
                         ToBeRendererQueue.Enqueue(key);
                     }
@@ -64,7 +65,7 @@ namespace VoxelsEngine
         {
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
-            Gizmos.DrawWireCube(new Vector3(chX * ChunkData.Size + ChunkData.Size / 2, 0, chZ * ChunkData.Size + ChunkData.Size / 2),
+            Gizmos.DrawWireCube(new Vector3(chX * ChunkData.Size + ChunkData.Size / 2f, 0, chZ * ChunkData.Size + ChunkData.Size / 2f),
                 new Vector3(ChunkData.Size, ChunkData.Size, ChunkData.Size));
         }
 
@@ -103,6 +104,7 @@ namespace VoxelsEngine
 
         public void UpdateChunk(int chX, int chZ)
         {
+            if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
             ChunkRenderer cr = ChunkRenderers[chX, chZ];
             if (cr != null)
             {
@@ -115,19 +117,21 @@ namespace VoxelsEngine
         {
             try
             {
+                if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
                 ChunkData currentChunk = _level.GetOrGenerateChunk(chX, chZ);
                 // preload outbounds chunk content
                 for (int x = -1; x <= 1; x++)
                 {
                     for (int z = -1; z <= 1; z++)
                     {
+                        if (chX + x < 0 || chX + x >= _level.Chunks.GetLength(0) || chZ + z < 0 || chZ + z >= _level.Chunks.GetLength(1)) continue;
                         _level.GetOrGenerateChunk(chX + x, chZ + z);
                     }
                 }
 
                 if (currentChunk.IsGenerated && !_cancellationTokenOnDestroy.IsCancellationRequested)
                 {
-                    var chunkRenderer = GenerateChunkRenderer(currentChunk, chX, chZ);
+                    var chunkRenderer = GenerateChunkRenderer(chX, chZ);
                     chunkRenderer.transform.SetParent(transform, true);
                     chunkRenderer.ReCalculateMesh(_level);
                     chunkRenderer.UpdateMesh();
@@ -142,9 +146,9 @@ namespace VoxelsEngine
             }
         }
 
-        private ChunkRenderer GenerateChunkRenderer(ChunkData currentChunk, int chX, int chY)
+        private ChunkRenderer GenerateChunkRenderer(int chX, int chY)
         {
-            var go = new GameObject("Chunk Renderer " + currentChunk.ChX + "," + currentChunk.ChZ);
+            var go = new GameObject("Chunk Renderer " + chX + "," + chY);
             var f = go.AddComponent<MeshFilter>();
             f.mesh = new Mesh();
             var r = go.AddComponent<MeshRenderer>();
@@ -152,7 +156,7 @@ namespace VoxelsEngine
             var chunkGen = go.AddComponent<ChunkRenderer>();
             chunkGen.transform.localPosition = new Vector3(chX * ChunkData.Size, 0, chY * ChunkData.Size);
             chunkGen.Level = _level;
-            chunkGen.ChunkKey = currentChunk.GetKey(_level.SaveId, _level.LevelId);
+            chunkGen.ChunkKey = new(_level.SaveId, _level.LevelId, chX, chY);
             return chunkGen;
         }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -9,7 +8,7 @@ namespace Shared
 {
     public class LevelData : IDisposable
     {
-        public const int LevelChunkSize = 256;
+        public const int LevelChunkSize = 128;
         public readonly ChunkData[,] Chunks;
 
         public static void Log(string s)
@@ -40,7 +39,11 @@ namespace Shared
             {
                 for (int z = 0; z < LevelChunkSize; z++)
                 {
-                    Chunks[x, z] = new ChunkData(x, z);
+                    Chunks[x, z] = new ChunkData()
+                    {
+                        Cells = new Cell[ChunkData.Size, ChunkData.Size, ChunkData.Size],
+                        IsGenerated = false
+                    };
                 }
             }
         }
@@ -56,7 +59,6 @@ namespace Shared
             Log("Start job generating chunks");
             while (!cancellationToken.IsCancellationRequested)
             {
-                var generatedThisFrame = 0;
                 await UniTask.Yield();
                 // dequeue until all is generated
                 while (GenerationQueue.TryDequeue(out int flatIndex))
@@ -65,11 +67,6 @@ namespace Shared
                     {
                         var (chX, chZ) = ChunkData.GetCoordsFromIndex(flatIndex);
                         LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, SaveId, ref Chunks[chX, chZ]);
-                        generatedThisFrame++;
-                        if (generatedThisFrame >= 15)
-                        {
-                            await UniTask.Yield();
-                        }
                     }
                     catch (Exception e)
                     {
@@ -178,6 +175,8 @@ namespace Shared
 
             if (y < 0 || y >= ChunkData.Size) return null;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
+            if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
+
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated)
             {
@@ -194,6 +193,7 @@ namespace Shared
         {
             var chX = (int) Math.Floor((double) x / ChunkData.Size);
             var chZ = (int) Math.Floor((double) z / ChunkData.Size);
+            if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
             var chunk = GetOrGenerateChunk(chX, chZ);
             return chunk.Cells?[Mod(x, ChunkData.Size), y, Mod(z, ChunkData.Size)];
         }
