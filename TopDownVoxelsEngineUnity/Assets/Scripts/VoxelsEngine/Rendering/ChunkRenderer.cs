@@ -14,7 +14,7 @@ namespace VoxelsEngine
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour
     {
-        public LevelData Level = null!;
+        public LevelMap Level = null!;
         public ChunkKey ChunkKey;
 
         private Mesh _mesh = null!;
@@ -33,7 +33,7 @@ namespace VoxelsEngine
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
         }
 
-        public void ReCalculateMesh(LevelData level)
+        public void ReCalculateMesh(LevelMap level)
         {
             if (_mesh == null) return;
             var chunk = Level.Chunks[ChunkKey.ChX, ChunkKey.ChZ];
@@ -54,14 +54,14 @@ namespace VoxelsEngine
             }
         }
 
-        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, ChunkData chunkData, LevelData level)
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, Chunk chunk, LevelMap level)
         {
             for (int i = 0; i < 6; i++)
             {
                 var dir = (Direction) i;
-                var x = cX + chunkKey.ChX * ChunkData.Size;
+                var x = cX + chunkKey.ChX * Chunk.Size;
                 var y = cY;
-                var z = cZ + chunkKey.ChZ * ChunkData.Size;
+                var z = cZ + chunkKey.ChZ * Chunk.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.Block == BlockId.Air)
                 {
@@ -82,7 +82,7 @@ namespace VoxelsEngine
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask)
         {
-            CubeMeshData.FaceVertices((int) dir, x % ChunkData.Size, y, z % ChunkData.Size, _vertices, ref _verticesCount);
+            CubeMeshData.FaceVertices((int) dir, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
             //     _vertices[_verticesCount] = faceVertex;

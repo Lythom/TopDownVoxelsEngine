@@ -3,13 +3,15 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using MessagePack;
 
 namespace Shared
 {
-    public class LevelData : IDisposable
+    [MessagePackObject(true)]
+    public class LevelMap : IDisposable
     {
         public const int LevelChunkSize = 128;
-        public readonly ChunkData[,] Chunks;
+        public readonly Chunk[,] Chunks;
 
         public static void Log(string s)
         {
@@ -28,20 +30,20 @@ namespace Shared
 
         private CancellationTokenSource cts = new();
 
-        public LevelData(string saveId, string levelId)
+        public LevelMap(string saveId, string levelId)
         {
             LevelId = levelId;
             SaveId = saveId;
             GenerateChunksFromQueue(cts.Token).Forget();
 
-            Chunks = new ChunkData[LevelChunkSize, LevelChunkSize];
+            Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
             for (int x = 0; x < LevelChunkSize; x++)
             {
                 for (int z = 0; z < LevelChunkSize; z++)
                 {
-                    Chunks[x, z] = new ChunkData()
+                    Chunks[x, z] = new Chunk()
                     {
-                        Cells = new Cell[ChunkData.Size, ChunkData.Size, ChunkData.Size],
+                        Cells = new Cell[Chunk.Size, Chunk.Size, Chunk.Size],
                         IsGenerated = false
                     };
                 }
@@ -65,7 +67,7 @@ namespace Shared
                 {
                     try
                     {
-                        var (chX, chZ) = ChunkData.GetCoordsFromIndex(flatIndex);
+                        var (chX, chZ) = Chunk.GetCoordsFromIndex(flatIndex);
                         LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, SaveId, ref Chunks[chX, chZ]);
                     }
                     catch (Exception e)
@@ -82,7 +84,7 @@ namespace Shared
         {
             var offset = dir.GetOffset();
             var yWithOffset = y + offset.y;
-            if (yWithOffset < 0 || yWithOffset >= ChunkData.Size) return null;
+            if (yWithOffset < 0 || yWithOffset >= Chunk.Size) return null;
             return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z, out _, out _, out _);
             // return await GetOrCreateCell(x + offset.X, offsetY, z - offset.Z);
         }
@@ -106,7 +108,7 @@ namespace Shared
         //     return filePath;
         // }
 
-        public ChunkData GetOrGenerateChunk(int chX, int chZ)
+        public Chunk GetOrGenerateChunk(int chX, int chZ)
         {
             // var key = ChunkData.GetFlatIndex(chX, chZ);
             //if (GenerationQueue.Contains(key)) await WaitUntil(() => !GenerationQueue.Contains(key));
@@ -136,14 +138,14 @@ namespace Shared
 
         public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock)
         {
-            if (position.Y < 0 || position.Y >= ChunkData.Size || position.X < 0 || position.X >= LevelChunkSize * ChunkData.Size || position.Z < 0 ||
-                position.Z >= LevelChunkSize * ChunkData.Size) return false;
-            var chX = (int) Math.Floor((double) position.X / ChunkData.Size);
-            var chZ = (int) Math.Floor((double) position.Z / ChunkData.Size);
+            if (position.Y < 0 || position.Y >= Chunk.Size || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
+                position.Z >= LevelChunkSize * Chunk.Size) return false;
+            var chX = (int) Math.Floor((double) position.X / Chunk.Size);
+            var chZ = (int) Math.Floor((double) position.Z / Chunk.Size);
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated)
             {
-                return chunk.Cells![Mod(position.X, ChunkData.Size), position.Y, Mod(position.Z, ChunkData.Size)].Block == referenceBlock;
+                return chunk.Cells![Mod(position.X, Chunk.Size), position.Y, Mod(position.Z, Chunk.Size)].Block == referenceBlock;
             }
 
             return false;
@@ -152,14 +154,14 @@ namespace Shared
 
         public bool TrySetExistingCell(int x, int y, int z, BlockId block)
         {
-            if (y < 0 || y >= ChunkData.Size) return false;
+            if (y < 0 || y >= Chunk.Size) return false;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated)
             {
-                var cx = Mod(x, ChunkData.Size);
+                var cx = Mod(x, Chunk.Size);
                 var cy = y;
-                var cz = Mod(z, ChunkData.Size);
+                var cz = Mod(z, Chunk.Size);
                 chunk.Cells![cx, cy, cz].Block = block;
                 return true;
             }
@@ -173,16 +175,16 @@ namespace Shared
             cy = 0;
             cz = 0;
 
-            if (y < 0 || y >= ChunkData.Size) return null;
+            if (y < 0 || y >= Chunk.Size) return null;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
             if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
 
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated)
             {
-                cx = Mod(x, ChunkData.Size);
+                cx = Mod(x, Chunk.Size);
                 cy = y;
-                cz = Mod(z, ChunkData.Size);
+                cz = Mod(z, Chunk.Size);
                 return chunk.Cells![cx, cy, cz];
             }
 
@@ -191,11 +193,11 @@ namespace Shared
 
         public Cell? GetOrCreateCell(int x, int y, int z)
         {
-            var chX = (int) Math.Floor((double) x / ChunkData.Size);
-            var chZ = (int) Math.Floor((double) z / ChunkData.Size);
+            var chX = (int) Math.Floor((double) x / Chunk.Size);
+            var chZ = (int) Math.Floor((double) z / Chunk.Size);
             if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
             var chunk = GetOrGenerateChunk(chX, chZ);
-            return chunk.Cells?[Mod(x, ChunkData.Size), y, Mod(z, ChunkData.Size)];
+            return chunk.Cells?[Mod(x, Chunk.Size), y, Mod(z, Chunk.Size)];
         }
 
         /// <summary>

@@ -1,43 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using LoneStoneStudio.Tools;
+using MessagePack;
 
-namespace Shared
-{
-    public class LocalState
-    {
+namespace Shared {
+    public class LocalState {
         public int CurrentPlayerId;
     }
 
-    public class GameState
-    {
+    [MessagePackObject(true)]
+    public class GameState {
+        public bool IsApplyingEvent => _isApplyingEvent;
         public List<Character> Characters = new();
         public List<NPC> NPCs = new();
-        public List<LevelData> Levels = new();
+        public List<LevelMap> Levels = new();
+
+        private bool _isApplyingEvent;
+
+        public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {
+            if (_isApplyingEvent)
+                throw new ApplicationException(
+                    $"An event is already being applied and event applications cannot be nested. Refactor the event being currently applied so that it can directly modify the state.");
+            _isApplyingEvent = true;
+            try {
+                // Logr.Log($"[{_id}] Applying evt {apply.Method.DeclaringType}");
+                apply(this, sideEffectManager);
+                OnEventApplied(sideEffectManager);
+            } finally {
+                _isApplyingEvent = false;
+            }
+        }
+
+        private void OnEventApplied(SideEffectManager? sideEffectManager) {
+            // no post events atm
+        }
     }
 
-    public class Character
-    {
-        public Vector3 Position;
-
-        public Vector3 Velocity;
-
-        // 0 is forward on the z axis. Clockwise = positive, CounterClockwise = negative
-        public byte Angle = 0;
-        public ToolId SelectedTool;
-        public BlockId SelectedBlock;
-        public TemplateId SelectedTemplate;
-        public byte ToolRemoveBlockLevel;
-        public byte ToolAddBlockLevel;
-        public byte ToolAddFurnitureLevel;
-        public byte ToolReplaceBlockLevel;
-        public Dictionary<BlockId, int> BlocsInventory = new();
-        public List<TemplateId> KnownTemplates = new();
-    }
 
     // ReSharper disable once InconsistentNaming
-    public class NPC
-    {
-        public Vector3 Position;
-        public Vector3 Velocity;
-        public byte Angle;
-    }
 }

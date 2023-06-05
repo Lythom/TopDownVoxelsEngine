@@ -2,20 +2,20 @@
 
 namespace Shared {
     public static class LevelBuilder {
-        public static void GenerateTestChunk(int chX, int chZ, string levelId, string saveId, ref ChunkData chunk) {
+        public static void GenerateTestChunk(int chX, int chZ, string levelId, string saveId, ref Chunk chunk) {
             var seed = GetChunkSeed(chX, chZ, levelId, saveId);
             var rng = new Random(seed);
             // Generate a new chunk
             if (chunk.Cells == null) {
-                chunk.Cells = new Cell[ChunkData.Size, ChunkData.Size, ChunkData.Size];
+                chunk.Cells = new Cell[Chunk.Size, Chunk.Size, Chunk.Size];
                 foreach (var (x, y, z) in chunk.GetCellPositions()) {
                     chunk.Cells[x, y, z] = new Cell(BlockId.Air);
                 }
             }
 
             // ... chunk generation code
-            for (int x = 0; x < ChunkData.Size; x++) {
-                for (int z = 0; z < ChunkData.Size; z++) {
+            for (int x = 0; x < Chunk.Size; x++) {
+                for (int z = 0; z < Chunk.Size; z++) {
                     var groundLevel = 5;
                     // Put a wall sometimes
                     var cell = chunk.Cells[x, groundLevel + 1, z];

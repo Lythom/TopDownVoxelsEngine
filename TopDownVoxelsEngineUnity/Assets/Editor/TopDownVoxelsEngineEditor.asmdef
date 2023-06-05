@@ -1,0 +1,29 @@
+{
+    "name": "TopDownVoxelsEngineEditor",
+    "rootNamespace": "VoxelsEngineEditor",
+    "references": [
+        "MessagePack",
+        "MessagePack.Annotations",
+        "DOTweenPro.Scripts",
+        "DOTweenTimeline.Scripts",
+        "DOTween.Modules",
+        "UniTask",
+        "UniTask.TextMeshPro",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem",
+        "Popcron.Gizmos",
+        "UniTask.Linq",
+        "Shared"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

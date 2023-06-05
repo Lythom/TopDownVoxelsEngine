@@ -12,8 +12,8 @@ namespace VoxelsEngine
 {
     public class LevelGenerator : MonoBehaviour
     {
-        private LevelData _level = null!;
-        public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelData.LevelChunkSize, LevelData.LevelChunkSize];
+        private LevelMap _level = null!;
+        public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
         public readonly HashSet<int> RendererChunks = new();
         public readonly Queue<int> ToBeRendererQueue = new();
@@ -30,7 +30,7 @@ namespace VoxelsEngine
 
         private void Awake()
         {
-            _level = new LevelData(SaveId, LevelId);
+            _level = new LevelMap(SaveId, LevelId);
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
@@ -50,7 +50,7 @@ namespace VoxelsEngine
             {
                 for (int z = -range; z <= range; z++)
                 {
-                    var key = ChunkData.GetFlatIndex(chX + x, chZ + z);
+                    var key = Chunk.GetFlatIndex(chX + x, chZ + z);
                     if (!RendererChunks.Contains(key))
                     {
                         if (chX + x < 0 || chX + x >= _level.Chunks.GetLength(0) || chZ + z < 0 || chZ + z >= _level.Chunks.GetLength(1)) continue;
@@ -65,8 +65,8 @@ namespace VoxelsEngine
         {
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
-            Gizmos.DrawWireCube(new Vector3(chX * ChunkData.Size + ChunkData.Size / 2f, 0, chZ * ChunkData.Size + ChunkData.Size / 2f),
-                new Vector3(ChunkData.Size, ChunkData.Size, ChunkData.Size));
+            Gizmos.DrawWireCube(new Vector3(chX * Chunk.Size + Chunk.Size / 2f, 0, chZ * Chunk.Size + Chunk.Size / 2f),
+                new Vector3(Chunk.Size, Chunk.Size, Chunk.Size));
         }
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken)
@@ -82,7 +82,7 @@ namespace VoxelsEngine
                 {
                     try
                     {
-                        var (chX, chZ) = ChunkData.GetCoordsFromIndex(chunkFlatIndex);
+                        var (chX, chZ) = Chunk.GetCoordsFromIndex(chunkFlatIndex);
                         RenderChunk(chX, chZ);
                         renderedThisFrame++;
 
@@ -118,7 +118,7 @@ namespace VoxelsEngine
             try
             {
                 if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
-                ChunkData currentChunk = _level.GetOrGenerateChunk(chX, chZ);
+                Chunk currentChunk = _level.GetOrGenerateChunk(chX, chZ);
                 // preload outbounds chunk content
                 for (int x = -1; x <= 1; x++)
                 {
@@ -154,7 +154,7 @@ namespace VoxelsEngine
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = BlockMaterial;
             var chunkGen = go.AddComponent<ChunkRenderer>();
-            chunkGen.transform.localPosition = new Vector3(chX * ChunkData.Size, 0, chY * ChunkData.Size);
+            chunkGen.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chY * Chunk.Size);
             chunkGen.Level = _level;
             chunkGen.ChunkKey = new(_level.SaveId, _level.LevelId, chX, chY);
             return chunkGen;

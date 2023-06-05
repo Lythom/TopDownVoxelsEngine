@@ -5,9 +5,14 @@ TODO:
     - Rendu par le client un fois les infos reçues
       - Le serveur pousse les infos et devine les besoins du client, le client ne rend rien tant qu'il n'a pas reçu d'infos
 - Créer des messages
+  - PlayerJoinFromClient => ack
+    - PlayerJoinAckFromServer
   - CharacterMove (position, velocity, angle) => No ack
   - CharacterChangeTool (ToolId) => Ack
+    - CharacterChangeToolAck
   - CharacterChangeBlock (BlockId) => Ack
+    - CharacterChangeBlockAck
   - PlaceBlock (include replace and delete (place air)) => Ack
+    - PlaceBlockAck[Shared.csproj](Shared.csproj)
 - Créer un tick qui résoud les changements dans le GameServer
 - 

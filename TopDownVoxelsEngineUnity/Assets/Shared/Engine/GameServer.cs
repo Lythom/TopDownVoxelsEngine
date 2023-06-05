@@ -10,7 +10,7 @@
             playerCharacter.Position = new Vector3(1028f, 4.5f, 1028f);
             _state.Characters.Add(playerCharacter);
 
-            LevelData level = new LevelData("server", "default");
+            LevelMap level = new LevelMap("server", "default");
         }
     }
 }

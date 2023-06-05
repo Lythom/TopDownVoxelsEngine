@@ -20,8 +20,8 @@ namespace Shared {
         public static (int chX, int chZ) GetChunkPosition(float wx, float wz) {
             int cX = M.RoundToInt(wx);
             int cZ = M.RoundToInt(wz);
-            int chX = M.FloorToInt(cX / (float) ChunkData.Size);
-            int chZ = M.FloorToInt(cZ / (float) ChunkData.Size);
+            int chX = M.FloorToInt(cX / (float) Chunk.Size);
+            int chZ = M.FloorToInt(cZ / (float) Chunk.Size);
             return (chX, chZ);
         }
 
