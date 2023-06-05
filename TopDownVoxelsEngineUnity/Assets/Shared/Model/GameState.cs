@@ -13,7 +13,7 @@ namespace Shared {
         public bool IsApplyingEvent => _isApplyingEvent;
         public List<Character> Characters = new();
         public List<NPC> NPCs = new();
-        public List<LevelMap> Levels = new();
+        public Dictionary<string, LevelMap> Levels = new();
 
         private bool _isApplyingEvent;
 

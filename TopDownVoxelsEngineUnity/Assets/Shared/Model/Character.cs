@@ -5,11 +5,11 @@ namespace Shared {
     [MessagePackObject(true)]
     public class Character {
         public Vector3 Position;
-
         public Vector3 Velocity;
 
         // 0 is forward on the z axis. Clockwise = positive, CounterClockwise = negative
         public byte Angle = 0;
+        public string Level = "Lobby";
         public ToolId SelectedTool;
         public BlockId SelectedBlock;
         public TemplateId SelectedTemplate;

@@ -26,7 +26,7 @@ namespace VoxelsEngine
         [FormerlySerializedAs("SelectedTool")] [FormerlySerializedAs("CurrentBlock")]
         public AsyncReactiveProperty<BlockId> SelectedItem = new(BlockId.Dirt);
 
-        [Required] public LevelGenerator Level = null!;
+        [Required] public LevelRenderer Level = null!;
 
         [Required] public Transform CameraTransform = null!;
 
@@ -221,7 +221,7 @@ namespace VoxelsEngine
         }
 
 
-        private (Vector3Int? collidingBlock, Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(LevelGenerator level, Ray mouseRay, Vector3 position,
+        private (Vector3Int? collidingBlock, Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(LevelRenderer level, Ray mouseRay, Vector3 position,
             int radius = 4)
         {
             var (up, upC, upF, upPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.up, Mathf.RoundToInt(position.Y), radius);
@@ -243,7 +243,7 @@ namespace VoxelsEngine
         /// <param name="playerPosition">The position of the player in the level.</param>
         /// <param name="radius">The radius within which to check for collisions. Default is 4.</param>
         /// <returns>The distance at which the ray enters the block, the position of the block that the ray collides with, and the position of the block that faces the colliding face.</returns>
-        private (float rayEnter, Vector3Int? collidingBlock, Vector3Int? facingBlock, Plane? p) GetCollidedBlockPositionOnPlane(LevelGenerator level, Ray mouseRay,
+        private (float rayEnter, Vector3Int? collidingBlock, Vector3Int? facingBlock, Plane? p) GetCollidedBlockPositionOnPlane(LevelRenderer level, Ray mouseRay,
             Vector3 axis, int playerPosition, int radius = 4)
         {
             // Define the start and stop positions for the collision check based on the player's position and the specified radius.
