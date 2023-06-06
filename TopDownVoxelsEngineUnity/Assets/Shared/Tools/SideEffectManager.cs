@@ -9,7 +9,7 @@ namespace LoneStoneStudio.Tools {
      * : Add mute ability
      * : remove Unity dependency
      */
-    public class SideEffectManager {
+    public class SideEffectManager : IDisposable {
         private readonly Dictionary<Type, SideEffectDispatcher> _all = new();
 
         public void Trigger<T>(T args) {
@@ -32,12 +32,13 @@ namespace LoneStoneStudio.Tools {
             }
         }
 
-        public abstract class SideEffectDispatcher {
+        public abstract class SideEffectDispatcher : IDisposable {
             public abstract void Mute();
             public abstract void UnMute();
+            public abstract void Dispose();
         }
 
-        public class SideEffectDispatcher<T> : SideEffectDispatcher {
+        public class SideEffectDispatcher<T> : SideEffectDispatcher, IDisposable {
             private readonly List<Action<T>> _listeners = new();
 
             public Action StartListening(Action<T> listener) {
@@ -65,6 +66,14 @@ namespace LoneStoneStudio.Tools {
             public override void UnMute() {
                 _muted = false;
             }
+
+            public void Dispose() {
+                _listeners.Clear();
+            }
+        }
+
+        public void Dispose() {
+            foreach (var sideEffectDispatcher in _all.Values) sideEffectDispatcher.Dispose();
         }
     }
 }

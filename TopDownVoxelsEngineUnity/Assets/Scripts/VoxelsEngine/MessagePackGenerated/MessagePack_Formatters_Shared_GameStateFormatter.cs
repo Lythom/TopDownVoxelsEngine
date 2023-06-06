@@ -44,7 +44,7 @@ namespace MessagePack.Formatters.Shared
             writer.WriteRaw(GetSpan_NPCs());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.NPCs, options);
             writer.WriteRaw(GetSpan_Levels());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
         }
 
         public global::Shared.GameState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -86,7 +86,7 @@ namespace MessagePack.Formatters.Shared
                     case 6:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126909395920204UL) { goto FAIL; }
 
-                        ____result.Levels = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.Levels = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
 
                 }

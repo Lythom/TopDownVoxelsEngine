@@ -18,7 +18,6 @@ namespace VoxelsEngine
         public readonly HashSet<int> RendererChunks = new();
         public readonly Queue<int> ToBeRendererQueue = new();
 
-        public string SaveId = "test";
         public string LevelId = "0";
 
         [Required] public Material BlockMaterial = null!;
@@ -30,7 +29,7 @@ namespace VoxelsEngine
 
         private void Awake()
         {
-            _level = new LevelMap(SaveId, LevelId);
+            _level = new LevelMap(LevelId);
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
@@ -45,7 +44,7 @@ namespace VoxelsEngine
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
-            var range = 2;
+            var range = 3;
             for (int x = -range; x <= range; x++)
             {
                 for (int z = -range; z <= range; z++)
@@ -156,7 +155,7 @@ namespace VoxelsEngine
             var chunkGen = go.AddComponent<ChunkRenderer>();
             chunkGen.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chY * Chunk.Size);
             chunkGen.Level = _level;
-            chunkGen.ChunkKey = new(_level.SaveId, _level.LevelId, chX, chY);
+            chunkGen.ChunkKey = new(_level.LevelId, chX, chY);
             return chunkGen;
         }
 

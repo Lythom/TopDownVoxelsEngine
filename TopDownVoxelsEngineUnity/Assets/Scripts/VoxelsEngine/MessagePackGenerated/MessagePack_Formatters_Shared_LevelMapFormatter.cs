@@ -22,8 +22,6 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_Chunks() => new byte[1 + 6] { 166, 67, 104, 117, 110, 107, 115 };
         // GenerationQueue
         private static global::System.ReadOnlySpan<byte> GetSpan_GenerationQueue() => new byte[1 + 15] { 175, 71, 101, 110, 101, 114, 97, 116, 105, 111, 110, 81, 117, 101, 117, 101 };
-        // SaveId
-        private static global::System.ReadOnlySpan<byte> GetSpan_SaveId() => new byte[1 + 6] { 166, 83, 97, 118, 101, 73, 100 };
         // LevelId
         private static global::System.ReadOnlySpan<byte> GetSpan_LevelId() => new byte[1 + 7] { 167, 76, 101, 118, 101, 108, 73, 100 };
 
@@ -36,13 +34,11 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(4);
+            writer.WriteMapHeader(3);
             writer.WriteRaw(GetSpan_Chunks());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Chunk[,]>(formatterResolver).Serialize(ref writer, value.Chunks, options);
             writer.WriteRaw(GetSpan_GenerationQueue());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Concurrent.ConcurrentQueue<int>>(formatterResolver).Serialize(ref writer, value.GenerationQueue, options);
-            writer.WriteRaw(GetSpan_SaveId());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.SaveId, options);
             writer.WriteRaw(GetSpan_LevelId());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.LevelId, options);
         }
@@ -59,7 +55,6 @@ namespace MessagePack.Formatters.Shared
             var length = reader.ReadMapHeader();
             var __GenerationQueue__IsInitialized = false;
             var __GenerationQueue__ = default(global::System.Collections.Concurrent.ConcurrentQueue<int>);
-            var __SaveId__ = default(string);
             var __LevelId__ = default(string);
 
             for (int i = 0; i < length; i++)
@@ -72,16 +67,10 @@ namespace MessagePack.Formatters.Shared
                       reader.Skip();
                       continue;
                     case 6:
-                        switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
-                        {
-                            default: goto FAIL;
-                            case 126905251883075UL:
-                                reader.Skip();
-                                continue;
-                            case 110266397647187UL:
-                                __SaveId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                                continue;
-                        }
+                        if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126905251883075UL) { goto FAIL; }
+
+                        reader.Skip();
+                        continue;
                     case 15:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_GenerationQueue().Slice(1))) { goto FAIL; }
 
@@ -97,7 +86,7 @@ namespace MessagePack.Formatters.Shared
                 }
             }
 
-            var ____result = new global::Shared.LevelMap(__SaveId__, __LevelId__);
+            var ____result = new global::Shared.LevelMap(__LevelId__);
             if (__GenerationQueue__IsInitialized)
             {
                 ____result.GenerationQueue = __GenerationQueue__;

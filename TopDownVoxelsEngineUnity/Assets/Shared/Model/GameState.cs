@@ -10,6 +10,7 @@ namespace Shared {
 
     [MessagePackObject(true)]
     public class GameState {
+        public readonly LevelGenerator LevelGenerator = new();
         public bool IsApplyingEvent => _isApplyingEvent;
         public List<Character> Characters = new();
         public List<NPC> NPCs = new();

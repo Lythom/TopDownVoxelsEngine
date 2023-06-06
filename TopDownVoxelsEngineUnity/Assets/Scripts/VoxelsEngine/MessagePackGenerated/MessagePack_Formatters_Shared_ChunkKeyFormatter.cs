@@ -18,8 +18,6 @@ namespace MessagePack.Formatters.Shared
 {
     public sealed class ChunkKeyFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.ChunkKey>
     {
-        // SaveId
-        private static global::System.ReadOnlySpan<byte> GetSpan_SaveId() => new byte[1 + 6] { 166, 83, 97, 118, 101, 73, 100 };
         // LevelId
         private static global::System.ReadOnlySpan<byte> GetSpan_LevelId() => new byte[1 + 7] { 167, 76, 101, 118, 101, 108, 73, 100 };
         // ChX
@@ -29,10 +27,14 @@ namespace MessagePack.Formatters.Shared
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.ChunkKey value, global::MessagePack.MessagePackSerializerOptions options)
         {
+            if (value is null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(4);
-            writer.WriteRaw(GetSpan_SaveId());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.SaveId, options);
+            writer.WriteMapHeader(3);
             writer.WriteRaw(GetSpan_LevelId());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.LevelId, options);
             writer.WriteRaw(GetSpan_ChX());
@@ -45,13 +47,12 @@ namespace MessagePack.Formatters.Shared
         {
             if (reader.TryReadNil())
             {
-                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+                return null;
             }
 
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var __SaveId__ = default(string);
             var __LevelId__ = default(string);
             var __ChX__ = default(int);
             var __ChZ__ = default(int);
@@ -65,11 +66,6 @@ namespace MessagePack.Formatters.Shared
                     FAIL:
                       reader.Skip();
                       continue;
-                    case 6:
-                        if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 110266397647187UL) { goto FAIL; }
-
-                        __SaveId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        continue;
                     case 7:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 28228227578619212UL) { goto FAIL; }
 
@@ -90,7 +86,7 @@ namespace MessagePack.Formatters.Shared
                 }
             }
 
-            var ____result = new global::Shared.ChunkKey(__SaveId__, __LevelId__, __ChX__, __ChZ__);
+            var ____result = new global::Shared.ChunkKey(__LevelId__, __ChX__, __ChZ__);
             reader.Depth--;
             return ____result;
         }

@@ -25,15 +25,13 @@ namespace Shared
         {
         };
 
-        public string SaveId;
         public string LevelId;
 
         private CancellationTokenSource cts = new();
 
-        public LevelMap(string saveId, string levelId)
+        public LevelMap(string levelId)
         {
             LevelId = levelId;
-            SaveId = saveId;
             GenerateChunksFromQueue(cts.Token).Forget();
 
             Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
@@ -68,7 +66,7 @@ namespace Shared
                     try
                     {
                         var (chX, chZ) = Chunk.GetCoordsFromIndex(flatIndex);
-                        LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, SaveId, ref Chunks[chX, chZ]);
+                        LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, ref Chunks[chX, chZ]);
                     }
                     catch (Exception e)
                     {
@@ -121,7 +119,7 @@ namespace Shared
 
             //GenerationQueue.Enqueue(key);
             // await WaitUntil(() => Chunks[chX, chZ].IsGenerated);
-            LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, SaveId, ref Chunks[chX, chZ]);
+            LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, ref Chunks[chX, chZ]);
 
             return Chunks[chX, chZ];
         }

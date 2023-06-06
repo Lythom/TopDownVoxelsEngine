@@ -53,8 +53,8 @@ namespace MessagePack.Resolvers
                 { typeof(global::Shared.Chunk[,]), 1 },
                 { typeof(global::System.Collections.Concurrent.ConcurrentQueue<int>), 2 },
                 { typeof(global::System.Collections.Generic.Dictionary<global::Shared.BlockId, int>), 3 },
-                { typeof(global::System.Collections.Generic.List<global::Shared.Character>), 4 },
-                { typeof(global::System.Collections.Generic.List<global::Shared.LevelMap>), 5 },
+                { typeof(global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>), 4 },
+                { typeof(global::System.Collections.Generic.List<global::Shared.Character>), 5 },
                 { typeof(global::System.Collections.Generic.List<global::Shared.NPC>), 6 },
                 { typeof(global::System.Collections.Generic.List<global::Shared.TemplateId>), 7 },
                 { typeof(global::Shared.BlockId), 8 },
@@ -93,8 +93,8 @@ namespace MessagePack.Resolvers
                 case 1: return new global::MessagePack.Formatters.TwoDimensionalArrayFormatter<global::Shared.Chunk>();
                 case 2: return new global::MessagePack.Formatters.ConcurrentQueueFormatter<int>();
                 case 3: return new global::MessagePack.Formatters.DictionaryFormatter<global::Shared.BlockId, int>();
-                case 4: return new global::MessagePack.Formatters.ListFormatter<global::Shared.Character>();
-                case 5: return new global::MessagePack.Formatters.ListFormatter<global::Shared.LevelMap>();
+                case 4: return new global::MessagePack.Formatters.DictionaryFormatter<string, global::Shared.LevelMap>();
+                case 5: return new global::MessagePack.Formatters.ListFormatter<global::Shared.Character>();
                 case 6: return new global::MessagePack.Formatters.ListFormatter<global::Shared.NPC>();
                 case 7: return new global::MessagePack.Formatters.ListFormatter<global::Shared.TemplateId>();
                 case 8: return new MessagePack.Formatters.Shared.BlockIdFormatter();

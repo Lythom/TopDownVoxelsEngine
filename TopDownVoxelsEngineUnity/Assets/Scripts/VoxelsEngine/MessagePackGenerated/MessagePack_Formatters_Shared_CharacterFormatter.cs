@@ -24,6 +24,8 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_Velocity() => new byte[1 + 8] { 168, 86, 101, 108, 111, 99, 105, 116, 121 };
         // Angle
         private static global::System.ReadOnlySpan<byte> GetSpan_Angle() => new byte[1 + 5] { 165, 65, 110, 103, 108, 101 };
+        // Level
+        private static global::System.ReadOnlySpan<byte> GetSpan_Level() => new byte[1 + 5] { 165, 76, 101, 118, 101, 108 };
         // SelectedTool
         private static global::System.ReadOnlySpan<byte> GetSpan_SelectedTool() => new byte[1 + 12] { 172, 83, 101, 108, 101, 99, 116, 101, 100, 84, 111, 111, 108 };
         // SelectedBlock
@@ -52,13 +54,15 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(12);
+            writer.WriteMapHeader(13);
             writer.WriteRaw(GetSpan_Position());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
             writer.WriteRaw(GetSpan_Velocity());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
             writer.WriteRaw(GetSpan_Angle());
             writer.Write(value.Angle);
+            writer.WriteRaw(GetSpan_Level());
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Level, options);
             writer.WriteRaw(GetSpan_SelectedTool());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Serialize(ref writer, value.SelectedTool, options);
             writer.WriteRaw(GetSpan_SelectedBlock());
@@ -112,10 +116,16 @@ namespace MessagePack.Formatters.Shared
                                 continue;
                         }
                     case 5:
-                        if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 435610414657UL) { goto FAIL; }
-
-                        ____result.Angle = reader.ReadByte();
-                        continue;
+                        switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
+                        {
+                            default: goto FAIL;
+                            case 435610414657UL:
+                                ____result.Angle = reader.ReadByte();
+                                continue;
+                            case 465558725964UL:
+                                ____result.Level = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                                continue;
+                        }
                     case 12:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_SelectedTool().Slice(1))) { goto FAIL; }
 

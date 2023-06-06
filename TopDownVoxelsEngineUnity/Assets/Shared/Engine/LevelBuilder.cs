@@ -2,8 +2,9 @@
 
 namespace Shared {
     public static class LevelBuilder {
-        public static void GenerateTestChunk(int chX, int chZ, string levelId, string saveId, ref Chunk chunk) {
-            var seed = GetChunkSeed(chX, chZ, levelId, saveId);
+        public static void GenerateTestChunk(int chX, int chZ, string levelId, ref Chunk chunk) {
+            Logr.Log($"GenerateTestChunk {chX}, {chZ}");
+            var seed = GetChunkSeed(chX, chZ, levelId);
             var rng = new Random(seed);
             // Generate a new chunk
             if (chunk.Cells == null) {
@@ -40,8 +41,8 @@ namespace Shared {
             chunk.IsGenerated = true;
         }
 
-        public static int GetChunkSeed(int chX, int chZ, string levelId, string saveId) {
-            return 1337 + chX + 100000 * chZ + levelId.GetHashCode() * 13 + saveId.GetHashCode() * 7;
+        public static int GetChunkSeed(int chX, int chZ, string levelId) {
+            return 1337 + chX + 100000 * chZ + levelId.GetHashCode() * 13;
         }
     }
 }
