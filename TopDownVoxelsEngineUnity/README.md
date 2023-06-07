@@ -1,7 +1,6 @@
 # VoxelsEngine
 
 General documentation of the VoxelsEngine project.
-Addition information about the data model in MODEL.md.
 
 ---
 

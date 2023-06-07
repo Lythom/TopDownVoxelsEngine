@@ -1,6 +1,5 @@
 ﻿using System;
 using MessagePack;
-using UnityEngine.Pool;
 
 namespace Shared {
     [MessagePackObject(true)]
@@ -23,7 +22,8 @@ namespace Shared {
 
         public override string ToString() => $"{LevelId}_{ChX}_{ChZ}";
 
-        public bool Equals(ChunkKey other) {
+        public bool Equals(ChunkKey other)
+        {
             return LevelId == other.LevelId && ChX == other.ChX && ChZ == other.ChZ;
         }
 
