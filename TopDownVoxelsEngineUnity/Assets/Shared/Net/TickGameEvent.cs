@@ -23,11 +23,16 @@ namespace Shared.Net {
             if (!state.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             // Generate missing chunks
             foreach (var c in state.Characters) {
+                MoveCharacter(c);
                 var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
                 state.LevelGenerator.EnqueueChunksAround(c.Level, chx, chz, 3);
             }
 
             state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
+        }
+
+        private void MoveCharacter(Character character) {
+            throw new NotImplementedException();
         }
 
         public override void AssertApplicationConditions(GameState state) {
