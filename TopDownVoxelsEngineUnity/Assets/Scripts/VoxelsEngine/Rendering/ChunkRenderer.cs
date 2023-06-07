@@ -4,18 +4,16 @@ using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
-namespace VoxelsEngine
-{
+namespace VoxelsEngine {
     /// <summary>
     /// Generate a mesh for the chunk ChunkKey of Level.
     /// The renderer game object should be placed at (chX * ChunkData.Size, 0, chY * ChunkData.Size).
     /// The rendered cells are centered, which means cell at (0,0,0) boundaries are visually at (-0.5,-0.5,-0.5)->(0.5,0.5,0.5).
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
-    public class ChunkRenderer : MonoBehaviour
-    {
+    public class ChunkRenderer : MonoBehaviour {
         public LevelMap Level = null!;
-        public ChunkKey ChunkKey;
+        public ChunkKey? ChunkKey;
 
         private Mesh _mesh = null!;
         private readonly int[] _triangles = new int[20000];
@@ -27,15 +25,13 @@ namespace VoxelsEngine
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
 
-        private void Awake()
-        {
+        private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
         }
 
-        public void ReCalculateMesh(LevelMap level)
-        {
-            if (_mesh == null) return;
+        public bool ReCalculateMesh(LevelMap level) {
+            if (_mesh == null || ChunkKey == null) return false;
             var chunk = Level.Chunks[ChunkKey.ChX, ChunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -43,28 +39,25 @@ namespace VoxelsEngine
             _verticesCount = 0;
             _uvsCount = 0;
             _uvs2Count = 0;
-            foreach (var (x, y, z) in chunk.GetCellPositions())
-            {
+            foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells![x, y, z];
-                if (cell.Block != BlockId.Air)
-                {
+                if (cell.Block != BlockId.Air) {
                     var blockDef = Configurator.Instance.BlocksRenderingLibrary[(int) cell.Block];
                     MakeCube(x, y, z, ChunkKey, blockDef, chunk, level);
                 }
             }
+
+            return true;
         }
 
-        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, Chunk chunk, LevelMap level)
-        {
-            for (int i = 0; i < 6; i++)
-            {
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, Chunk chunk, LevelMap level) {
+            for (int i = 0; i < 6; i++) {
                 var dir = (Direction) i;
                 var x = cX + chunkKey.ChX * Chunk.Size;
                 var y = cY;
                 var z = cZ + chunkKey.ChZ * Chunk.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
-                if (n == null || n.Value.Block == BlockId.Air)
-                {
+                if (n == null || n.Value.Block == BlockId.Air) {
                     var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
@@ -80,8 +73,7 @@ namespace VoxelsEngine
         /// <param name="z"></param>
         /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
-        private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask)
-        {
+        private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask) {
             CubeMeshData.FaceVertices((int) dir, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
@@ -107,8 +99,7 @@ namespace VoxelsEngine
             _triangles[_trianglesCount++] = _verticesCount - 4 + 3;
         }
 
-        public void UpdateMesh()
-        {
+        public void UpdateMesh() {
             _mesh.Clear();
             _mesh.SetVertices(_vertices, 0, _verticesCount);
             _mesh.SetTriangles(_triangles, 0, _trianglesCount, 0);

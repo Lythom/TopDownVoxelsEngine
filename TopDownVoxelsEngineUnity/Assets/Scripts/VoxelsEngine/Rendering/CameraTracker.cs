@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace VoxelsEngine {
     public class CameraTracker : MonoBehaviour {
-        public Character? Target; // The object to follow
+        public CharacterAgent? Target; // The object to follow
         public float OrbitDistance = 50f;
         public float TrackingDistance = 1.0f; // The tracking distance
         public float MaxTrackingDistance = 3.0f; // The tracking distance

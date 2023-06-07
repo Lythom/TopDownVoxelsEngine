@@ -67,7 +67,7 @@ namespace LoneStoneStudio.Tools {
                 _muted = false;
             }
 
-            public void Dispose() {
+            public override void Dispose() {
                 _listeners.Clear();
             }
         }

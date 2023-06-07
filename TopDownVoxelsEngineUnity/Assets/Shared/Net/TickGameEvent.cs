@@ -5,6 +5,12 @@ using MessagePack;
 namespace Shared.Net {
     [MessagePackObject]
     public class TickGameEvent : GameEvent {
+        public float CharactersSpeed = 5.0f;
+        public float CharactersJumpForce = 0.2f;
+        public float CharactersJumpChargeIntensity = 1f;
+        public int CharactersPlacementRadius = 4;
+        public float Gravity = 0.2f;
+
         [Key(0)]
         public int Id;
 

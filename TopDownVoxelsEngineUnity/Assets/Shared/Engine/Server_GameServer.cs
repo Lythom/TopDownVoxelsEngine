@@ -26,6 +26,11 @@ namespace Shared {
         private PriorityLevel _minimumPriority = PriorityLevel.All;
         private readonly Stopwatch _frameStopwatch = new();
 
+        private readonly TickGameEvent _tick = new() {
+            Id = -1,
+            MinPriority = PriorityLevel.All
+        };
+
 
         public Server_GameServer() {
             InitState();
@@ -70,15 +75,12 @@ namespace Shared {
             _minimumPriority = level;
         }
 
-        public async Task Tick(CancellationToken cancellationToken, SideEffectManager effectManager) {
+        public async Task Tick(CancellationToken cancellationToken, SideEffectManager sideEffectManager) {
             _frameStopwatch.Restart();
 
-            State.ApplyEvent(new TickGameEvent {
-                Id = -1,
-                MinPriority = _minimumPriority
-            }, sideEffectManager);
+            _tick.MinPriority = _minimumPriority;
+            _tick.Apply(State, sideEffectManager);
 
-            await GameLoop.Tick(State, _minimumPriority, cancellationToken, null);
             // Simulate work being done for a frame for test purpose
             if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);
 

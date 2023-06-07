@@ -1,4 +1,6 @@
-﻿namespace Priority_Queue
+﻿#nullable disable
+
+namespace Priority_Queue
 {
     public class GenericPriorityQueueNode<TPriority>
     {
