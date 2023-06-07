@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace VoxelsEngine {
     public class ClientEngine : MonoBehaviour {
+        public IWebSocketManager? SocketManager = new FakeEchoingSocketManager();
         public readonly GameState State = new();
         public readonly SideEffectManager SideEffectManager = new();
 

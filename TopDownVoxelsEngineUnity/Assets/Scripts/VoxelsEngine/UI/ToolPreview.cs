@@ -1,5 +1,4 @@
-﻿using Cysharp.Threading.Tasks.Linq;
-using Sirenix.OdinInspector;
+﻿using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;

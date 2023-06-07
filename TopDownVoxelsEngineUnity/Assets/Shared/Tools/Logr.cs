@@ -6,8 +6,8 @@ namespace Shared {
             Console.WriteLine(e);
         }
 
-        public static void LogException(Exception e) {
-            Console.WriteLine(e.Message + "\n" + e);
+        public static void LogException(Exception e, string? message = null) {
+            Console.WriteLine((string.IsNullOrEmpty(message) ? "" : message + "\n") + e.Message + "\n" + e);
         }
     }
 }
