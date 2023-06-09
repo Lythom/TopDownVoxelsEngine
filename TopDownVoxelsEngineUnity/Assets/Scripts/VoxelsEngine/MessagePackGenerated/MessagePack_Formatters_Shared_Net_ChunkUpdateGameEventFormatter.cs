@@ -16,10 +16,10 @@
 
 namespace MessagePack.Formatters.Shared.Net
 {
-    public sealed class CharacterMoveGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.CharacterMoveGameEvent>
+    public sealed class ChunkUpdateGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.ChunkUpdateGameEvent>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.CharacterMoveGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.ChunkUpdateGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -27,16 +27,15 @@ namespace MessagePack.Formatters.Shared.Net
                 return;
             }
 
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(5);
             writer.Write(value.Id);
             writer.Write(value.CharacterId);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
+            writer.Write(value.BlockInChunk);
+            writer.Write(value.ChunkPosition);
             writer.Write(value.Angle);
         }
 
-        public global::Shared.Net.CharacterMoveGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Shared.Net.ChunkUpdateGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -44,32 +43,27 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             options.Security.DepthStep(ref reader);
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __Id__ = default(int);
-            var __CharacterId__ = default(short);
-            var __Position__ = default(global::Shared.Vector3);
-            var __Velocity__ = default(global::Shared.Vector3);
-            var __Angle__ = default(byte);
+            var ____result = new global::Shared.Net.ChunkUpdateGameEvent();
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        __Id__ = reader.ReadInt32();
+                        ____result.Id = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadInt16();
+                        ____result.CharacterId = reader.ReadByte();
                         break;
                     case 2:
-                        __Position__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.BlockInChunk = reader.ReadInt16();
                         break;
                     case 3:
-                        __Velocity__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.ChunkPosition = reader.ReadInt16();
                         break;
                     case 4:
-                        __Angle__ = reader.ReadByte();
+                        ____result.Angle = reader.ReadByte();
                         break;
                     default:
                         reader.Skip();
@@ -77,7 +71,6 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, __CharacterId__, __Position__, __Velocity__, __Angle__);
             reader.Depth--;
             return ____result;
         }

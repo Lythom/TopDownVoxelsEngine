@@ -40,7 +40,7 @@ namespace MessagePack.Formatters.Shared
             writer.WriteRaw(GetSpan_IsApplyingEvent());
             writer.Write(value.IsApplyingEvent);
             writer.WriteRaw(GetSpan_Characters());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<short, global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
             writer.WriteRaw(GetSpan_NPCs());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.NPCs, options);
             writer.WriteRaw(GetSpan_Levels());
@@ -76,7 +76,7 @@ namespace MessagePack.Formatters.Shared
                     case 10:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_Characters().Slice(1))) { goto FAIL; }
 
-                        ____result.Characters = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.Character>>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.Characters = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<short, global::Shared.Character>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 4:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 1933791310UL) { goto FAIL; }

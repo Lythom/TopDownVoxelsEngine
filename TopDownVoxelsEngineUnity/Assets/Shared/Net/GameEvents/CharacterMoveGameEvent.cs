@@ -9,7 +9,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public byte CharacterId;
+        public short CharacterId;
 
         [Key(2)]
         public Vector3 Position;
@@ -22,6 +22,14 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
+        public CharacterMoveGameEvent(int id, short characterId, Vector3 position, Vector3 velocity, byte angle) {
+            Id = id;
+            CharacterId = characterId;
+            Position = position;
+            Velocity = velocity;
+            Angle = angle;
+        }
+
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             gameState.Characters[CharacterId].Position = Position;
@@ -30,6 +38,7 @@ namespace Shared.Net {
         }
 
         public override void AssertApplicationConditions(GameState gameState) {
+            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character must exists");
         }
     }
 }

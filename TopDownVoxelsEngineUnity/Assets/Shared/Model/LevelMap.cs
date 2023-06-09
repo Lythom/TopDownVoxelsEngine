@@ -5,42 +5,33 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 
-namespace Shared
-{
+namespace Shared {
     [MessagePackObject(true)]
-    public class LevelMap : IDisposable
-    {
+    public class LevelMap : IDisposable {
         public const int LevelChunkSize = 128;
         public readonly Chunk[,] Chunks;
 
-        public static void Log(string s)
-        {
+        public static void Log(string s) {
         }
 
-        public static void LogException(Exception e)
-        {
+        public static void LogException(Exception e) {
         }
 
-        public ConcurrentQueue<int> GenerationQueue = new()
-        {
+        public ConcurrentQueue<int> GenerationQueue = new() {
         };
 
         public string LevelId;
 
         private CancellationTokenSource cts = new();
 
-        public LevelMap(string levelId)
-        {
+        public LevelMap(string levelId) {
             LevelId = levelId;
             GenerateChunksFromQueue(cts.Token).Forget();
 
             Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
-            for (int x = 0; x < LevelChunkSize; x++)
-            {
-                for (int z = 0; z < LevelChunkSize; z++)
-                {
-                    Chunks[x, z] = new Chunk()
-                    {
+            for (int x = 0; x < LevelChunkSize; x++) {
+                for (int z = 0; z < LevelChunkSize; z++) {
+                    Chunks[x, z] = new Chunk() {
                         Cells = new Cell[Chunk.Size, Chunk.Size, Chunk.Size],
                         IsGenerated = false
                     };
@@ -49,27 +40,20 @@ namespace Shared
         }
 
 
-        public void Dispose()
-        {
+        public void Dispose() {
             cts.Cancel(false);
         }
 
-        private async UniTaskVoid GenerateChunksFromQueue(CancellationToken cancellationToken)
-        {
+        private async UniTaskVoid GenerateChunksFromQueue(CancellationToken cancellationToken) {
             Log("Start job generating chunks");
-            while (!cancellationToken.IsCancellationRequested)
-            {
+            while (!cancellationToken.IsCancellationRequested) {
                 await UniTask.Yield();
                 // dequeue until all is generated
-                while (GenerationQueue.TryDequeue(out int flatIndex))
-                {
-                    try
-                    {
+                while (GenerationQueue.TryDequeue(out int flatIndex)) {
+                    try {
                         var (chX, chZ) = Chunk.GetCoordsFromIndex(flatIndex);
                         LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, ref Chunks[chX, chZ]);
-                    }
-                    catch (Exception e)
-                    {
+                    } catch (Exception e) {
                         LogException(e);
                     }
                 }
@@ -78,8 +62,7 @@ namespace Shared
             Log("Stop job generating chunks");
         }
 
-        public Cell? GetNeighbor(int x, int y, int z, Direction dir)
-        {
+        public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
             var offset = dir.GetOffset();
             var yWithOffset = y + offset.y;
             if (yWithOffset < 0 || yWithOffset >= Chunk.Size) return null;
@@ -106,14 +89,12 @@ namespace Shared
         //     return filePath;
         // }
 
-        public Chunk GetOrGenerateChunk(int chX, int chZ)
-        {
+        public Chunk GetOrGenerateChunk(int chX, int chZ) {
             // var key = ChunkData.GetFlatIndex(chX, chZ);
             //if (GenerationQueue.Contains(key)) await WaitUntil(() => !GenerationQueue.Contains(key));
 
             var chunk = Chunks[chX, chZ];
-            if (chunk.IsGenerated)
-            {
+            if (chunk.IsGenerated) {
                 return chunk;
             }
 
@@ -125,41 +106,33 @@ namespace Shared
         }
 
         // TODO: super dangerous code, Change design !
-        static async UniTask WaitUntil(Func<bool> predicate, int intervalMilliseconds = 10)
-        {
-            while (!predicate())
-            {
+        static async UniTask WaitUntil(Func<bool> predicate, int intervalMilliseconds = 10) {
+            while (!predicate()) {
                 await Task.Delay(intervalMilliseconds);
             }
         }
 
 
-        public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock)
-        {
+        public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock) {
             if (position.Y < 0 || position.Y >= Chunk.Size || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
                 position.Z >= LevelChunkSize * Chunk.Size) return false;
             var chX = (int) Math.Floor((double) position.X / Chunk.Size);
             var chZ = (int) Math.Floor((double) position.Z / Chunk.Size);
             var chunk = Chunks[chX, chZ];
-            if (chunk.IsGenerated)
-            {
-                return chunk.Cells![Mod(position.X, Chunk.Size), position.Y, Mod(position.Z, Chunk.Size)].Block == referenceBlock;
+            if (chunk.IsGenerated) {
+                return chunk.Cells![M.Mod(position.X, Chunk.Size), position.Y, M.Mod(position.Z, Chunk.Size)].Block == referenceBlock;
             }
 
             return false;
         }
 
 
-        public bool TrySetExistingCell(int x, int y, int z, BlockId block)
-        {
+        public bool TrySetExistingCell(int x, int y, int z, BlockId block) {
             if (y < 0 || y >= Chunk.Size) return false;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
             var chunk = Chunks[chX, chZ];
-            if (chunk.IsGenerated)
-            {
-                var cx = Mod(x, Chunk.Size);
-                var cy = y;
-                var cz = Mod(z, Chunk.Size);
+            if (chunk.IsGenerated) {
+                var (cx, cy, cz) = LevelTools.WorldToCellInChunk(x, y, z);
                 chunk.Cells![cx, cy, cz].Block = block;
                 return true;
             }
@@ -167,8 +140,11 @@ namespace Shared
             return false;
         }
 
-        public Cell? TryGetExistingCell(int x, int y, int z, out int cx, out int cy, out int cz)
-        {
+        public Cell? TryGetExistingCell(Vector3Int wp) {
+            return TryGetExistingCell(wp.X, wp.Y, wp.Z, out _, out _, out _);
+        }
+
+        public Cell? TryGetExistingCell(int x, int y, int z, out uint cx, out uint cy, out uint cz) {
             cx = 0;
             cy = 0;
             cz = 0;
@@ -178,36 +154,25 @@ namespace Shared
             if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
 
             var chunk = Chunks[chX, chZ];
-            if (chunk.IsGenerated)
-            {
-                cx = Mod(x, Chunk.Size);
-                cy = y;
-                cz = Mod(z, Chunk.Size);
+            if (chunk.IsGenerated) {
+                (cx, cy, cz) = LevelTools.WorldToCellInChunk(x, y, z);
                 return chunk.Cells![cx, cy, cz];
             }
 
             return null;
         }
 
-        public Cell? GetOrCreateCell(int x, int y, int z)
-        {
+        public Cell? GetOrCreateCell(int x, int y, int z) {
             var chX = (int) Math.Floor((double) x / Chunk.Size);
             var chZ = (int) Math.Floor((double) z / Chunk.Size);
             if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
             var chunk = GetOrGenerateChunk(chX, chZ);
-            return chunk.Cells?[Mod(x, Chunk.Size), y, Mod(z, Chunk.Size)];
+            return chunk.Cells?[M.Mod(x, Chunk.Size), y, M.Mod(z, Chunk.Size)];
         }
 
-        /// <summary>
-        /// Modulo function that return a correct "offset" when reading into negative values instead of mirroring the rest of the division.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="modulo"></param>
-        /// <returns></returns>
-        static int Mod(int value, int modulo)
-        {
-            int r = value % modulo;
-            return r < 0 ? r + modulo : r;
+        public bool CanSet(Vector3Int p, BlockId selectedItemValue) {
+            var c = TryGetExistingCell(p);
+            return c != null && c.Value.Block != selectedItemValue;
         }
     }
 }

@@ -7,10 +7,11 @@ using Shared;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
+using Vector3Int = Shared.Vector3Int;
 
 namespace VoxelsEngine {
-    public class LevelRenderer : MonoBehaviour {
-        private LevelMap _level = null!;
+    public class LevelRenderer : ConnectedBehaviour {
+        private LevelMap? _level = null;
         public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
         public readonly HashSet<int> RendererChunks = new();
@@ -22,22 +23,28 @@ namespace VoxelsEngine {
         public Material BlockMaterial = null!;
 
         [Required, SceneObjectsOnly]
-        public CharacterAgent Player = null!;
+        public GameObject Player = null!;
 
         private CancellationToken _cancellationTokenOnDestroy;
 
 
         private void Awake() {
-            _level = new LevelMap(LevelId);
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
         private void OnDestroy() {
-            _level.Dispose();
+            _level?.Dispose();
+        }
+
+        protected override void OnSetup(GameState state) {
+            var player = LocalState.Instance.CurrentPlayerId;
+            var levelName = state.Characters[player].Level;
+            _level = state.Levels[levelName];
         }
 
         public void Update() {
+            if (_level == null) return;
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
@@ -54,7 +61,13 @@ namespace VoxelsEngine {
             }
         }
 
+        public Cell? GetCellAt(Vector3Int p) {
+            if (_level == null) return null;
+            return _level.TryGetExistingCell(p);
+        }
+
         private void OnDrawGizmos() {
+            if (Player == null || Player.transform == null) return;
             var playerPos = Player.transform.position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             Gizmos.DrawWireCube(new Vector3(chX * Chunk.Size + Chunk.Size / 2f, 0, chZ * Chunk.Size + Chunk.Size / 2f),
@@ -72,7 +85,7 @@ namespace VoxelsEngine {
                     try {
                         var (chX, chZ) = Chunk.GetCoordsFromIndex(chunkFlatIndex);
                         // if enqueued chunk is out bounds, ignore
-                        if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) continue;
+                        if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) continue;
                         var chunk = _level.Chunks[chX, chZ];
                         if (!chunk.IsGenerated) {
                             // Not ready to render, put again in the queue and break until next update
@@ -139,7 +152,7 @@ namespace VoxelsEngine {
             r.sharedMaterial = BlockMaterial;
             var chunkGen = go.AddComponent<ChunkRenderer>();
             chunkGen.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chY * Chunk.Size);
-            chunkGen.Level = _level;
+            chunkGen.Level = _level!;
             return chunkGen;
         }
 

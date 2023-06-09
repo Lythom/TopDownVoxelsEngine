@@ -4,6 +4,11 @@ using MessagePack;
 namespace Shared.Net {
     [Union(0, typeof(NewGameNetworkMessage))]
     [Union(1, typeof(HelloNetworkMessage))]
+    [Union(2, typeof(ChangeToolGameEvent))]
+    [Union(3, typeof(CharacterMoveGameEvent))]
+    [Union(4, typeof(ChunkUpdateGameEvent))]
+    [Union(5, typeof(PlaceBlocksGameEvent))]
+    [Union(6, typeof(TickGameEvent))]
     public interface INetworkMessage {
     }
 

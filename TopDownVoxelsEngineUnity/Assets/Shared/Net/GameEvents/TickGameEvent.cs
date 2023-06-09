@@ -1,16 +1,11 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
+using UnityEngine;
 
 namespace Shared.Net {
     [MessagePackObject]
     public class TickGameEvent : GameEvent {
-        public float CharactersSpeed = 5.0f;
-        public float CharactersJumpForce = 0.2f;
-        public float CharactersJumpChargeIntensity = 1f;
-        public int CharactersPlacementRadius = 4;
-        public float Gravity = 0.2f;
-
         [Key(0)]
         public int Id;
 
@@ -22,8 +17,8 @@ namespace Shared.Net {
         protected internal override void DoApply(GameState state, SideEffectManager? sideEffectManager) {
             if (!state.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             // Generate missing chunks
-            foreach (var c in state.Characters) {
-                MoveCharacter(c);
+            foreach (var (key, c) in state.Characters) {
+                MoveCharacter(c, state);
                 var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
                 state.LevelGenerator.EnqueueChunksAround(c.Level, chx, chz, 3);
             }
@@ -31,8 +26,10 @@ namespace Shared.Net {
             state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
         }
 
-        private void MoveCharacter(Character character) {
-            throw new NotImplementedException();
+        private void MoveCharacter(Character character, GameState gameState) {
+            //var levelId = character.Level;
+            //var level = gameState.Levels[levelId];
+            character.Position += character.Velocity;
         }
 
         public override void AssertApplicationConditions(GameState state) {

@@ -55,7 +55,7 @@ namespace Shared {
             // TODO: join level message (that TP the player)
             Character playerCharacter = new Character();
             playerCharacter.Position = new Vector3(1028f, 4.5f, 1028f);
-            State.Characters.Add(playerCharacter);
+            State.Characters.Add(0, playerCharacter);
 
             LevelMap level = new LevelMap("lobby");
             State.Levels.Add("lobby", level);

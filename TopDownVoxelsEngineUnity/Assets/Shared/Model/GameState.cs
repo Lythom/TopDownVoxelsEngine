@@ -5,16 +5,21 @@ using MessagePack;
 
 namespace Shared {
     public class LocalState {
-        public int CurrentPlayerId;
+        public static LocalState Instance = new();
+        public short CurrentPlayerId = 0;
     }
 
     [MessagePackObject(true)]
     public class GameState {
+        [IgnoreMember]
         public readonly LevelGenerator LevelGenerator = new();
+
         public bool IsApplyingEvent => _isApplyingEvent;
-        public List<Character> Characters = new();
+        public Dictionary<short, Character> Characters = new();
         public List<NPC> NPCs = new();
         public Dictionary<string, LevelMap> Levels = new();
+
+        private HashSet<uint> _dirtyChunks = new();
 
         private bool _isApplyingEvent;
 
@@ -34,6 +39,10 @@ namespace Shared {
 
         private void OnEventApplied(SideEffectManager? sideEffectManager) {
             // no post events atm
+        }
+
+        public void SetChunkDirty(uint chMorton) {
+            _dirtyChunks.Add(chMorton);
         }
     }
 

@@ -2,6 +2,7 @@
 using Cysharp.Threading.Tasks;
 using Popcron;
 using Shared;
+using Shared.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,12 +11,12 @@ using Ray = UnityEngine.Ray;
 using Vector3 = Shared.Vector3;
 using Vector3Int = Shared.Vector3Int;
 
-namespace VoxelsEngine
-{
-    public class CharacterAgent : MonoBehaviour
-    {
+namespace VoxelsEngine {
+    public class CharacterAgent : ConnectedBehaviour {
+        public short CharacterId = 0;
         public float Speed = 5.0f;
-        public Vector3 Acceleration = new(0, 0, 0);
+
+        public Vector3 Velocity = new(0, 0, 0);
 
         public float JumpForce = 0.2f;
         public float JumpChargeIntensity = 1f;
@@ -23,12 +24,15 @@ namespace VoxelsEngine
 
         public int PlacementRadius = 4;
 
-        [FormerlySerializedAs("SelectedTool")] [FormerlySerializedAs("CurrentBlock")]
+        [FormerlySerializedAs("SelectedTool")]
+        [FormerlySerializedAs("CurrentBlock")]
         public AsyncReactiveProperty<BlockId> SelectedItem = new(BlockId.Dirt);
 
-        [Required] public LevelRenderer Level = null!;
+        [Required]
+        public LevelRenderer Level = null!;
 
-        [Required] public Transform CameraTransform = null!;
+        [Required]
+        public Transform CameraTransform = null!;
 
         private Controls _controls = null!;
         private readonly Cooldown _placeCooldown = new(0.1f);
@@ -41,8 +45,7 @@ namespace VoxelsEngine
         private Plane? _draggingPlane = null;
         private bool _isPlacing = false;
 
-        private void Awake()
-        {
+        private void Awake() {
             _controls = new Controls();
             _spawnedTime = Time.time;
             if (Camera.main == null) throw new ApplicationException("No camera found");
@@ -51,18 +54,22 @@ namespace VoxelsEngine
             transform.position = new Vector3(position.x, 10, position.z);
         }
 
-        public void OnEnable()
-        {
+        public void OnEnable() {
             _controls.Enable();
         }
 
-        public void OnDisable()
-        {
+        protected override void OnSetup(GameState state) {
+        }
+
+        public void OnDisable() {
             _controls.Disable();
         }
 
-        private void Update()
-        {
+        /// <summary>
+        /// In update, read the controls.
+        /// Currently the client is in charge of calculating the speed, so there is no limitation to speeding or teleporting cheats.
+        /// </summary>
+        private void Update() {
             var t = transform;
             Vector3 pos = t.position;
 
@@ -74,11 +81,10 @@ namespace VoxelsEngine
             Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
             UnityEngine.Vector3 movement = CameraTransform.rotation * move;
             movement.y = 0;
-            movement = movement.normalized * (Speed * Time.deltaTime);
+            movement = movement.normalized * (Speed * Time.fixedDeltaTime);
 
             // If we have some input
-            if (move != Vector3.zero)
-            {
+            if (move != Vector3.zero) {
                 // Create a quaternion (rotation) based on looking down the vector from the player to the camera.
                 Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
 
@@ -87,31 +93,30 @@ namespace VoxelsEngine
             }
 
             // Apply the movement to the player's rigidbody using the camera's rotation
-            Acceleration.X = movement.x;
-            Acceleration.Z = movement.z;
+            Velocity.X = movement.x;
+            Velocity.Z = movement.z;
 
             // check collisions
-            if (Mathf.Abs(movement.x) > 0)
-            {
+            var levelId = ClientEngine.State.Characters[CharacterId].Level;
+            LevelMap level = ClientEngine.State.Levels[levelId];
+
+            if (Mathf.Abs(movement.x) > 0) {
                 var forwardXPosFeet = (pos + new Vector3(Mathf.Sign(movement.x) * 0.6f, -0.8f, 0)).WorldToCell();
                 var forwardXPosHead = (pos + new Vector3(Mathf.Sign(movement.x) * 0.6f, 0.8f, 0)).WorldToCell();
-                var cellFeet = Level.GetCellAt(forwardXPosFeet);
-                var cellHead = Level.GetCellAt(forwardXPosHead);
-                if (!cellFeet.IsAir() || !cellHead.IsAir())
-                {
-                    Acceleration.X = 0;
+                var cellFeet = level.TryGetExistingCell(forwardXPosFeet);
+                var cellHead = level.TryGetExistingCell(forwardXPosHead);
+                if (!cellFeet.IsAir() || !cellHead.IsAir()) {
+                    Velocity.X = 0;
                 }
             }
 
-            if (Mathf.Abs(movement.z) > 0)
-            {
+            if (Mathf.Abs(movement.z) > 0) {
                 var forwardZPosFeet = (pos + new Vector3(0, -0.8f, Mathf.Sign(movement.z) * 0.6f)).WorldToCell();
                 var forwardZPosHead = (pos + new Vector3(0, 0.8f, Mathf.Sign(movement.z) * 0.6f)).WorldToCell();
-                var cellFeet = Level.GetCellAt(forwardZPosFeet);
-                var cellHead = Level.GetCellAt(forwardZPosHead);
-                if (!cellFeet.IsAir() || !cellHead.IsAir())
-                {
-                    Acceleration.Z = 0;
+                var cellFeet = level.TryGetExistingCell(forwardZPosFeet);
+                var cellHead = level.TryGetExistingCell(forwardZPosHead);
+                if (!cellFeet.IsAir() || !cellHead.IsAir()) {
+                    Velocity.Z = 0;
                 }
             }
 
@@ -123,95 +128,94 @@ namespace VoxelsEngine
                 Vector3.one,
                 Color.gray
             );
-            var groundCell = Level.GetCellAt(groundPosition);
+            var groundCell = level.TryGetExistingCell(groundPosition);
 
-            if (Time.time - _spawnedTime > 1)
-            {
-                if (!groundCell.HasValue || groundCell.Value.Block == BlockId.Air)
-                {
+            if (Time.time - _spawnedTime > 1) {
+                if (!groundCell.HasValue || groundCell.Value.Block == BlockId.Air) {
                     // fall if no ground under
-                    Acceleration.Y -= Gravity * Time.deltaTime;
-                    if (Acceleration.Y < -0.9f) Acceleration.Y = -0.9f;
-                }
-                else if (Acceleration.Y < 0)
-                {
-                    Acceleration.Y = 0;
+                    Velocity.Y -= Gravity * Time.fixedDeltaTime;
+                    if (Velocity.Y < -0.9f) Velocity.Y = -0.9f;
+                } else if (Velocity.Y < 0) {
+                    Velocity.Y = 0;
                 }
             }
 
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
-            if (_isPlacing && _draggingPlane.HasValue)
-            {
+            if (_isPlacing && _draggingPlane.HasValue) {
                 (collidingBlockPos, facingCursorPos) = GetBlocksOnPlane(mouseRay, _draggingPlane.Value);
-            }
-            else
-            {
+            } else {
                 Plane? plane;
                 (collidingBlockPos, facingCursorPos, plane) = GetCollidedBlockPosition(Level, mouseRay, pos, PlacementRadius);
                 if (plane.HasValue) _draggingPlane = plane.Value;
             }
 
-            if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame())
-            {
+            if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
                 if (SelectedItem.Value > 0) SelectedItem.Value--;
-            }
-            else if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame())
-            {
+            } else if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
                 if ((int) SelectedItem.Value < Enum.GetNames(typeof(BlockId)).Length) SelectedItem.Value++;
             }
 
-            if (facingCursorPos != null)
-            {
+            if (facingCursorPos != null) {
                 BCubeDrawer.Cube(
                     facingCursorPos.Value,
                     Quaternion.identity,
                     Vector3.one
                 );
 
-                if (_controls.Gameplay.Place.IsPressed())
-                {
+                if (_controls.Gameplay.Place.IsPressed()) {
                     _isPlacing = true;
-                    var succeeded = _placeCooldown.TryPerform() && Level.SetCellAt(facingCursorPos.Value, SelectedItem.Value);
-                    if (succeeded)
-                    {
-                        var (chX, chZ) = LevelTools.GetChunkPosition(facingCursorPos.Value);
-                        Level.UpdateChunk(chX, chZ);
+                    var succeeded = _placeCooldown.TryPerform() && level.CanSet(facingCursorPos.Value, SelectedItem.Value);
+                    if (succeeded) {
+                        var (x, y, z) = facingCursorPos.Value;
+                        SendMessageAsync(
+                            new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, SelectedItem.Value),
+                            TimeSpan.FromSeconds(5)
+                        ).Forget();
                     }
                 }
 
-                if (_controls.Gameplay.Place.WasReleasedThisFrame())
-                {
+                if (_controls.Gameplay.Place.WasReleasedThisFrame()) {
                     _isPlacing = false;
                 }
             }
 
-            if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !groundCell.IsAir())
-            {
+            if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !groundCell.IsAir()) {
                 _jumpChargeStart = Time.time;
-                Acceleration.Y = JumpForce;
+                Velocity.Y = JumpForce;
             }
 
-            if (_controls.Gameplay.Jump.IsPressed())
-            {
+            if (_controls.Gameplay.Jump.IsPressed()) {
                 var jumpCharge = Time.time - _jumpChargeStart;
-                Acceleration.Y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
+                Velocity.Y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
             }
 
-
-            pos += Acceleration;
-            t.position = pos;
+            var c = ClientEngine.State.Characters[CharacterId];
+            c.Velocity = Velocity;
+            c.Angle = Character.CompressAngle(transform.eulerAngles.y);
         }
 
-        private (Vector3Int?, Vector3Int?) GetBlocksOnPlane(Ray mouseRay, Plane plane)
-        {
+        /// <summary>
+        /// In fixed update, update the display
+        /// </summary>
+        private void FixedUpdate() {
+            // optimistic update
+            var exists = ClientEngine.State.Characters.TryGetValue(CharacterId, out var c);
+            if (!exists) return;
+            // Récupérer la rotation actuelle du GameObject
+            UnityEngine.Vector3 currentRotation = transform.eulerAngles;
+            currentRotation.y = Character.UncompressAngle(c!.Angle);
+            transform.eulerAngles = currentRotation;
+            transform.position = c.Position;
+        }
+
+        private (Vector3Int?, Vector3Int?) GetBlocksOnPlane(Ray mouseRay, Plane plane) {
             Vector3Int? facingCursorPos = null;
             Vector3Int? collidingBlockPos = null;
             var axis = plane.normal;
             int dir = UnityEngine.Vector3.Dot(mouseRay.direction, axis) > 0 ? 1 : -1;
-            if (plane.Raycast(mouseRay, out var enter))
-            {
+            if (plane.Raycast(mouseRay, out var enter)) {
                 UnityEngine.Vector3 collisionPos = mouseRay.GetPoint(enter);
                 collidingBlockPos = LevelTools.WorldToCell((collisionPos + axis * (0.5f * dir)));
                 facingCursorPos = LevelTools.WorldToCell((collisionPos - axis * (0.5f * dir)));
@@ -221,9 +225,12 @@ namespace VoxelsEngine
         }
 
 
-        private (Vector3Int? collidingBlock, Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(LevelRenderer level, Ray mouseRay, Vector3 position,
-            int radius = 4)
-        {
+        private (Vector3Int? collidingBlock, Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(
+            LevelRenderer level,
+            Ray mouseRay,
+            Vector3 position,
+            int radius = 4
+        ) {
             var (up, upC, upF, upPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.up, Mathf.RoundToInt(position.Y), radius);
             var (right, rightC, rightF, rightPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.right, Mathf.RoundToInt(position.X), radius);
             var (forward, forwardC, forwardF, forwardPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.forward, Mathf.RoundToInt(position.Z), radius);
@@ -243,9 +250,13 @@ namespace VoxelsEngine
         /// <param name="playerPosition">The position of the player in the level.</param>
         /// <param name="radius">The radius within which to check for collisions. Default is 4.</param>
         /// <returns>The distance at which the ray enters the block, the position of the block that the ray collides with, and the position of the block that faces the colliding face.</returns>
-        private (float rayEnter, Vector3Int? collidingBlock, Vector3Int? facingBlock, Plane? p) GetCollidedBlockPositionOnPlane(LevelRenderer level, Ray mouseRay,
-            Vector3 axis, int playerPosition, int radius = 4)
-        {
+        private (float rayEnter, Vector3Int? collidingBlock, Vector3Int? facingBlock, Plane? p) GetCollidedBlockPositionOnPlane(
+            LevelRenderer level,
+            Ray mouseRay,
+            Vector3 axis,
+            int playerPosition,
+            int radius = 4
+        ) {
             // Define the start and stop positions for the collision check based on the player's position and the specified radius.
             // the goal is to start with blocks that are closer to the camera (=mouse ray origin)
             var start = playerPosition - radius;
@@ -255,17 +266,14 @@ namespace VoxelsEngine
             int dir = UnityEngine.Vector3.Dot(mouseRay.direction, axis) > 0 ? 1 : -1;
             if (dir < 0) (start, stop) = (stop, start);
 
-            for (int pos = start; pos != stop; pos += dir)
-            {
+            for (int pos = start; pos != stop; pos += dir) {
                 _wkPlane.SetNormalAndPosition(axis, axis * (pos + dir * 0.5f));
-                if (_wkPlane.Raycast(mouseRay, out var enter))
-                {
+                if (_wkPlane.Raycast(mouseRay, out var enter)) {
                     Vector3 position = mouseRay.GetPoint(enter);
                     // Determine the position inside the block that the ray intersects.
                     var insidePosition = (position + axis * (0.5f * dir)).WorldToCell();
                     var inside = level.GetCellAt(insidePosition);
-                    if (!inside.IsAir())
-                    {
+                    if (!inside.IsAir()) {
                         return (enter, insidePosition, (position - axis * (0.5f * dir)).WorldToCell(), _wkPlane);
                     }
                 }

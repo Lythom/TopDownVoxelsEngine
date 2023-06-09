@@ -1,5 +1,4 @@
-﻿using System;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using Shared;
 using Shared.Net;
@@ -7,7 +6,7 @@ using UnityEngine;
 
 namespace VoxelsEngine {
     public class ClientEngine : MonoBehaviour {
-        public IWebSocketManager? SocketManager = new FakeEchoingSocketManager();
+        public IWebSocketManager SocketManager = new FakeEchoingSocketManager();
         public readonly GameState State = new();
         public readonly SideEffectManager SideEffectManager = new();
 
@@ -27,6 +26,17 @@ namespace VoxelsEngine {
             _tick.Id++;
             _tick.MinPriority = _minLevel;
             _tick.Apply(State, SideEffectManager);
+
+            var c = State.Characters[LocalState.Instance.CurrentPlayerId];
+            SocketManager.Send(
+                new CharacterMoveGameEvent(
+                    0,
+                    LocalState.Instance.CurrentPlayerId,
+                    c.Position,
+                    c.Velocity,
+                    c.Angle
+                )
+            ).Forget();
         }
 
         public void SendEvent(IGameEvent evt) {

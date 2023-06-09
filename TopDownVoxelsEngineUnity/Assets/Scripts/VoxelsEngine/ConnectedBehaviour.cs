@@ -294,6 +294,14 @@ namespace VoxelsEngine {
             if (SocketManager != null) SocketManager.OnNetworkMessage -= HandleAnswer;
             return answerReceived.GetStatus(0) == UniTaskStatus.Succeeded ? answerReceived.GetResult(0) : null;
         }
+        
+        protected void SendBlindMessageAsync(INetworkMessage msg) {
+            if (SocketManager == null) {
+                Logr.Log("Not connected to a server.");
+                return;
+            }
+            SocketManager.Send(msg).Forget();
+        }
 
         /// <summary>
         ///     Subscribe to component Click triggers while this MonoBehaviour is Instantiated on scene and the component is active

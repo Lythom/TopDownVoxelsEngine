@@ -20,15 +20,25 @@ namespace MessagePack.Formatters.Shared.Net
 
         public INetworkMessageFormatter()
         {
-            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(2, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(7, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
                 { typeof(global::Shared.Net.NewGameNetworkMessage).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
                 { typeof(global::Shared.Net.HelloNetworkMessage).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+                { typeof(global::Shared.Net.ChangeToolGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
+                { typeof(global::Shared.Net.CharacterMoveGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(3, 3) },
+                { typeof(global::Shared.Net.ChunkUpdateGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
+                { typeof(global::Shared.Net.PlaceBlocksGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
+                { typeof(global::Shared.Net.TickGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
             };
-            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(2)
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(7)
             {
                 { 0, 0 },
                 { 1, 1 },
+                { 2, 2 },
+                { 3, 3 },
+                { 4, 4 },
+                { 5, 5 },
+                { 6, 6 },
             };
         }
 
@@ -46,6 +56,21 @@ namespace MessagePack.Formatters.Shared.Net
                         break;
                     case 1:
                         global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.HelloNetworkMessage>(options.Resolver).Serialize(ref writer, (global::Shared.Net.HelloNetworkMessage)value, options);
+                        break;
+                    case 2:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.ChangeToolGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.ChangeToolGameEvent)value, options);
+                        break;
+                    case 3:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.CharacterMoveGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.CharacterMoveGameEvent)value, options);
+                        break;
+                    case 4:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.ChunkUpdateGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.ChunkUpdateGameEvent)value, options);
+                        break;
+                    case 5:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.PlaceBlocksGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.PlaceBlocksGameEvent)value, options);
+                        break;
+                    case 6:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.TickGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.TickGameEvent)value, options);
                         break;
                     default:
                         break;
@@ -85,6 +110,21 @@ namespace MessagePack.Formatters.Shared.Net
                     break;
                 case 1:
                     result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.HelloNetworkMessage>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 2:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.ChangeToolGameEvent>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 3:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.CharacterMoveGameEvent>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 4:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.ChunkUpdateGameEvent>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 5:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.PlaceBlocksGameEvent>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 6:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.TickGameEvent>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();

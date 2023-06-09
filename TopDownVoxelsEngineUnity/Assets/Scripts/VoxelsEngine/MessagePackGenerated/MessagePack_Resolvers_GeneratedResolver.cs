@@ -47,35 +47,40 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(27)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(32)
             {
                 { typeof(global::Shared.Cell[,,]), 0 },
                 { typeof(global::Shared.Chunk[,]), 1 },
                 { typeof(global::System.Collections.Concurrent.ConcurrentQueue<int>), 2 },
                 { typeof(global::System.Collections.Generic.Dictionary<global::Shared.BlockId, int>), 3 },
-                { typeof(global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>), 4 },
-                { typeof(global::System.Collections.Generic.List<global::Shared.Character>), 5 },
+                { typeof(global::System.Collections.Generic.Dictionary<short, global::Shared.Character>), 4 },
+                { typeof(global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>), 5 },
                 { typeof(global::System.Collections.Generic.List<global::Shared.NPC>), 6 },
                 { typeof(global::System.Collections.Generic.List<global::Shared.TemplateId>), 7 },
                 { typeof(global::Shared.BlockId), 8 },
-                { typeof(global::Shared.TemplateId), 9 },
-                { typeof(global::Shared.ToolId), 10 },
-                { typeof(global::Shared.Net.INetworkMessage), 11 },
-                { typeof(global::Shared.Cell), 12 },
-                { typeof(global::Shared.Character), 13 },
-                { typeof(global::Shared.Chunk), 14 },
-                { typeof(global::Shared.ChunkKey), 15 },
-                { typeof(global::Shared.GameState), 16 },
-                { typeof(global::Shared.LevelMap), 17 },
-                { typeof(global::Shared.Net.CharacterMoveGameEvent), 18 },
-                { typeof(global::Shared.Net.HelloNetworkMessage), 19 },
-                { typeof(global::Shared.Net.NewGameNetworkMessage), 20 },
-                { typeof(global::Shared.NPC), 21 },
-                { typeof(global::Shared.Ray), 22 },
-                { typeof(global::Shared.Vector2), 23 },
-                { typeof(global::Shared.Vector2Int), 24 },
-                { typeof(global::Shared.Vector3), 25 },
-                { typeof(global::Shared.Vector3Int), 26 },
+                { typeof(global::Shared.PriorityLevel), 9 },
+                { typeof(global::Shared.TemplateId), 10 },
+                { typeof(global::Shared.ToolId), 11 },
+                { typeof(global::Shared.Net.INetworkMessage), 12 },
+                { typeof(global::Shared.Cell), 13 },
+                { typeof(global::Shared.Character), 14 },
+                { typeof(global::Shared.Chunk), 15 },
+                { typeof(global::Shared.ChunkKey), 16 },
+                { typeof(global::Shared.GameState), 17 },
+                { typeof(global::Shared.LevelMap), 18 },
+                { typeof(global::Shared.Net.ChangeToolGameEvent), 19 },
+                { typeof(global::Shared.Net.CharacterMoveGameEvent), 20 },
+                { typeof(global::Shared.Net.ChunkUpdateGameEvent), 21 },
+                { typeof(global::Shared.Net.HelloNetworkMessage), 22 },
+                { typeof(global::Shared.Net.NewGameNetworkMessage), 23 },
+                { typeof(global::Shared.Net.PlaceBlocksGameEvent), 24 },
+                { typeof(global::Shared.Net.TickGameEvent), 25 },
+                { typeof(global::Shared.NPC), 26 },
+                { typeof(global::Shared.Ray), 27 },
+                { typeof(global::Shared.Vector2), 28 },
+                { typeof(global::Shared.Vector2Int), 29 },
+                { typeof(global::Shared.Vector3), 30 },
+                { typeof(global::Shared.Vector3Int), 31 },
             };
         }
 
@@ -93,29 +98,34 @@ namespace MessagePack.Resolvers
                 case 1: return new global::MessagePack.Formatters.TwoDimensionalArrayFormatter<global::Shared.Chunk>();
                 case 2: return new global::MessagePack.Formatters.ConcurrentQueueFormatter<int>();
                 case 3: return new global::MessagePack.Formatters.DictionaryFormatter<global::Shared.BlockId, int>();
-                case 4: return new global::MessagePack.Formatters.DictionaryFormatter<string, global::Shared.LevelMap>();
-                case 5: return new global::MessagePack.Formatters.ListFormatter<global::Shared.Character>();
+                case 4: return new global::MessagePack.Formatters.DictionaryFormatter<short, global::Shared.Character>();
+                case 5: return new global::MessagePack.Formatters.DictionaryFormatter<string, global::Shared.LevelMap>();
                 case 6: return new global::MessagePack.Formatters.ListFormatter<global::Shared.NPC>();
                 case 7: return new global::MessagePack.Formatters.ListFormatter<global::Shared.TemplateId>();
                 case 8: return new MessagePack.Formatters.Shared.BlockIdFormatter();
-                case 9: return new MessagePack.Formatters.Shared.TemplateIdFormatter();
-                case 10: return new MessagePack.Formatters.Shared.ToolIdFormatter();
-                case 11: return new MessagePack.Formatters.Shared.Net.INetworkMessageFormatter();
-                case 12: return new MessagePack.Formatters.Shared.CellFormatter();
-                case 13: return new MessagePack.Formatters.Shared.CharacterFormatter();
-                case 14: return new MessagePack.Formatters.Shared.ChunkFormatter();
-                case 15: return new MessagePack.Formatters.Shared.ChunkKeyFormatter();
-                case 16: return new MessagePack.Formatters.Shared.GameStateFormatter();
-                case 17: return new MessagePack.Formatters.Shared.LevelMapFormatter();
-                case 18: return new MessagePack.Formatters.Shared.Net.CharacterMoveGameEventFormatter();
-                case 19: return new MessagePack.Formatters.Shared.Net.HelloNetworkMessageFormatter();
-                case 20: return new MessagePack.Formatters.Shared.Net.NewGameNetworkMessageFormatter();
-                case 21: return new MessagePack.Formatters.Shared.NPCFormatter();
-                case 22: return new MessagePack.Formatters.Shared.RayFormatter();
-                case 23: return new MessagePack.Formatters.Shared.Vector2Formatter();
-                case 24: return new MessagePack.Formatters.Shared.Vector2IntFormatter();
-                case 25: return new MessagePack.Formatters.Shared.Vector3Formatter();
-                case 26: return new MessagePack.Formatters.Shared.Vector3IntFormatter();
+                case 9: return new MessagePack.Formatters.Shared.PriorityLevelFormatter();
+                case 10: return new MessagePack.Formatters.Shared.TemplateIdFormatter();
+                case 11: return new MessagePack.Formatters.Shared.ToolIdFormatter();
+                case 12: return new MessagePack.Formatters.Shared.Net.INetworkMessageFormatter();
+                case 13: return new MessagePack.Formatters.Shared.CellFormatter();
+                case 14: return new MessagePack.Formatters.Shared.CharacterFormatter();
+                case 15: return new MessagePack.Formatters.Shared.ChunkFormatter();
+                case 16: return new MessagePack.Formatters.Shared.ChunkKeyFormatter();
+                case 17: return new MessagePack.Formatters.Shared.GameStateFormatter();
+                case 18: return new MessagePack.Formatters.Shared.LevelMapFormatter();
+                case 19: return new MessagePack.Formatters.Shared.Net.ChangeToolGameEventFormatter();
+                case 20: return new MessagePack.Formatters.Shared.Net.CharacterMoveGameEventFormatter();
+                case 21: return new MessagePack.Formatters.Shared.Net.ChunkUpdateGameEventFormatter();
+                case 22: return new MessagePack.Formatters.Shared.Net.HelloNetworkMessageFormatter();
+                case 23: return new MessagePack.Formatters.Shared.Net.NewGameNetworkMessageFormatter();
+                case 24: return new MessagePack.Formatters.Shared.Net.PlaceBlocksGameEventFormatter();
+                case 25: return new MessagePack.Formatters.Shared.Net.TickGameEventFormatter();
+                case 26: return new MessagePack.Formatters.Shared.NPCFormatter();
+                case 27: return new MessagePack.Formatters.Shared.RayFormatter();
+                case 28: return new MessagePack.Formatters.Shared.Vector2Formatter();
+                case 29: return new MessagePack.Formatters.Shared.Vector2IntFormatter();
+                case 30: return new MessagePack.Formatters.Shared.Vector3Formatter();
+                case 31: return new MessagePack.Formatters.Shared.Vector3IntFormatter();
                 default: return null;
             }
         }
