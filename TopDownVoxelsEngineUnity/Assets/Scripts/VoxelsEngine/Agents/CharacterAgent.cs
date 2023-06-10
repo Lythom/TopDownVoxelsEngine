@@ -16,11 +16,8 @@ namespace VoxelsEngine {
         public short CharacterId = 0;
         public float Speed = 5.0f;
 
-        public Vector3 Velocity = new(0, 0, 0);
-
         public float JumpForce = 0.2f;
         public float JumpChargeIntensity = 1f;
-        public float Gravity = 0.2f;
 
         public int PlacementRadius = 4;
 
@@ -38,6 +35,8 @@ namespace VoxelsEngine {
         private Plane? _draggingPlane = null;
         private bool _isPlacing = false;
         private Character? _character;
+
+        private Vector3 _nextPosition;
 
         private void Awake() {
             _controls = new Controls();
@@ -100,8 +99,9 @@ namespace VoxelsEngine {
             }
 
             // Apply the movement to the player's rigidbody using the camera's rotation
-            Velocity.X = movement.x;
-            Velocity.Z = movement.z;
+            Vector3 velocity = _character.Velocity;
+            velocity.X = movement.x;
+            velocity.Z = movement.z;
 
             // check collisions
             if (Mathf.Abs(movement.x) > 0) {
@@ -110,7 +110,7 @@ namespace VoxelsEngine {
                 var cellFeet = level.TryGetExistingCell(forwardXPosFeet);
                 var cellHead = level.TryGetExistingCell(forwardXPosHead);
                 if (!cellFeet.IsAir() || !cellHead.IsAir()) {
-                    Velocity.X = 0;
+                    velocity.X = 0;
                 }
             }
 
@@ -120,10 +120,9 @@ namespace VoxelsEngine {
                 var cellFeet = level.TryGetExistingCell(forwardZPosFeet);
                 var cellHead = level.TryGetExistingCell(forwardZPosHead);
                 if (!cellFeet.IsAir() || !cellHead.IsAir()) {
-                    Velocity.Z = 0;
+                    velocity.Z = 0;
                 }
             }
-
 
             var groundPosition = (pos + Vector3.down).WorldToCell();
             BCubeDrawer.Cube(
@@ -133,16 +132,6 @@ namespace VoxelsEngine {
                 Color.gray
             );
             var groundCell = level.TryGetExistingCell(groundPosition);
-
-            if (Time.time - _spawnedTime > 1) {
-                if (!groundCell.HasValue || groundCell.Value.Block == BlockId.Air) {
-                    // fall if no ground under
-                    Velocity.Y -= Gravity * Time.fixedDeltaTime;
-                    if (Velocity.Y < -0.9f) Velocity.Y = -0.9f;
-                } else if (Velocity.Y < 0) {
-                    Velocity.Y = 0;
-                }
-            }
 
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
@@ -188,17 +177,17 @@ namespace VoxelsEngine {
 
             if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !groundCell.IsAir()) {
                 _jumpChargeStart = Time.time;
-                Velocity.Y = JumpForce;
-            }
-
-            if (_controls.Gameplay.Jump.IsPressed()) {
+                velocity.Y = JumpForce;
+            } else if (_controls.Gameplay.Jump.IsPressed()) {
                 var jumpCharge = Time.time - _jumpChargeStart;
-                Velocity.Y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * 2));
+                velocity.Y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * jumpCharge));
             }
 
             // Wild override of local state for client side prediction
-            _character.Velocity = Velocity;
+            _character.Velocity = velocity;
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
+
+            transform.position = _character.Position += _character.Velocity * Time.deltaTime;
         }
 
         /// <summary>

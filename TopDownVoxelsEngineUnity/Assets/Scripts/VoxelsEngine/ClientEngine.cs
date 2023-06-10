@@ -2,12 +2,15 @@
 using LoneStoneStudio.Tools;
 using Shared;
 using Shared.Net;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace VoxelsEngine {
     public class ClientEngine : MonoBehaviour {
         public IWebSocketManager SocketManager = new FakeEchoingSocketManager();
-        public readonly GameState State = new(null, null, null);
+        
+        [ShowInInspector]
+        public GameState State = new(null, null, null);
         public readonly SideEffectManager SideEffectManager = new();
 
         private readonly TickGameEvent _tick = new();

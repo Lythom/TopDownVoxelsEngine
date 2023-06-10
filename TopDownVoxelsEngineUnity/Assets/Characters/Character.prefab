@@ -53,10 +53,10 @@ MonoBehaviour:
     X: 0
     Y: 0
     Z: 0
-  JumpForce: 0.03
-  JumpChargeIntensity: 0.17
+  JumpForce: 0.25
+  JumpChargeIntensity: 0.11
   Gravity: 0.2
-  PlacementRadius: 4
+  PlacementRadius: 5
   CameraTransform: {fileID: 0}
 --- !u!33 &3647220086276733180
 MeshFilter:
