@@ -70,8 +70,8 @@ namespace Shared.Net {
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
-            var level = gameState.Characters[CharacterId].Level;
-            var chunk = gameState.Levels[level].Chunks[chX, chZ];
+            var level = gameState.Characters[CharacterId].Level.Value;
+            var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
             chunk.Cells![cx, cy, cz].Block = Block;
         }
@@ -80,8 +80,8 @@ namespace Shared.Net {
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
             if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Unknown level");
             var level = gameState.Characters[CharacterId].Level;
-            if (!gameState.Levels.ContainsKey(level)) throw new ApplicationException("Unknown level");
-            var chunk = gameState.Levels[level].Chunks[chX, chZ];
+            if (level.Value == null || !gameState.Levels.ContainsKey(level.Value)) throw new ApplicationException("Unknown level");
+            var chunk = gameState.Levels[level.Value].Chunks[chX, chZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Can't set blocks in non ready chunks");
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
             chunk.Cells![cx, cy, cz].Block = Block;

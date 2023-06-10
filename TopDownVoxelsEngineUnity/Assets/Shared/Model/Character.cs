@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using LoneStoneStudio.Tools;
 using MessagePack;
 
 namespace Shared {
     [MessagePackObject(true)]
-    public class Character {
+    public class Character : IUpdatable<Character> {
         // Calculated by the tick
         public Vector3 Position;
 
@@ -15,21 +15,67 @@ namespace Shared {
         // Input from the CharacterAgent (via local or via network)
         public byte Angle = 0;
 
-        public string Level = "Lobby";
-        public ToolId SelectedTool;
-        public BlockId SelectedBlock;
-        public TemplateId SelectedTemplate;
-        public byte ToolRemoveBlockLevel;
-        public byte ToolAddBlockLevel;
-        public byte ToolAddFurnitureLevel;
-        public byte ToolReplaceBlockLevel;
-        public Dictionary<BlockId, int> BlocsInventory = new();
-        public List<TemplateId> KnownTemplates = new();
+        public readonly Reactive<string?> Level = new(null);
+        public readonly Reactive<ToolId> SelectedTool = new(ToolId.None);
+        public readonly Reactive<BlockId> SelectedBlock = new(BlockId.Air);
+        public readonly Reactive<TemplateId> SelectedTemplate = new(TemplateId.None);
+        public readonly Reactive<byte> ToolRemoveBlockLevel = new(0);
+        public readonly Reactive<byte> ToolAddBlockLevel = new(0);
+        public readonly Reactive<byte> ToolAddFurnitureLevel = new(0);
+        public readonly Reactive<byte> ToolReplaceBlockLevel = new(0);
+        public readonly ReactiveDictionary<BlockId, int> BlocsInventory = new();
+        public readonly ReactiveList<TemplateId> KnownTemplates = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte CompressAngle(float yAngle) => (byte) M.RoundToInt(yAngle * 255 / 360);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float UncompressAngle(byte angle) => angle * 360 / 255f;
+
+        public Character(
+            Vector3 position,
+            Vector3 velocity,
+            byte angle,
+            Reactive<string?>? level,
+            Reactive<ToolId>? selectedTool,
+            Reactive<BlockId>? selectedBlock,
+            Reactive<TemplateId>? selectedTemplate,
+            Reactive<byte>? toolRemoveBlockLevel,
+            Reactive<byte>? toolAddBlockLevel,
+            Reactive<byte>? toolAddFurnitureLevel,
+            Reactive<byte>? toolReplaceBlockLevel,
+            ReactiveDictionary<BlockId, int>? blocsInventory,
+            ReactiveList<TemplateId>? knownTemplates
+        ) {
+            Position = position;
+            Velocity = velocity;
+            Angle = angle;
+            Level.Value = level?.Value;
+            SelectedTool.Value = selectedTool ?? ToolId.None;
+            SelectedBlock.Value = selectedBlock ?? BlockId.Air;
+            SelectedTemplate.Value = selectedTemplate ?? TemplateId.None;
+            ToolRemoveBlockLevel.Value = toolRemoveBlockLevel ?? (byte) 0;
+            ToolAddBlockLevel.Value = toolAddBlockLevel ?? (byte) 0;
+            ToolAddFurnitureLevel.Value = toolAddFurnitureLevel ?? (byte) 0;
+            ToolReplaceBlockLevel.Value = toolReplaceBlockLevel ?? (byte) 0;
+            if (blocsInventory != null) BlocsInventory.SynchronizeToTarget(blocsInventory);
+            if (knownTemplates != null) KnownTemplates.SynchronizeToTarget(knownTemplates);
+        }
+
+        public void UpdateValue(Character nextState) {
+            Position = nextState.Position;
+            Velocity = nextState.Velocity;
+            Angle = nextState.Angle;
+            Level.Value = nextState.Level.Value;
+            SelectedTool.Value = nextState.SelectedTool.Value;
+            SelectedBlock.Value = nextState.SelectedBlock.Value;
+            SelectedTemplate.Value = nextState.SelectedTemplate.Value;
+            ToolRemoveBlockLevel.Value = nextState.ToolRemoveBlockLevel.Value;
+            ToolAddBlockLevel.Value = nextState.ToolAddBlockLevel.Value;
+            ToolAddFurnitureLevel.Value = nextState.ToolAddFurnitureLevel.Value;
+            ToolReplaceBlockLevel.Value = nextState.ToolReplaceBlockLevel.Value;
+            BlocsInventory.SynchronizeToTarget(nextState.BlocsInventory);
+            KnownTemplates.SynchronizeToTarget(nextState.KnownTemplates);
+        }
     }
 }

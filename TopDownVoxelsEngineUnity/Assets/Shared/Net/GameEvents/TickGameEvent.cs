@@ -1,7 +1,6 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
-using UnityEngine;
 
 namespace Shared.Net {
     [MessagePackObject]
@@ -20,7 +19,7 @@ namespace Shared.Net {
             foreach (var (key, c) in state.Characters) {
                 MoveCharacter(c, state);
                 var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
-                state.LevelGenerator.EnqueueChunksAround(c.Level, chx, chz, 3);
+                if (c.Level.Value != null && state.Levels.ContainsKey(c.Level.Value)) state.LevelGenerator.EnqueueChunksAround(c.Level.Value, chx, chz, 3, state.Levels);
             }
 
             state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);

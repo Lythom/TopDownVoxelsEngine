@@ -29,12 +29,17 @@
       <Content Include="DataStructure\CoutingList.cs.meta" />
       <Content Include="DataStructure\Ray.cs.meta" />
       <Content Include="DataStructure\Vectors.cs.meta" />
+      <Content Include="Model\GameState.cs.meta" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="MessagePack" Version="2.5.108" />
       <PackageReference Include="ObservableCollections" Version="1.1.2" />
       <PackageReference Include="UniTask" Version="2.3.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Model\GameState\" />
     </ItemGroup>
 
 </Project>

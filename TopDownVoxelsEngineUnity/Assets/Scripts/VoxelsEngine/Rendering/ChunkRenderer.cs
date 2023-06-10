@@ -13,7 +13,6 @@ namespace VoxelsEngine {
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
         public LevelMap Level = null!;
-        public ChunkKey? ChunkKey;
 
         private Mesh _mesh = null!;
         private readonly int[] _triangles = new int[20000];
@@ -30,9 +29,10 @@ namespace VoxelsEngine {
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
         }
 
-        public bool ReCalculateMesh(LevelMap level) {
-            if (_mesh == null || ChunkKey == null) return false;
-            var chunk = Level.Chunks[ChunkKey.ChX, ChunkKey.ChZ];
+        public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey) {
+            if (_mesh == null) _mesh = GetComponent<MeshFilter>().mesh;
+            if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
+            var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
             _trianglesCount = 0;
@@ -43,7 +43,7 @@ namespace VoxelsEngine {
                 var cell = chunk.Cells![x, y, z];
                 if (cell.Block != BlockId.Air) {
                     var blockDef = Configurator.Instance.BlocksRenderingLibrary[(int) cell.Block];
-                    MakeCube(x, y, z, ChunkKey, blockDef, chunk, level);
+                    MakeCube(x, y, z, chunkKey, blockDef, chunk, level);
                 }
             }
 

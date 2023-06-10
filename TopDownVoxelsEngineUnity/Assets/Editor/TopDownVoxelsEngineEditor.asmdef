@@ -13,7 +13,8 @@
         "Unity.InputSystem",
         "Popcron.Gizmos",
         "UniTask.Linq",
-        "Shared"
+        "Shared",
+        "TopDownVoxelsEngine"
     ],
     "includePlatforms": [
         "Editor"

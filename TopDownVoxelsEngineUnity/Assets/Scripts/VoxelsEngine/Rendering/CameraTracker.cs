@@ -26,7 +26,7 @@ namespace VoxelsEngine {
             }
         }
 
-        private void LateUpdate() {
+        public void LateUpdate() {
             if (Target == null) return; // Do nothing if target is null
 
             var t = transform;

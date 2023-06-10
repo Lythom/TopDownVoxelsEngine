@@ -1,24 +1,29 @@
-﻿using Sirenix.OdinInspector;
-using UnityEngine;
-using UnityEngine.Serialization;
+﻿using LoneStoneStudio.Tools;
+using Shared;
+using Sirenix.OdinInspector;
 using UnityEngine.UI;
 
 namespace VoxelsEngine.UI {
-    public class ToolPreview : MonoBehaviour {
-        // [FormerlySerializedAs("Character")]
-        // [Required]
-        // public CharacterAgent CharacterAgent = null!;
-        //
-        // [Required]
-        // public Image Preview = null!;
-        //
-        // private void Start() {
-        //     CharacterAgent.SelectedItem.ForEachAsync(v => {
-        //         int id = (int) v;
-        //
-        //         var lib = Configurator.Instance.BlocksRenderingLibrary;
-        //         Preview.sprite = (id >= 0 && id < lib.Count ? lib[id].ItemPreview : null)!;
-        //     });
-        // }
+    public class ToolPreview : ConnectedBehaviour {
+        [Required]
+        public Image Preview = null!;
+
+        protected override void OnSetup(GameState state) {
+            var playerId = LocalState.Instance.CurrentPlayerId;
+            var playerStateSelector = ReactiveHelpers.CreateSelector(
+                state.Characters,
+                characters => characters.Dictionary.TryGetValue(playerId, out var value) ? value : null,
+                null,
+                ResetToken
+            );
+            var playerToolSelector = new Reactive<BlockId>(BlockId.Air);
+            playerToolSelector.BindCompoundValue(playerStateSelector, c => c?.SelectedBlock, ResetToken);
+            
+            Subscribe(playerToolSelector, block => {
+                var lib = Configurator.Instance.BlocksRenderingLibrary;
+                int id = (int) block;
+                Preview.sprite = (id >= 0 && id < lib.Count ? lib[id].ItemPreview : null)!;
+            });
+        }
     }
 }

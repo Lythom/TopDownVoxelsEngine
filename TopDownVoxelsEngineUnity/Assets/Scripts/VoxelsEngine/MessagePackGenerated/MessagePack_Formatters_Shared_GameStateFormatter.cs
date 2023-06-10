@@ -40,11 +40,11 @@ namespace MessagePack.Formatters.Shared
             writer.WriteRaw(GetSpan_IsApplyingEvent());
             writer.Write(value.IsApplyingEvent);
             writer.WriteRaw(GetSpan_Characters());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<short, global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<short, global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
             writer.WriteRaw(GetSpan_NPCs());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.NPCs, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.NPCs, options);
             writer.WriteRaw(GetSpan_Levels());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
         }
 
         public global::Shared.GameState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -57,7 +57,9 @@ namespace MessagePack.Formatters.Shared
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var ____result = new global::Shared.GameState();
+            var __Characters__ = default(global::LoneStoneStudio.Tools.ReactiveDictionary<short, global::Shared.Character>);
+            var __NPCs__ = default(global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>);
+            var __Levels__ = default(global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>);
 
             for (int i = 0; i < length; i++)
             {
@@ -76,22 +78,23 @@ namespace MessagePack.Formatters.Shared
                     case 10:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_Characters().Slice(1))) { goto FAIL; }
 
-                        ____result.Characters = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<short, global::Shared.Character>>(formatterResolver).Deserialize(ref reader, options);
+                        __Characters__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<short, global::Shared.Character>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 4:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 1933791310UL) { goto FAIL; }
 
-                        ____result.NPCs = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.NPC>>(formatterResolver).Deserialize(ref reader, options);
+                        __NPCs__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 6:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126909395920204UL) { goto FAIL; }
 
-                        ____result.Levels = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
+                        __Levels__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
 
                 }
             }
 
+            var ____result = new global::Shared.GameState(__Characters__, __NPCs__, __Levels__);
             reader.Depth--;
             return ____result;
         }

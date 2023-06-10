@@ -73,14 +73,18 @@ The client catches up out of sync content on the go.
 Game ticks are run at 50 ticks/seconds = 20 ms per tick, are applied as a TickGameEvent, and are implicitly executed by
 all clients and server.
 
-Every 10 seconds, the server will try a full reconciliation. The idea is to bundle all the "near state" of each player, and send :
+Every 10 seconds, the server will try a full reconciliation. The idea is to bundle all the "near state" of each player,
+and send :
+
 - id of the state (TickId)
 - List of events to (re) apply on it
-The client can then re apply sent event since this tick that the server did not ack.
+  The client can then re apply sent event since this tick that the server did not ack.
 
 #### Example: position synchronisation
 
 https://sequencediagram.org/index.html#initialData=A4QwTgLglgxloDsIAIDCALcIYQKZgEEBzXJAKFElnhCTQBspSIBRBIqBXC8aORFAGV8AN1wBXMGQxYc+YswC0APmUyw2PIRJIAXMgDaAVWAATEHgC6yADJQU9AOSdg4lKfHIAVgHtxEqXVNeR0IFTVMDTltZn1jMwtcawBZXBQAA+8-MGQRe1wAZwLcZDTkWiJ6EtJkADMfBBwoBuRTQuQXNwLpSOCYpHDURmY2Di44k3MrZAAVDQQCgFsyvLwi6pQKqulhpFHOXEHd1nYD-VQQehhxKuR6EGQEPzF6W+AfAvtmhGRMmEwAI7+ZB8ADWOyYe1OXEGvWiCj0s3mSzK90ez1wrxK70+0AaPVkWgRYVUQXhoTiADEoAAPXCmSaJawEWq1WDoEpvfAFBoIEAkcqeABGLVIpjAPnsEJG0MOqmEYDEkn0bBEkpK4h+yyK-JKIDEMGQOK+DQANLl8utzVtcAAdBB-QHAsHIAAUIGAYAAFwVkDBLtd6ABKMgKpVgcJhgLnAM3TkPJ7iF5vD4mn6OkBAkpg0OiAJHSEnMa4fQAIQlIFM-oKDgexrxPzaIL8vqqvuA3I+v2b4lb7Rgx26Q0L+xhpOOo5LyFSGSykiNqYbpRQq0KxVa7Q7YB5vvtggIRkpC-nt18-nnNRg2V9rtMAEuvJlMmewCGgA
+
+![Networking_position.png](Networking_position.png)
 
 There is 3 levels of synchronisation. In the end what matters is that the client displays the object at the right
 location :
@@ -89,7 +93,8 @@ location :
   that they improve their predictions and update their state.
 - The client read from input, generate an event, send to server and applies to the state during the fixed update to
   anticipate the server latency.
-- The client read from input and immediately updates the CharacterAgent. It keeps interpolating from the last fixedUpdate GameState value toward the expected position.
+- The client read from input and immediately updates the CharacterAgent. It keeps interpolating from the last
+  fixedUpdate GameState value toward the expected position.
 
 Other example: block placement
 
@@ -98,6 +103,26 @@ Other example: block placement
 - The client read from input, generate an event, send to erver and applied to the state during fixed update to
   anticipate the server latency.
 - There is no immediate update, an animated VFX is played immediatly to cover the latency
+
+#### Client
+
+ClientMain.cs is a MonoBehaviour in charge of orchestrating the game at high level (starting a local game, a remote
+game, leaving the server, etc.)
+ClientEngine.cs is a MonoBehaviour in charge of running a local game (ticks at fixedupdate, keep track of the state,
+applying GameEvents)
+Player the is entity who interacts with the game throw inputs.
+CharacterAgent.cs is in charge of both transforming the player input into GameEvents, and is a visual representation of
+the player character.
+
+Start a local game
+https://sequencediagram.org/index.html#initialData=A4QwTgLglgxloDsIAIDCAbKBTJBZEUCAUKJLPCEmpjhAKIIDmhWJ40ciKAgo7QM74EIPmCJEM2PAQQBaAHzzJtBswRYAXMgAiAS4C24MFmQBXdcgQB7UwDcs6dCdLQT6KzBBOJNJKpYKSr70TCxaqGC6JubI-BAgECaEUNBeADrC9jBmCMjAWGD8VgjCfMgAVjZYpmB54MgAJroAZiCmKAAUAAwAlD5SIWpYgcp+oepaAOK6CAAXxsjINsgwABbgZU6WUPZtyB0ARADuVmDoDQd9o4MBirwCQiIFWgCSCHGUrjkm90iClE9aiAssgQDAYLN+KDTLF4okMsgANTIQjNKyNGGVUzVWruTzoIi-CD-UoFQJEkmA17veIIODRXKodZgMGJMBEjLAGy1NYgACO2LyBSKJSeGNhCVYFMeohGwX8EzQxWaUDA+jcAHJCB86VAElBisgsCh0CBYjZ+DAwPBoIa9h9EuJrgrhopneNNMgAGq6a0qkwCkwQGwoLBxI25YCmmAmY2NAxGNxmlzYIhAA
+![startLocalGame.png](startLocalGame.png)
+
+Load a local game
+https://sequencediagram.org/index.html#initialData=A4QwTgLglgxloDsIAIDCAbKBTJBZEUCAUKJLPCEmpjhAKIIDmhWJ40ciKAgo7QM74EIPmCJEM2PAQQBaAHzzJtBswRYAXGgAW4PsgCu65KWhZk6APYwQ6c1gAeUfhEoRWypKpYKlNL0wsWqi6YPp2yC4g7pEgBgBuWIzgACYAlwA6wokwFubAWGD8lgjC+gBWlgZYBmDIWCgRALYlKR7+9IHqvrwCQiKFWgCSCFFI2IbGvUiClAN1IDnIIDAwABf8ywaRru5ZyADUyIQAZpbIKduV1bUW1rZE0xCzZYU9fDP9osOjrghw5iMOnAK3cYCeWWAVTqMF0AEdqiZCsVSgMLtsou5Hh9nl83opPJ01Jo0CUTlAwE1zOgAOSEMZwaJQEr1RogSJVfgwMDwaAsuI7aKsCQdbzdAmirokgBqaR55PMCPMECqKCwLnqCBM6BW9hQYCwwANCBSFnZpmwRCAA
+
+Start the server
+https://sequencediagram.org/index.html#initialData=CoSwLgTgpgXABAZQJcEcCuUB2BjKcAme+SAtgIYQRkDmRacAzlBAG5RoQBQnCzbEAWTIhMAWgB8vVswCimaiNhwAIqQrQIUthwAUASh59Z8xRIDiZElARgyYJQHkARvcwgIM22ARk0bahTE+pwWVjZ2UKISWsYKmEqedj5+UAEQxAD0AJJuYCBkADbh9obSHibx5lAMeQD2mJjC0ABK1VC+8DngOgCC2NgAFww9iWAGZtV1DU1QrUy+UZJG5XFKAML1AGbu5FNdYMExK6ZLZUIi8BskVjjMAFLsh8vnYuITNSD1je6zbR1wfVwAAd7BANg0oAAPT6YBjBIA
 
 ### Code safety
 

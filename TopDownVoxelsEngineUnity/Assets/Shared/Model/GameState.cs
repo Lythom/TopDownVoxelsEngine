@@ -10,18 +10,26 @@ namespace Shared {
     }
 
     [MessagePackObject(true)]
-    public class GameState {
+    public class GameState : IUpdatable<GameState> {
+        // Public state
+        public bool IsApplyingEvent => _isApplyingEvent;
+        public readonly ReactiveDictionary<short, Character> Characters = new();
+        public readonly ReactiveList<NPC> NPCs = new();
+        public readonly ReactiveDictionary<string, LevelMap> Levels = new();
+
+        // internal or non serialized properties
         [IgnoreMember]
         public readonly LevelGenerator LevelGenerator = new();
 
-        public bool IsApplyingEvent => _isApplyingEvent;
-        public Dictionary<short, Character> Characters = new();
-        public List<NPC> NPCs = new();
-        public Dictionary<string, LevelMap> Levels = new();
-
-        private HashSet<uint> _dirtyChunks = new();
+        private readonly HashSet<uint> _dirtyChunks = new();
 
         private bool _isApplyingEvent;
+
+        public GameState(ReactiveDictionary<short, Character>? characters, ReactiveList<NPC>? npcs, ReactiveDictionary<string, LevelMap>? levels) {
+            if (characters != null) Characters.SynchronizeToTarget(characters);
+            if (npcs != null) NPCs.SynchronizeToTarget(npcs);
+            if (levels != null) Levels.SynchronizeToTarget(levels);
+        }
 
         public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {
             if (_isApplyingEvent)
@@ -43,6 +51,12 @@ namespace Shared {
 
         public void SetChunkDirty(uint chMorton) {
             _dirtyChunks.Add(chMorton);
+        }
+
+        public void UpdateValue(GameState nextState) {
+            Characters.SynchronizeToTarget(nextState.Characters);
+            NPCs.SynchronizeToTarget(nextState.NPCs);
+            Levels.SynchronizeToTarget(nextState.Levels);
         }
     }
 

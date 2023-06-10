@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 
 namespace Shared {
     [MessagePackObject(true)]
-    public class LevelMap : IDisposable {
+    public class LevelMap : IDisposable, IUpdatable<LevelMap> {
         public const int LevelChunkSize = 128;
         public readonly Chunk[,] Chunks;
 
@@ -22,11 +21,11 @@ namespace Shared {
 
         public string LevelId;
 
-        private CancellationTokenSource cts = new();
+        private readonly CancellationTokenSource _cts = new();
 
         public LevelMap(string levelId) {
             LevelId = levelId;
-            GenerateChunksFromQueue(cts.Token).Forget();
+            GenerateChunksFromQueue(_cts.Token).Forget();
 
             Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
             for (int x = 0; x < LevelChunkSize; x++) {
@@ -41,7 +40,7 @@ namespace Shared {
 
 
         public void Dispose() {
-            cts.Cancel(false);
+            _cts.Cancel(false);
         }
 
         private async UniTaskVoid GenerateChunksFromQueue(CancellationToken cancellationToken) {
@@ -105,14 +104,6 @@ namespace Shared {
             return Chunks[chX, chZ];
         }
 
-        // TODO: super dangerous code, Change design !
-        static async UniTask WaitUntil(Func<bool> predicate, int intervalMilliseconds = 10) {
-            while (!predicate()) {
-                await Task.Delay(intervalMilliseconds);
-            }
-        }
-
-
         public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock) {
             if (position.Y < 0 || position.Y >= Chunk.Size || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
                 position.Z >= LevelChunkSize * Chunk.Size) return false;
@@ -173,6 +164,16 @@ namespace Shared {
         public bool CanSet(Vector3Int p, BlockId selectedItemValue) {
             var c = TryGetExistingCell(p);
             return c != null && c.Value.Block != selectedItemValue;
+        }
+
+        public void UpdateValue(LevelMap nextState) {
+            var nextStateChunks = nextState.Chunks;
+            for (int i = 0; i < Chunks.GetLength(0); i++) {
+                for (int j = 0; j < Chunks.GetLength(1); j++) {
+                    var nextChunk = nextStateChunks[i, j];
+                    if (nextChunk.IsGenerated) Chunks[i, j] = nextChunk;
+                }
+            }
         }
     }
 }

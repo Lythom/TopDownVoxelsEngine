@@ -23,7 +23,7 @@ namespace Shared.Net {
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            gameState.Characters[CharacterId].SelectedTool = Tool;
+            gameState.Characters[CharacterId].SelectedTool.Value = Tool;
         }
 
         public override void AssertApplicationConditions(GameState gameState) {

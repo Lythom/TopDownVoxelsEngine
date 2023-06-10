@@ -9,6 +9,7 @@ namespace Shared.Net {
     [Union(4, typeof(ChunkUpdateGameEvent))]
     [Union(5, typeof(PlaceBlocksGameEvent))]
     [Union(6, typeof(TickGameEvent))]
+    [Union(7, typeof(AckNetworkMessage))]
     public interface INetworkMessage {
     }
 
@@ -23,6 +24,16 @@ namespace Shared.Net {
 
         public NewGameNetworkMessage(GameState? gameState) {
             GameState = gameState;
+        }
+    }
+
+    [MessagePackObject]
+    public class AckNetworkMessage : INetworkMessage {
+        [Key(0)]
+        public int Id;
+
+        public AckNetworkMessage(int id) {
+            Id = id;
         }
     }
 

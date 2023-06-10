@@ -62,25 +62,25 @@ namespace MessagePack.Formatters.Shared
             writer.WriteRaw(GetSpan_Angle());
             writer.Write(value.Angle);
             writer.WriteRaw(GetSpan_Level());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Level, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<string>>(formatterResolver).Serialize(ref writer, value.Level, options);
             writer.WriteRaw(GetSpan_SelectedTool());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Serialize(ref writer, value.SelectedTool, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.ToolId>>(formatterResolver).Serialize(ref writer, value.SelectedTool, options);
             writer.WriteRaw(GetSpan_SelectedBlock());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Serialize(ref writer, value.SelectedBlock, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.BlockId>>(formatterResolver).Serialize(ref writer, value.SelectedBlock, options);
             writer.WriteRaw(GetSpan_SelectedTemplate());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.TemplateId>(formatterResolver).Serialize(ref writer, value.SelectedTemplate, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.TemplateId>>(formatterResolver).Serialize(ref writer, value.SelectedTemplate, options);
             writer.WriteRaw(GetSpan_ToolRemoveBlockLevel());
-            writer.Write(value.ToolRemoveBlockLevel);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Serialize(ref writer, value.ToolRemoveBlockLevel, options);
             writer.WriteRaw(GetSpan_ToolAddBlockLevel());
-            writer.Write(value.ToolAddBlockLevel);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Serialize(ref writer, value.ToolAddBlockLevel, options);
             writer.WriteRaw(GetSpan_ToolAddFurnitureLevel());
-            writer.Write(value.ToolAddFurnitureLevel);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Serialize(ref writer, value.ToolAddFurnitureLevel, options);
             writer.WriteRaw(GetSpan_ToolReplaceBlockLevel());
-            writer.Write(value.ToolReplaceBlockLevel);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Serialize(ref writer, value.ToolReplaceBlockLevel, options);
             writer.WriteRaw(GetSpan_BlocsInventory());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<global::Shared.BlockId, int>>(formatterResolver).Serialize(ref writer, value.BlocsInventory, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<global::Shared.BlockId, int>>(formatterResolver).Serialize(ref writer, value.BlocsInventory, options);
             writer.WriteRaw(GetSpan_KnownTemplates());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.TemplateId>>(formatterResolver).Serialize(ref writer, value.KnownTemplates, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.TemplateId>>(formatterResolver).Serialize(ref writer, value.KnownTemplates, options);
         }
 
         public global::Shared.Character Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -93,7 +93,19 @@ namespace MessagePack.Formatters.Shared
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var ____result = new global::Shared.Character();
+            var __Position__ = default(global::Shared.Vector3);
+            var __Velocity__ = default(global::Shared.Vector3);
+            var __Angle__ = default(byte);
+            var __Level__ = default(global::LoneStoneStudio.Tools.Reactive<string>);
+            var __SelectedTool__ = default(global::LoneStoneStudio.Tools.Reactive<global::Shared.ToolId>);
+            var __SelectedBlock__ = default(global::LoneStoneStudio.Tools.Reactive<global::Shared.BlockId>);
+            var __SelectedTemplate__ = default(global::LoneStoneStudio.Tools.Reactive<global::Shared.TemplateId>);
+            var __ToolRemoveBlockLevel__ = default(global::LoneStoneStudio.Tools.Reactive<byte>);
+            var __ToolAddBlockLevel__ = default(global::LoneStoneStudio.Tools.Reactive<byte>);
+            var __ToolAddFurnitureLevel__ = default(global::LoneStoneStudio.Tools.Reactive<byte>);
+            var __ToolReplaceBlockLevel__ = default(global::LoneStoneStudio.Tools.Reactive<byte>);
+            var __BlocsInventory__ = default(global::LoneStoneStudio.Tools.ReactiveDictionary<global::Shared.BlockId, int>);
+            var __KnownTemplates__ = default(global::LoneStoneStudio.Tools.ReactiveList<global::Shared.TemplateId>);
 
             for (int i = 0; i < length; i++)
             {
@@ -109,10 +121,10 @@ namespace MessagePack.Formatters.Shared
                         {
                             default: goto FAIL;
                             case 7957695015293251408UL:
-                                ____result.Position = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                                __Position__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
                             case 8751735851679769942UL:
-                                ____result.Velocity = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                                __Velocity__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
                         }
                     case 5:
@@ -120,36 +132,36 @@ namespace MessagePack.Formatters.Shared
                         {
                             default: goto FAIL;
                             case 435610414657UL:
-                                ____result.Angle = reader.ReadByte();
+                                __Angle__ = reader.ReadByte();
                                 continue;
                             case 465558725964UL:
-                                ____result.Level = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                                __Level__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<string>>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
                         }
                     case 12:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_SelectedTool().Slice(1))) { goto FAIL; }
 
-                        ____result.SelectedTool = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Deserialize(ref reader, options);
+                        __SelectedTool__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.ToolId>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 13:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_SelectedBlock().Slice(1))) { goto FAIL; }
 
-                        ____result.SelectedBlock = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
+                        __SelectedBlock__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.BlockId>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 16:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_SelectedTemplate().Slice(1))) { goto FAIL; }
 
-                        ____result.SelectedTemplate = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.TemplateId>(formatterResolver).Deserialize(ref reader, options);
+                        __SelectedTemplate__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<global::Shared.TemplateId>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 20:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ToolRemoveBlockLevel().Slice(1))) { goto FAIL; }
 
-                        ____result.ToolRemoveBlockLevel = reader.ReadByte();
+                        __ToolRemoveBlockLevel__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 17:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ToolAddBlockLevel().Slice(1))) { goto FAIL; }
 
-                        ____result.ToolAddBlockLevel = reader.ReadByte();
+                        __ToolAddBlockLevel__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 21:
                         switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
@@ -158,13 +170,13 @@ namespace MessagePack.Formatters.Shared
                             case 5072289312480915284UL:
                                 if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ToolAddFurnitureLevel().Slice(1 + 8))) { goto FAIL; }
 
-                                ____result.ToolAddFurnitureLevel = reader.ReadByte();
+                                __ToolAddFurnitureLevel__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
 
                             case 7813856758168776532UL:
                                 if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ToolReplaceBlockLevel().Slice(1 + 8))) { goto FAIL; }
 
-                                ____result.ToolReplaceBlockLevel = reader.ReadByte();
+                                __ToolReplaceBlockLevel__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.Reactive<byte>>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
 
                         }
@@ -175,13 +187,13 @@ namespace MessagePack.Formatters.Shared
                             case 8533839103851981890UL:
                                 if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 133532403134053UL) { goto FAIL; }
 
-                                ____result.BlocsInventory = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<global::Shared.BlockId, int>>(formatterResolver).Deserialize(ref reader, options);
+                                __BlocsInventory__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<global::Shared.BlockId, int>>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
 
                             case 7882799556208848459UL:
                                 if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126879581432944UL) { goto FAIL; }
 
-                                ____result.KnownTemplates = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Shared.TemplateId>>(formatterResolver).Deserialize(ref reader, options);
+                                __KnownTemplates__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.TemplateId>>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
 
                         }
@@ -189,6 +201,7 @@ namespace MessagePack.Formatters.Shared
                 }
             }
 
+            var ____result = new global::Shared.Character(__Position__, __Velocity__, __Angle__, __Level__, __SelectedTool__, __SelectedBlock__, __SelectedTemplate__, __ToolRemoveBlockLevel__, __ToolAddBlockLevel__, __ToolAddFurnitureLevel__, __ToolReplaceBlockLevel__, __BlocsInventory__, __KnownTemplates__);
             reader.Depth--;
             return ____result;
         }

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using LoneStoneStudio.Tools;
 using Shared;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
-using Vector3Int = Shared.Vector3Int;
 
 namespace VoxelsEngine {
     public class LevelRenderer : ConnectedBehaviour {
@@ -22,9 +22,6 @@ namespace VoxelsEngine {
         [Required]
         public Material BlockMaterial = null!;
 
-        [Required, SceneObjectsOnly]
-        public GameObject Player = null!;
-
         private CancellationToken _cancellationTokenOnDestroy;
 
 
@@ -33,19 +30,32 @@ namespace VoxelsEngine {
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
-        private void OnDestroy() {
-            _level?.Dispose();
-        }
+        private Character? _character = null;
 
         protected override void OnSetup(GameState state) {
-            var player = LocalState.Instance.CurrentPlayerId;
-            var levelName = state.Characters[player].Level;
-            _level = state.Levels[levelName];
+            var playerId = LocalState.Instance.CurrentPlayerId;
+            var playerStateSelector = ReactiveHelpers.CreateSelector(
+                state.Characters,
+                characters => characters.Dictionary.TryGetValue(playerId, out var value) ? value : null,
+                null,
+                ResetToken
+            );
+            var playerLevelSelector = new Reactive<string?>(playerStateSelector.Value?.Level.Value);
+            playerLevelSelector.BindCompoundValue(playerStateSelector, c => c?.Level, ResetToken);
+
+            Subscribe(playerStateSelector, p => _character = p);
+            Subscribe(playerLevelSelector, levelId => {
+                _level = null;
+                if (levelId == null) return;
+                RendererChunks.Clear();
+                transform.DestroyChildren();
+                _level = state.Levels[levelId];
+            });
         }
 
         public void Update() {
-            if (_level == null) return;
-            var playerPos = Player.transform.position;
+            if (_level == null || _character == null) return;
+            var playerPos = _character.Position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
             var range = 3;
@@ -61,14 +71,9 @@ namespace VoxelsEngine {
             }
         }
 
-        public Cell? GetCellAt(Vector3Int p) {
-            if (_level == null) return null;
-            return _level.TryGetExistingCell(p);
-        }
-
         private void OnDrawGizmos() {
-            if (Player == null || Player.transform == null) return;
-            var playerPos = Player.transform.position;
+            if (_character == null) return;
+            var playerPos = _character.Position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             Gizmos.DrawWireCube(new Vector3(chX * Chunk.Size + Chunk.Size / 2f, 0, chZ * Chunk.Size + Chunk.Size / 2f),
                 new Vector3(Chunk.Size, Chunk.Size, Chunk.Size));
@@ -110,17 +115,17 @@ namespace VoxelsEngine {
         }
 
         public void UpdateChunk(int chX, int chZ) {
-            if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
+            if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
             ChunkRenderer cr = ChunkRenderers[chX, chZ];
             if (cr != null) {
-                cr.ReCalculateMesh(_level);
+                cr.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ));
                 cr.UpdateMesh();
             }
         }
 
         private void RenderChunk(int chX, int chZ) {
             try {
-                if (chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
+                if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
                 Chunk currentChunk = _level.Chunks[chX, chZ];
                 // preload outbounds chunk content
                 for (int x = -1; x <= 1; x++) {
@@ -133,7 +138,7 @@ namespace VoxelsEngine {
                 if (currentChunk.IsGenerated && !_cancellationTokenOnDestroy.IsCancellationRequested) {
                     var chunkRenderer = GenerateChunkRenderer(chX, chZ);
                     chunkRenderer.transform.SetParent(transform, true);
-                    chunkRenderer.ReCalculateMesh(_level);
+                    chunkRenderer.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ));
                     chunkRenderer.UpdateMesh();
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
@@ -155,26 +160,5 @@ namespace VoxelsEngine {
             chunkGen.Level = _level!;
             return chunkGen;
         }
-
-        /*
-        public Cell? GetCellAt(Vector3 worldPosition) {
-            return _level.TryGetExistingCell(
-                Mathf.RoundToInt(worldPosition.x),
-                Mathf.RoundToInt(worldPosition.y),
-                Mathf.RoundToInt(worldPosition.z),
-                out _,
-                out _,
-                out _
-            );
-        }
-
-        public bool SetCellAt(Vector3 worldPosition, BlockId block) {
-            return _level.TrySetExistingCell(
-                Mathf.RoundToInt(worldPosition.x),
-                Mathf.RoundToInt(worldPosition.y),
-                Mathf.RoundToInt(worldPosition.z),
-                block
-            );
-        }*/
     }
 }

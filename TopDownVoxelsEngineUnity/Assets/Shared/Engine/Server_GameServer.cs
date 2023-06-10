@@ -6,14 +6,8 @@ using LoneStoneStudio.Tools;
 using Shared.Net;
 
 namespace Shared {
-    public enum PriorityLevel {
-        Must,
-        Should,
-        All
-    }
-
     public class Server_GameServer : IDisposable {
-        public readonly GameState State = new();
+        public readonly GameState State = new(null, null, null);
         private readonly CancellationTokenSource _cancellationTokenSource;
         private CancellationToken _cancellationToken;
         public int Frames { get; private set; } = 0;
@@ -53,9 +47,9 @@ namespace Shared {
             // TODO: envoyer des numéros de ticks pour numéroter les packets et gérer les acks
             // TODO: Spawn point
             // TODO: join level message (that TP the player)
-            Character playerCharacter = new Character();
-            playerCharacter.Position = new Vector3(1028f, 4.5f, 1028f);
-            State.Characters.Add(0, playerCharacter);
+            //Character playerCharacter = new Character();
+            //playerCharacter.Position = new Vector3(1028f, 4.5f, 1028f);
+            //State.Characters.Add(0, playerCharacter);
 
             LevelMap level = new LevelMap("lobby");
             State.Levels.Add("lobby", level);
