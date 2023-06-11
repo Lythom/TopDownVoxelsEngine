@@ -43,6 +43,7 @@ Material:
     m_Floats:
     - _Glossiness: 0.362
     - _Metallic: 0
+    - _Parallax: 0.077
     - _TextureIndex: 0
     - _Tiling: 1
     m_Colors:

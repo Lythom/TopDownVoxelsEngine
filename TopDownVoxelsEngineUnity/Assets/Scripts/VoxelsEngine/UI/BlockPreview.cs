@@ -1,12 +1,12 @@
 ﻿using LoneStoneStudio.Tools;
 using Shared;
 using Sirenix.OdinInspector;
-using TMPro;
+using UnityEngine.UI;
 
 namespace VoxelsEngine.UI {
-    public class ToolPreview : ConnectedBehaviour {
+    public class BlocPreview : ConnectedBehaviour {
         [Required]
-        public TextMeshProUGUI Text = null!;
+        public Image Preview = null!;
 
         protected override void OnSetup(GameState state) {
             var playerId = LocalState.Instance.CurrentPlayerId;
@@ -16,10 +16,17 @@ namespace VoxelsEngine.UI {
                 null,
                 ResetToken
             );
+            var playerBlockSelector = new Reactive<BlockId>(BlockId.Dirt);
+            playerBlockSelector.BindCompoundValue(playerStateSelector, c => c?.SelectedBlock, ResetToken);
             var playerToolSelector = new Reactive<ToolId>(ToolId.None);
             playerToolSelector.BindCompoundValue(playerStateSelector, c => c?.SelectedTool, ResetToken);
 
-            Subscribe(playerToolSelector, t => Text.text = t.ToString());
+            Subscribe(playerBlockSelector, playerToolSelector, (block, tool) => {
+                this.SmartActive(tool == ToolId.PlaceBlock || tool == ToolId.ExchangeBlock);
+                var lib = Configurator.Instance.BlocksRenderingLibrary;
+                int id = (int) block;
+                Preview.sprite = (id >= 0 && id < lib.Count ? lib[id].ItemPreview : null)!;
+            });
         }
     }
 }

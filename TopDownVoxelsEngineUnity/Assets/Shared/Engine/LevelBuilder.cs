@@ -3,7 +3,7 @@
 namespace Shared {
     public static class LevelBuilder {
         public static void GenerateTestChunk(int chX, int chZ, string levelId, ref Chunk chunk) {
-            Logr.Log($"GenerateTestChunk {chX}, {chZ}");
+            // Logr.Log($"GenerateTestChunk {chX}, {chZ}");
             var seed = GetChunkSeed(chX, chZ, levelId);
             var rng = new Random(seed);
             // Generate a new chunk

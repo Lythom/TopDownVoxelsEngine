@@ -26,6 +26,8 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_NPCs() => new byte[1 + 4] { 164, 78, 80, 67, 115 };
         // Levels
         private static global::System.ReadOnlySpan<byte> GetSpan_Levels() => new byte[1 + 6] { 166, 76, 101, 118, 101, 108, 115 };
+        // Gravity
+        private static global::System.ReadOnlySpan<byte> GetSpan_Gravity() => new byte[1 + 7] { 167, 71, 114, 97, 118, 105, 116, 121 };
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.GameState value, global::MessagePack.MessagePackSerializerOptions options)
         {
@@ -36,7 +38,7 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(4);
+            writer.WriteMapHeader(5);
             writer.WriteRaw(GetSpan_IsApplyingEvent());
             writer.Write(value.IsApplyingEvent);
             writer.WriteRaw(GetSpan_Characters());
@@ -45,6 +47,8 @@ namespace MessagePack.Formatters.Shared
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.NPCs, options);
             writer.WriteRaw(GetSpan_Levels());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
+            writer.WriteRaw(GetSpan_Gravity());
+            writer.Write(value.Gravity);
         }
 
         public global::Shared.GameState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -89,6 +93,11 @@ namespace MessagePack.Formatters.Shared
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126909395920204UL) { goto FAIL; }
 
                         __Levels__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
+                        continue;
+                    case 7:
+                        if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 34186468488475207UL) { goto FAIL; }
+
+                        reader.Skip();
                         continue;
 
                 }

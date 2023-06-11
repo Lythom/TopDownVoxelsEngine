@@ -1,6 +1,7 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
+using Shared.SideEffects;
 
 namespace Shared.Net {
     [MessagePackObject]
@@ -73,7 +74,8 @@ namespace Shared.Net {
             var level = gameState.Characters[CharacterId].Level.Value;
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
-            chunk.Cells![cx, cy, cz].Block = Block;
+            chunk.Cells[cx, cy, cz].Block = Block;
+            sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(chX, chZ));
         }
 
         public override void AssertApplicationConditions(GameState gameState) {

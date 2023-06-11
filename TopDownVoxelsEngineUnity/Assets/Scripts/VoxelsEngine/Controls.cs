@@ -89,6 +89,15 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SelectTool"",
+                    ""type"": ""Value"",
+                    ""id"": ""17d01231-e835-42fa-97d1-fa8ac8c6c21e"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -267,6 +276,17 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""action"": ""SelectPrevItem"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e83a39ce-d5e0-4971-8983-1af567d7972e"",
+                    ""path"": ""<Mouse>/scroll"",
+                    ""interactions"": """",
+                    ""processors"": ""NormalizeVector2"",
+                    ""groups"": """",
+                    ""action"": ""SelectTool"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -282,6 +302,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         m_Gameplay_Look = m_Gameplay.FindAction("Look", throwIfNotFound: true);
         m_Gameplay_SelectNextItem = m_Gameplay.FindAction("SelectNextItem", throwIfNotFound: true);
         m_Gameplay_SelectPrevItem = m_Gameplay.FindAction("SelectPrevItem", throwIfNotFound: true);
+        m_Gameplay_SelectTool = m_Gameplay.FindAction("SelectTool", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -350,6 +371,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_Look;
     private readonly InputAction m_Gameplay_SelectNextItem;
     private readonly InputAction m_Gameplay_SelectPrevItem;
+    private readonly InputAction m_Gameplay_SelectTool;
     public struct GameplayActions
     {
         private @Controls m_Wrapper;
@@ -361,6 +383,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         public InputAction @Look => m_Wrapper.m_Gameplay_Look;
         public InputAction @SelectNextItem => m_Wrapper.m_Gameplay_SelectNextItem;
         public InputAction @SelectPrevItem => m_Wrapper.m_Gameplay_SelectPrevItem;
+        public InputAction @SelectTool => m_Wrapper.m_Gameplay_SelectTool;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -391,6 +414,9 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @SelectPrevItem.started += instance.OnSelectPrevItem;
             @SelectPrevItem.performed += instance.OnSelectPrevItem;
             @SelectPrevItem.canceled += instance.OnSelectPrevItem;
+            @SelectTool.started += instance.OnSelectTool;
+            @SelectTool.performed += instance.OnSelectTool;
+            @SelectTool.canceled += instance.OnSelectTool;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -416,6 +442,9 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @SelectPrevItem.started -= instance.OnSelectPrevItem;
             @SelectPrevItem.performed -= instance.OnSelectPrevItem;
             @SelectPrevItem.canceled -= instance.OnSelectPrevItem;
+            @SelectTool.started -= instance.OnSelectTool;
+            @SelectTool.performed -= instance.OnSelectTool;
+            @SelectTool.canceled -= instance.OnSelectTool;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -442,5 +471,6 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         void OnLook(InputAction.CallbackContext context);
         void OnSelectNextItem(InputAction.CallbackContext context);
         void OnSelectPrevItem(InputAction.CallbackContext context);
+        void OnSelectTool(InputAction.CallbackContext context);
     }
 }

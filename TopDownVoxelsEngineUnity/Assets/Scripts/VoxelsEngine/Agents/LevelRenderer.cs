@@ -5,17 +5,21 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using LoneStoneStudio.Tools;
 using Shared;
+using Shared.SideEffects;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
     public class LevelRenderer : ConnectedBehaviour {
+        public int MaxRenderDistance = 4;
+
         private LevelMap? _level = null;
         public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
-        public readonly HashSet<int> RendererChunks = new();
+        public readonly HashSet<int> RenderedChunks = new();
         public readonly Queue<int> ToBeRendererQueue = new();
+        public readonly HashSet<int> DirtySet = new();
 
         public string LevelId = "0";
 
@@ -47,24 +51,40 @@ namespace VoxelsEngine {
             Subscribe(playerLevelSelector, levelId => {
                 _level = null;
                 if (levelId == null) return;
-                RendererChunks.Clear();
+                RenderedChunks.Clear();
                 transform.DestroyChildren();
                 _level = state.Levels[levelId];
             });
+
+            SubscribeSideEffect<ChunkDirtySEffect>(cse => DirtySet.Add(Chunk.GetFlatIndex(cse.ChX, cse.ChZ)));
+        }
+
+        public void SetDirty(int chX, int chZ) {
+            if (_character == null) return;
+            var (pchX, pchZ) = LevelTools.GetChunkPosition(_character.Position);
+            if (Math.Abs(pchX - chX) <= MaxRenderDistance
+                && Math.Abs(pchX - chX) <= MaxRenderDistance
+               ) {
+                DirtySet.Add(Chunk.GetFlatIndex(chX, chZ));
+            }
         }
 
         public void Update() {
             if (_level == null || _character == null) return;
-            var playerPos = _character.Position;
+            UpdateAroundPlayer(_character.Position, _level.Chunks);
+        }
+
+        private void UpdateAroundPlayer(Shared.Vector3 characterPosition, Chunk[,] levelChunks) {
+            var playerPos = characterPosition;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
             var range = 3;
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
                     var key = Chunk.GetFlatIndex(chX + x, chZ + z);
-                    if (!RendererChunks.Contains(key)) {
-                        if (chX + x < 0 || chX + x >= _level.Chunks.GetLength(0) || chZ + z < 0 || chZ + z >= _level.Chunks.GetLength(1)) continue;
-                        RendererChunks.Add(key);
+                    if (!RenderedChunks.Contains(key)) {
+                        if (chX + x < 0 || chX + x >= levelChunks.GetLength(0) || chZ + z < 0 || chZ + z >= levelChunks.GetLength(1)) continue;
+                        RenderedChunks.Add(key);
                         ToBeRendererQueue.Enqueue(key);
                     }
                 }
@@ -81,10 +101,21 @@ namespace VoxelsEngine {
 
         private async UniTask RenderChunksFromQueue(CancellationToken cancellationToken) {
             Debug.Log("Start job rendering chunks.");
+            int maxRenderPerFrame = 3;
 
             while (!cancellationToken.IsCancellationRequested) {
                 var renderedThisFrame = 0;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+
+                // first update visible chunks that requires rerender
+                foreach (var i in DirtySet) {
+                    var (chX, chZ) = Chunk.GetCoordsFromIndex(i);
+                    UpdateChunk(chX, chZ);
+                }
+
+                DirtySet.Clear();
+
+
                 // dequeue until all is generated
                 while (ToBeRendererQueue.TryDequeue(out int chunkFlatIndex)) {
                     try {
@@ -101,8 +132,7 @@ namespace VoxelsEngine {
                         RenderChunk(chX, chZ);
                         renderedThisFrame++;
 
-                        if (renderedThisFrame >= 1) {
-                            // max 1 per frame
+                        if (renderedThisFrame >= maxRenderPerFrame) {
                             await UniTask.NextFrame(cancellationToken);
                         }
                     } catch (Exception e) {

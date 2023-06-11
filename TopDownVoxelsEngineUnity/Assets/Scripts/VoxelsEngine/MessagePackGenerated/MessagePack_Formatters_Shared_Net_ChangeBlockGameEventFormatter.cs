@@ -16,10 +16,10 @@
 
 namespace MessagePack.Formatters.Shared.Net
 {
-    public sealed class ChangeToolGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.ChangeToolGameEvent>
+    public sealed class ChangeBlockGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.ChangeBlockGameEvent>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.ChangeToolGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.ChangeBlockGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -31,10 +31,10 @@ namespace MessagePack.Formatters.Shared.Net
             writer.WriteArrayHeader(3);
             writer.Write(value.Id);
             writer.Write(value.CharacterId);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Serialize(ref writer, value.Tool, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Serialize(ref writer, value.Block, options);
         }
 
-        public global::Shared.Net.ChangeToolGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Shared.Net.ChangeBlockGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -46,7 +46,7 @@ namespace MessagePack.Formatters.Shared.Net
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
             var __CharacterId__ = default(short);
-            var __Tool__ = default(global::Shared.ToolId);
+            var __Block__ = default(global::Shared.BlockId);
 
             for (int i = 0; i < length; i++)
             {
@@ -59,7 +59,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __CharacterId__ = reader.ReadInt16();
                         break;
                     case 2:
-                        __Tool__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Deserialize(ref reader, options);
+                        __Block__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -67,7 +67,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.ChangeToolGameEvent(__Id__, __CharacterId__, __Tool__);
+            var ____result = new global::Shared.Net.ChangeBlockGameEvent(__Id__, __CharacterId__, __Block__);
             reader.Depth--;
             return ____result;
         }

@@ -151,22 +151,39 @@ namespace VoxelsEngine {
             //     if ((int) SelectedItem.Value < Enum.GetNames(typeof(BlockId)).Length) SelectedItem.Value++;
             // }
 
-            if (facingCursorPos != null) {
+            if (facingCursorPos != null && collidingBlockPos != null) {
+                var target = _character.SelectedTool.Value switch {
+                    ToolId.PlaceBlock => facingCursorPos.Value,
+                    ToolId.PlaceFurniture => facingCursorPos.Value,
+                    _ => collidingBlockPos.Value
+                };
                 BCubeDrawer.Cube(
-                    facingCursorPos.Value,
+                    target,
                     Quaternion.identity,
                     Vector3.one
                 );
 
                 if (_controls.Gameplay.Place.IsPressed()) {
-                    _isPlacing = true;
-                    var succeeded = _placeCooldown.TryPerform() && level.CanSet(facingCursorPos.Value, _character.SelectedBlock.Value);
-                    if (succeeded) {
-                        var (x, y, z) = facingCursorPos.Value;
-                        SendMessageAsync(
-                            new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, _character.SelectedBlock.Value),
-                            TimeSpan.FromSeconds(5)
-                        ).Forget();
+                    var blockToSet = _character.SelectedTool.Value switch {
+                        ToolId.PlaceBlock => _character.SelectedBlock.Value,
+                        ToolId.ExchangeBlock => _character.SelectedBlock.Value,
+                        _ => BlockId.Air
+                    };
+                    switch (_character.SelectedTool.Value) {
+                        case ToolId.PlaceBlock:
+                        case ToolId.ExchangeBlock:
+                        case ToolId.RemoveBlock:
+                            _isPlacing = true;
+                            var succeeded = _placeCooldown.TryPerform() && level.CanSet(target, blockToSet);
+                            if (succeeded) {
+                                var (x, y, z) = target;
+                                SendMessageAsync(
+                                    new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet),
+                                    TimeSpan.FromSeconds(5)
+                                ).Forget();
+                            }
+
+                            break;
                     }
                 }
 
@@ -182,6 +199,27 @@ namespace VoxelsEngine {
                 var jumpCharge = Time.time - _jumpChargeStart;
                 velocity.Y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * jumpCharge));
             }
+
+            Vector2 scrollDelta = _controls.Gameplay.SelectTool.ReadValue<Vector2>();
+            if (scrollDelta.y > 0) {
+                ToolId nextToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value + 1, Enum.GetNames(typeof(ToolId)).Length);
+                SendMessageAsync(new ChangeToolGameEvent(0, CharacterId, nextToolId), TimeSpan.FromSeconds(5)).Forget();
+            } else if (scrollDelta.y < 0) {
+                ToolId prevToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value - 1, Enum.GetNames(typeof(ToolId)).Length);
+                SendMessageAsync(new ChangeToolGameEvent(0, CharacterId, prevToolId), TimeSpan.FromSeconds(5)).Forget();
+            }
+
+            if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
+                BlockId nextBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value + 1, Enum.GetNames(typeof(BlockId)).Length);
+                if (nextBlockId == BlockId.Air) nextBlockId++;
+                SendMessageAsync(new ChangeBlockGameEvent(0, CharacterId, nextBlockId), TimeSpan.FromSeconds(5)).Forget();
+            } else if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
+                var length = Enum.GetNames(typeof(BlockId)).Length;
+                BlockId prevBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value - 1, length);
+                if (prevBlockId == BlockId.Air) prevBlockId = (BlockId) (length - 1);
+                SendMessageAsync(new ChangeBlockGameEvent(0, CharacterId, prevBlockId), TimeSpan.FromSeconds(5)).Forget();
+            }
+
 
             // Wild override of local state for client side prediction
             _character.Velocity = velocity;

@@ -1,11 +1,9 @@
-namespace Shared
-{
-    public enum ToolId
-    {
+namespace Shared {
+    public enum ToolId {
         None,
         PlaceBlock,
         RemoveBlock,
-        ReplacePlace,
+        ExchangeBlock,
         PlaceFurniture,
     }
 }

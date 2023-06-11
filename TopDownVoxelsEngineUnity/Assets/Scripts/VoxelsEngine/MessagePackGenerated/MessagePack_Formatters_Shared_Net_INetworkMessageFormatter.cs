@@ -20,7 +20,7 @@ namespace MessagePack.Formatters.Shared.Net
 
         public INetworkMessageFormatter()
         {
-            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(7, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(8, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
                 { typeof(global::Shared.Net.NewGameNetworkMessage).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
                 { typeof(global::Shared.Net.HelloNetworkMessage).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
@@ -29,8 +29,9 @@ namespace MessagePack.Formatters.Shared.Net
                 { typeof(global::Shared.Net.ChunkUpdateGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
                 { typeof(global::Shared.Net.PlaceBlocksGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
                 { typeof(global::Shared.Net.TickGameEvent).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
+                { typeof(global::Shared.Net.AckNetworkMessage).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
             };
-            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(7)
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(8)
             {
                 { 0, 0 },
                 { 1, 1 },
@@ -39,6 +40,7 @@ namespace MessagePack.Formatters.Shared.Net
                 { 4, 4 },
                 { 5, 5 },
                 { 6, 6 },
+                { 7, 7 },
             };
         }
 
@@ -71,6 +73,9 @@ namespace MessagePack.Formatters.Shared.Net
                         break;
                     case 6:
                         global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.TickGameEvent>(options.Resolver).Serialize(ref writer, (global::Shared.Net.TickGameEvent)value, options);
+                        break;
+                    case 7:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.AckNetworkMessage>(options.Resolver).Serialize(ref writer, (global::Shared.Net.AckNetworkMessage)value, options);
                         break;
                     default:
                         break;
@@ -125,6 +130,9 @@ namespace MessagePack.Formatters.Shared.Net
                     break;
                 case 6:
                     result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.TickGameEvent>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 7:
+                    result = (global::Shared.Net.INetworkMessage)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Net.AckNetworkMessage>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
