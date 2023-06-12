@@ -46,6 +46,13 @@ namespace Server {
                 throw new ApplicationException("Could not start Server", e);
             }
         }
+        
+        // TODO: démarrer un serveur qui tick tout le temps, nouvelle partie si pas de partie
+        // TODO: gérer la connexion d'un nouveau joueur (créer un nouveau personnage)
+        // TODO: gérer la connexion joueur existant
+        // - identité
+        // - récupérer personnage
+        
 
         public async UniTask HandleMessageAsync(
             INetworkMessage netMessage,

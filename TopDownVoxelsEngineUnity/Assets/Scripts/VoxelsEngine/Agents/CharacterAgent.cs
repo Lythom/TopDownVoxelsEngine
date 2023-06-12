@@ -1,5 +1,4 @@
 ﻿using System;
-using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using Popcron;
 using Shared;
@@ -177,10 +176,7 @@ namespace VoxelsEngine {
                             var succeeded = _placeCooldown.TryPerform() && level.CanSet(target, blockToSet);
                             if (succeeded) {
                                 var (x, y, z) = target;
-                                SendMessageAsync(
-                                    new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet),
-                                    TimeSpan.FromSeconds(5)
-                                ).Forget();
+                                SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
                             }
 
                             break;
@@ -203,21 +199,21 @@ namespace VoxelsEngine {
             Vector2 scrollDelta = _controls.Gameplay.SelectTool.ReadValue<Vector2>();
             if (scrollDelta.y > 0) {
                 ToolId nextToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value + 1, Enum.GetNames(typeof(ToolId)).Length);
-                SendMessageAsync(new ChangeToolGameEvent(0, CharacterId, nextToolId), TimeSpan.FromSeconds(5)).Forget();
+                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, nextToolId));
             } else if (scrollDelta.y < 0) {
                 ToolId prevToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value - 1, Enum.GetNames(typeof(ToolId)).Length);
-                SendMessageAsync(new ChangeToolGameEvent(0, CharacterId, prevToolId), TimeSpan.FromSeconds(5)).Forget();
+                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolId));
             }
 
             if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
                 BlockId nextBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value + 1, Enum.GetNames(typeof(BlockId)).Length);
                 if (nextBlockId == BlockId.Air) nextBlockId++;
-                SendMessageAsync(new ChangeBlockGameEvent(0, CharacterId, nextBlockId), TimeSpan.FromSeconds(5)).Forget();
+                SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, nextBlockId));
             } else if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
                 var length = Enum.GetNames(typeof(BlockId)).Length;
                 BlockId prevBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value - 1, length);
                 if (prevBlockId == BlockId.Air) prevBlockId = (BlockId) (length - 1);
-                SendMessageAsync(new ChangeBlockGameEvent(0, CharacterId, prevBlockId), TimeSpan.FromSeconds(5)).Forget();
+                SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, prevBlockId));
             }
 
 

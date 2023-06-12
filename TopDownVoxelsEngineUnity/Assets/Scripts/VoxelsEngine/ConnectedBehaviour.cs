@@ -141,57 +141,73 @@ namespace VoxelsEngine {
             );
         }
 
-        protected void Subscribe<TSource, TSource2, TSource3>(IUniTaskAsyncEnumerable<TSource> source, IUniTaskAsyncEnumerable<TSource2> source2,
-                                                              IUniTaskAsyncEnumerable<TSource3> source3, Action<TSource, TSource2, TSource3> action) {
+        protected void Subscribe<TSource, TSource2, TSource3>(
+            IUniTaskAsyncEnumerable<TSource> source,
+            IUniTaskAsyncEnumerable<TSource2> source2,
+            IUniTaskAsyncEnumerable<TSource3> source3,
+            Action<TSource, TSource2, TSource3> action
+        ) {
             Subscribe(
                 UniTaskAsyncEnumerable.CombineLatest(source, source2, source3, Fns.Tuplify),
                 args => action(args.Item1, args.Item2, args.Item3)
             );
         }
 
-        protected void Subscribe<TSource, TSource2, TSource3, TSource4>(IUniTaskAsyncEnumerable<TSource> source, IUniTaskAsyncEnumerable<TSource2> source2,
-                                                                        IUniTaskAsyncEnumerable<TSource3> source3, IUniTaskAsyncEnumerable<TSource4> source4,
-                                                                        Action<TSource, TSource2, TSource3, TSource4> action) {
+        protected void Subscribe<TSource, TSource2, TSource3, TSource4>(
+            IUniTaskAsyncEnumerable<TSource> source,
+            IUniTaskAsyncEnumerable<TSource2> source2,
+            IUniTaskAsyncEnumerable<TSource3> source3,
+            IUniTaskAsyncEnumerable<TSource4> source4,
+            Action<TSource, TSource2, TSource3, TSource4> action
+        ) {
             Subscribe(
                 UniTaskAsyncEnumerable.CombineLatest(source, source2, source3, source4, Fns.Tuplify),
                 args => action(args.Item1, args.Item2, args.Item3, args.Item4)
             );
         }
 
-        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5>(IUniTaskAsyncEnumerable<TSource> source, IUniTaskAsyncEnumerable<TSource2> source2,
-                                                                                  IUniTaskAsyncEnumerable<TSource3> source3, IUniTaskAsyncEnumerable<TSource4> source4,
-                                                                                  IUniTaskAsyncEnumerable<TSource5> source5,
-                                                                                  Action<TSource, TSource2, TSource3, TSource4, TSource5> action) {
+        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5>(
+            IUniTaskAsyncEnumerable<TSource> source,
+            IUniTaskAsyncEnumerable<TSource2> source2,
+            IUniTaskAsyncEnumerable<TSource3> source3,
+            IUniTaskAsyncEnumerable<TSource4> source4,
+            IUniTaskAsyncEnumerable<TSource5> source5,
+            Action<TSource, TSource2, TSource3, TSource4, TSource5> action
+        ) {
             Subscribe(
                 UniTaskAsyncEnumerable.CombineLatest(source, source2, source3, source4, source5, Fns.Tuplify),
                 args => action(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5)
             );
         }
 
-        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5, TSource6>(IUniTaskAsyncEnumerable<TSource> source,
-                                                                                            IUniTaskAsyncEnumerable<TSource2> source2,
-                                                                                            IUniTaskAsyncEnumerable<TSource3> source3,
-                                                                                            IUniTaskAsyncEnumerable<TSource4> source4,
-                                                                                            IUniTaskAsyncEnumerable<TSource5> source5,
-                                                                                            IUniTaskAsyncEnumerable<TSource6> source6,
-                                                                                            Action<TSource, TSource2, TSource3, TSource4, TSource5, TSource6> action,
-                                                                                            string? debugSource = null) {
+        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5, TSource6>(
+            IUniTaskAsyncEnumerable<TSource> source,
+            IUniTaskAsyncEnumerable<TSource2> source2,
+            IUniTaskAsyncEnumerable<TSource3> source3,
+            IUniTaskAsyncEnumerable<TSource4> source4,
+            IUniTaskAsyncEnumerable<TSource5> source5,
+            IUniTaskAsyncEnumerable<TSource6> source6,
+            Action<TSource, TSource2, TSource3, TSource4, TSource5, TSource6> action,
+            string? debugSource = null
+        ) {
             Subscribe(
                 UniTaskAsyncEnumerable.CombineLatest(source, source2, source3, source4, source5, source6, Fns.Tuplify),
                 args => action(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6)
             );
         }
 
-        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5, TSource6, TSource7>(IUniTaskAsyncEnumerable<TSource> source,
-                                                                                                      IUniTaskAsyncEnumerable<TSource2> source2,
-                                                                                                      IUniTaskAsyncEnumerable<TSource3> source3,
-                                                                                                      IUniTaskAsyncEnumerable<TSource4> source4,
-                                                                                                      IUniTaskAsyncEnumerable<TSource5> source5,
-                                                                                                      IUniTaskAsyncEnumerable<TSource6> source6,
-                                                                                                      IUniTaskAsyncEnumerable<TSource7> source7,
-                                                                                                      Action<TSource, TSource2, TSource3, TSource4, TSource5, TSource6,
-                                                                                                          TSource7> action,
-                                                                                                      string? debugSource = null) {
+        protected void Subscribe<TSource, TSource2, TSource3, TSource4, TSource5, TSource6, TSource7>(
+            IUniTaskAsyncEnumerable<TSource> source,
+            IUniTaskAsyncEnumerable<TSource2> source2,
+            IUniTaskAsyncEnumerable<TSource3> source3,
+            IUniTaskAsyncEnumerable<TSource4> source4,
+            IUniTaskAsyncEnumerable<TSource5> source5,
+            IUniTaskAsyncEnumerable<TSource6> source6,
+            IUniTaskAsyncEnumerable<TSource7> source7,
+            Action<TSource, TSource2, TSource3, TSource4, TSource5, TSource6,
+                TSource7> action,
+            string? debugSource = null
+        ) {
             Subscribe(
                 UniTaskAsyncEnumerable.CombineLatest(source, source2, source3, source4, source5, source6, source7, Fns.Tuplify),
                 args => action(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7)
@@ -294,12 +310,14 @@ namespace VoxelsEngine {
             if (SocketManager != null) SocketManager.OnNetworkMessage -= HandleAnswer;
             return answerReceived.GetStatus(0) == UniTaskStatus.Succeeded ? answerReceived.GetResult(0) : null;
         }
-        
-        protected void SendBlindMessageAsync(INetworkMessage msg) {
+
+        protected void SendBlindMessageOptimistic(GameEvent msg) {
             if (SocketManager == null) {
                 Logr.Log("Not connected to a server.");
                 return;
             }
+
+            ClientEngine.HandleEvent(msg);
             SocketManager.Send(msg).Forget();
         }
 

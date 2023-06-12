@@ -3,6 +3,7 @@ using System.IO;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using Shared;
+using Shared.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vector3 = Shared.Vector3;
@@ -16,10 +17,23 @@ namespace VoxelsEngine {
         [Required, AssetsOnly]
         public CharacterAgent CharacterPrefab = null!;
 
+        public string ServerURL = "ws://localhost:8080";
+        private ClientEngine? _engine;
+
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
         private void Awake() {
-            StartLocalPlay().Forget();
+            //StartLocalPlay().Forget();
+            StartRemotePlay().Forget();
+        }
+
+        private void OnDestroy() {
+            if (_engine != null) _engine.SocketManager.Close();
+        }
+
+        private async UniTask StartRemotePlay() {
+            _engine = gameObject.AddComponent<ClientEngine>();
+            await _engine.InitRemote(ServerURL);
         }
 
         private async UniTask StartLocalPlay() {
@@ -66,13 +80,15 @@ namespace VoxelsEngine {
                     );
                 }
 
-                var engine = gameObject.AddComponent<ClientEngine>();
-                engine.State.UpdateValue(state);
-                state = null;
-                engine.State.LevelGenerator.EnqueueChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, engine.State.Levels);
-                engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, engine.State.Levels);
+                _engine = gameObject.AddComponent<ClientEngine>();
 
-                var agent = Instantiate(CharacterPrefab, engine.transform, true);
+                // bootup local engine
+                _engine.State.UpdateValue(state);
+                state = null;
+                _engine.State.LevelGenerator.EnqueueChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
+                _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
+
+                var agent = Instantiate(CharacterPrefab, _engine.transform, true);
                 agent.CharacterId = 0;
                 agent.CameraTransform = Tracker.transform;
                 Tracker.Target = agent.gameObject;
@@ -85,7 +101,7 @@ namespace VoxelsEngine {
 
                 await UniTask.Delay(2000);
 
-                engine.Start();
+                _engine.Start();
             } catch (Exception e) {
                 Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
                 return;

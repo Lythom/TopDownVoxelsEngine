@@ -24,6 +24,7 @@ namespace Shared.Net {
                 return;
             }
 
+            // send to server
             var bytes = MessagePackSerializer.Serialize(msg);
             await _websocket.Send(bytes);
         }

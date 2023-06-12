@@ -1,6 +1,7 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
+using Shared.SideEffects;
 
 namespace Shared.Net {
     [MessagePackObject]
@@ -20,11 +21,10 @@ namespace Shared.Net {
             // Generate missing chunks
             foreach (var (key, c) in state.Characters) {
                 MoveCharacter(c, state);
-                var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
-                if (c.Level.Value != null && state.Levels.ContainsKey(c.Level.Value)) state.LevelGenerator.EnqueueChunksAround(c.Level.Value, chx, chz, 3, state.Levels);
             }
 
-            state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
+            //state.LevelGenerator.EnqueueChunksAround(c.Level.Value, chx, chz, 3, state.Levels);
+            //state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
         }
 
         private void MoveCharacter(Character character, GameState gameState) {

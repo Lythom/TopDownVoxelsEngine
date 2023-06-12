@@ -10,10 +10,10 @@ namespace Shared.Net {
             return UniTask.CompletedTask;
         }
 
-        public async UniTask Send(INetworkMessage msg) {
-            await UniTask.DelayFrame(1);
+        public UniTask Send(INetworkMessage msg) {
             Debug.Log("Echoing " + msg);
             OnNetworkMessage?.Invoke(msg);
+            return UniTask.CompletedTask;
         }
 
         public UniTask Close() {
