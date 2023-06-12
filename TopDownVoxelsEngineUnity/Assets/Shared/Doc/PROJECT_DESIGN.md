@@ -47,7 +47,7 @@ public abstract class GameEvent : IGameEvent, INetworkMessage
     
     // Mostly for developper experience, express the assertions required for the event to succeed.
     // It helps the develop knows the presequites for this GameEvent to be applied;
-    public abstract void AssertApplicationConditions(GameState gameState);
+    public abstract void AssertApplicationConditions(in GameState gameState);
 }
 ```
 

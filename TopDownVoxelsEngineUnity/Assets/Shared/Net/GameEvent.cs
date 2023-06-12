@@ -12,6 +12,6 @@ namespace Shared.Net
         }
 
         protected internal abstract void DoApply(GameState gameState, SideEffectManager? sideEffectManager);
-        public abstract void AssertApplicationConditions(GameState gameState);
+        public abstract void AssertApplicationConditions(in GameState gameState);
     }
 }

@@ -27,7 +27,7 @@ namespace Shared.Net {
             gameState.Characters[CharacterId].SelectedBlock.Value = Block;
         }
 
-        public override void AssertApplicationConditions(GameState gameState) {
+        public override void AssertApplicationConditions(in GameState gameState) {
             if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character must exists");
         }
     }

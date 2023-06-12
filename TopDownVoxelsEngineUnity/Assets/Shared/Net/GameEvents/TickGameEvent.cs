@@ -43,7 +43,7 @@ namespace Shared.Net {
             }
         }
 
-        public override void AssertApplicationConditions(GameState state) {
+        public override void AssertApplicationConditions(in GameState state) {
         }
     }
 }

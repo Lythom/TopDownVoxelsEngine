@@ -78,7 +78,7 @@ namespace Shared.Net {
             sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(chX, chZ));
         }
 
-        public override void AssertApplicationConditions(GameState gameState) {
+        public override void AssertApplicationConditions(in GameState gameState) {
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
             if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Unknown level");
             var level = gameState.Characters[CharacterId].Level;

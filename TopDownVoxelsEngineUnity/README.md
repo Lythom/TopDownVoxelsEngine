@@ -37,7 +37,7 @@ General documentation of the VoxelsEngine project.
 
 ### Server
 
--   Open ./VoxelsEngine.sln in the project root. The solution contains 4 projects:
+-   Open ./VoxelsEngine.sln in the project root. The solution contains those projects:
     -   Server: .net6.0 C# 9 .NET core web application. A server that handles gameEvent validation, networking
         and DB saving.
     -   Shared: netstandard2.1 C# 9 library. Contains most of game logic and data models. It does not use the same .net

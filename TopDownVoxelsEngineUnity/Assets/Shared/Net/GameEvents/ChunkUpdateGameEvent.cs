@@ -27,7 +27,7 @@ namespace Shared.Net {
             gameState.Characters[CharacterId].Angle = Angle;
         }
 
-        public override void AssertApplicationConditions(GameState gameState) {
+        public override void AssertApplicationConditions(in GameState gameState) {
         }
     }
 }
