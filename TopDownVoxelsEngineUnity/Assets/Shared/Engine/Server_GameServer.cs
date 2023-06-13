@@ -34,9 +34,6 @@ namespace Shared {
         }
 
         private void InitState() {
-            // TODO: Je dois faire communiquer le client du jeu et le serveur.
-            // Le client fait tourner son propre serveur s'il est en local et lui envoi directement des messages
-            // Le client fait toujours tourner son propre serveur s'il n'est pas en local pour faire de la prédition d'état.
             // Les éléments simulé par le client sont:
             // - [Character] position en fonction de la velocity et des collisions aux blocs adjacents
             // - [NPC] position en fonction de la velocity et des collisions aux blocs adjacents

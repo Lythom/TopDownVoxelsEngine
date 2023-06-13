@@ -10,6 +10,7 @@ namespace Shared.Net {
     [Union(5, typeof(PlaceBlocksGameEvent))]
     [Union(6, typeof(TickGameEvent))]
     [Union(7, typeof(AckNetworkMessage))]
+    [Union(8, typeof(AckNetworkMessage))]
     public interface INetworkMessage {
     }
 
@@ -43,14 +44,31 @@ namespace Shared.Net {
     [MessagePackObject]
     public class HelloNetworkMessage : INetworkMessage {
         [Key(0)]
-        public string Hey;
+        public string Username;
 
         public HelloNetworkMessage() {
-            Hey = string.Empty;
+            Username = string.Empty;
         }
 
-        public HelloNetworkMessage(string hey) {
-            Hey = hey;
+        public HelloNetworkMessage(string username) {
+            Username = username;
+        }
+    }
+
+    /// <summary>
+    /// ClientToServer: (User) Tell the server the client is ready to play.
+    /// </summary>
+    [MessagePackObject]
+    public class ErrorNetworkMessage : INetworkMessage {
+        [Key(0)]
+        public string Message;
+
+        public ErrorNetworkMessage() {
+            Message = string.Empty;
+        }
+
+        public ErrorNetworkMessage(string message) {
+            Message = message;
         }
     }
 

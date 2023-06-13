@@ -58,7 +58,7 @@ namespace Server {
                         case WebSocketMessageType.Binary:
                             var bytes = new ArraySegment<byte>(buffer, 0, bufferOffset);
                             var msg = MessagePackSerializer.Deserialize<INetworkMessage>(bytes);
-                            await server.HandleMessageAsync(
+                            await server.HandleMessage(
                                 msg,
                                 answer => messageSender.Send(webSocket, answer),
                                 messageSender.Broadcast

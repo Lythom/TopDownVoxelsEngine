@@ -26,6 +26,9 @@ namespace Shared {
 
         private bool _isApplyingEvent;
 
+        public GameState() {
+        }
+
         public GameState(ReactiveDictionary<short, Character>? characters, ReactiveList<NPC>? npcs, ReactiveDictionary<string, LevelMap>? levels) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (npcs != null) NPCs.SynchronizeToTarget(npcs);
