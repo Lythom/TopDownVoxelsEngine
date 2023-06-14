@@ -12,7 +12,7 @@ using Vector3Int = Shared.Vector3Int;
 
 namespace VoxelsEngine {
     public class CharacterAgent : ConnectedBehaviour {
-        public short CharacterId = 0;
+        public ushort CharacterId = 0;
         public float Speed = 5.0f;
 
         public float JumpForce = 0.2f;

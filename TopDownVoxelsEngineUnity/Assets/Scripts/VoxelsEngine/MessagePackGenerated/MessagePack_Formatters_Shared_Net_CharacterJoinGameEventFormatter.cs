@@ -16,10 +16,10 @@
 
 namespace MessagePack.Formatters.Shared.Net
 {
-    public sealed class CharacterMoveGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.CharacterMoveGameEvent>
+    public sealed class CharacterJoinGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.CharacterJoinGameEvent>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.CharacterMoveGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.CharacterJoinGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -28,15 +28,13 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(5);
+            writer.WriteArrayHeader(3);
             writer.Write(value.Id);
             writer.Write(value.CharacterId);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
-            writer.Write(value.Angle);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Serialize(ref writer, value.Character, options);
         }
 
-        public global::Shared.Net.CharacterMoveGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Shared.Net.CharacterJoinGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -48,9 +46,7 @@ namespace MessagePack.Formatters.Shared.Net
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
             var __CharacterId__ = default(ushort);
-            var __Position__ = default(global::Shared.Vector3);
-            var __Velocity__ = default(global::Shared.Vector3);
-            var __Angle__ = default(byte);
+            var __Character__ = default(global::Shared.Character);
 
             for (int i = 0; i < length; i++)
             {
@@ -63,13 +59,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __CharacterId__ = reader.ReadUInt16();
                         break;
                     case 2:
-                        __Position__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 3:
-                        __Velocity__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 4:
-                        __Angle__ = reader.ReadByte();
+                        __Character__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -77,7 +67,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, __CharacterId__, __Position__, __Velocity__, __Angle__);
+            var ____result = new global::Shared.Net.CharacterJoinGameEvent(__Id__, __CharacterId__, __Character__);
             reader.Depth--;
             return ____result;
         }

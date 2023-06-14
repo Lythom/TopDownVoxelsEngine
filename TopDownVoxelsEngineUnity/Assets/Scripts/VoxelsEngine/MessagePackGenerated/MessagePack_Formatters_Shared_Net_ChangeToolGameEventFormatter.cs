@@ -45,7 +45,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(short);
+            var __CharacterId__ = default(ushort);
             var __Tool__ = default(global::Shared.ToolId);
 
             for (int i = 0; i < length; i++)
@@ -56,7 +56,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadInt16();
+                        __CharacterId__ = reader.ReadUInt16();
                         break;
                     case 2:
                         __Tool__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.ToolId>(formatterResolver).Deserialize(ref reader, options);

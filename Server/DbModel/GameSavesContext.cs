@@ -2,16 +2,18 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Server.DbModel {
     public sealed class GameSavesContext : IdentityDbContext {
-        public DbSet<Player> Players { get; set; }
-        public DbSet<Character> Characters { get; set; }
-        public DbSet<Chunk> Chunks { get; set; }
-        public DbSet<Game> Games { get; set; }
-        public DbSet<Level> Levels { get; set; }
+        public DbSet<DbPlayer> Players { get; set; }
+        public DbSet<DbCharacter> Characters { get; set; }
+        public DbSet<DbChunk> Chunks { get; set; }
+        public DbSet<DbGame> Games { get; set; }
+        public DbSet<DbLevel> Levels { get; set; }
+        public DbSet<DbNpc> Npcs { get; set; }
 
         public GameSavesContext() {
         }
@@ -22,17 +24,17 @@ namespace Server.DbModel {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Player>()
+            modelBuilder.Entity<DbPlayer>()
                 .HasIndex(p => p.IdentityUserId)
                 .IsUnique();
 
-            modelBuilder.Entity<Character>()
+            modelBuilder.Entity<DbCharacter>()
                 .HasIndex(c => c.Name);
 
-            modelBuilder.Entity<Chunk>()
-                .HasIndex(ch => new {ch.chX, ch.chZ});
-            
-            modelBuilder.Entity<Level>()
+            modelBuilder.Entity<DbChunk>()
+                .HasIndex(ch => new {chX = ch.ChX, chZ = ch.ChZ});
+
+            modelBuilder.Entity<DbLevel>()
                 .HasIndex(l => l.Name);
         }
 
@@ -65,59 +67,88 @@ namespace Server.DbModel {
         }
     }
 
-    public class Player {
+    public class DbPlayer {
         [Key]
         public Guid PlayerId { get; set; } // Assuming you are using Guids for Identity
 
-        public string IdentityUserId { get; set; } // This is the .NET Identity user Id. This could also be a foreign key to your identity table.
-
         // Navigation property for a list of characters associated with a player
-        public ICollection<Character> Characters { get; set; }
+        public ICollection<DbCharacter> Characters { get; set; }
+
+        public Guid IdentityUserId { get; set; }
+        public IdentityUser IdentityUser { get; set; } // Navigation property
     }
 
-    public class Character {
+    public class DbCharacter {
         [Key]
         public Guid CharacterId { get; set; }
 
         public string Name { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+        public byte[] SerializedData { get; set; } // Shared.Character
 
         // Foreign key to player
         public Guid PlayerId { get; set; }
-        public Player Player { get; set; } // Navigation property
+        public DbPlayer DbPlayer { get; set; } // Navigation property
+
+        // Foreign key to Level
+        public Guid LevelId { get; set; }
+        public DbLevel DbLevel { get; set; } // Navigation property
     }
 
-    public class Level {
+    public class DbNpc {
+        [Key]
+        public Guid NpcId { get; set; }
+
+        public string Name { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Z { get; set; }
+        public byte[] SerializedData { get; set; } // Shared.Npc
+
+        // Foreign key to Level
+        public Guid LevelId { get; set; }
+        public DbLevel DbLevel { get; set; } // Navigation property
+    }
+
+    public class DbLevel {
         [Key]
         public Guid LevelId { get; set; }
+
         public string Name { get; set; }
-        
+
         public int Seed { get; set; }
-        public int SpawnPointX { get; set; }
-        public int SpawnPointY { get; set; }
-        public int SpawnPointZ { get; set; }
+        public float SpawnPointX { get; set; }
+        public float SpawnPointY { get; set; }
+        public float SpawnPointZ { get; set; }
 
         // Navigation property for a list of chunks associated with a level
-        public ICollection<Chunk> Chunks { get; set; }
+        public ICollection<DbChunk> Chunks { get; set; }
+
+        // Navigation property for a list of chunks associated with a level
+        public ICollection<DbNpc> Npcs { get; set; }
 
         // Foreign key to game
         public Guid GameId { get; set; }
-        public Game Game { get; set; } // Navigation property
+        public DbGame DbGame { get; set; } // Navigation property
     }
 
-    public class Chunk {
+    public class DbChunk {
         [Key]
         public Guid ChunkId { get; set; }
 
-        public short chX { get; set; }
-        public short chZ { get; set; }
+        public short ChX { get; set; }
+        public short ChZ { get; set; }
         public byte[] Cells { get; set; }
+        public bool IsGenerated { get; set; }
 
         // Foreign key to level
         public Guid LevelId { get; set; }
-        public Level Level { get; set; } // Navigation property
+        public DbLevel DbLevel { get; set; } // Navigation property
     }
 
-    public class Game {
+    public class DbGame {
         [Key]
         public Guid GameId { get; set; }
 
@@ -125,6 +156,6 @@ namespace Server.DbModel {
         public int DataVersion { get; set; }
 
         // Navigation property for a list of levels associated with a game
-        public ICollection<Level> Levels { get; set; }
+        public ICollection<DbLevel> Levels { get; set; }
     }
 }

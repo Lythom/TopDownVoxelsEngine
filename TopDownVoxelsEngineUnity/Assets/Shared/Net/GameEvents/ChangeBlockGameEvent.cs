@@ -9,14 +9,14 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public short CharacterId;
+        public ushort CharacterId;
 
         [Key(2)]
         public BlockId Block;
 
         public override int GetId() => Id;
 
-        public ChangeBlockGameEvent(int id, short characterId, BlockId block) {
+        public ChangeBlockGameEvent(int id, ushort characterId, BlockId block) {
             Id = id;
             CharacterId = characterId;
             Block = block;

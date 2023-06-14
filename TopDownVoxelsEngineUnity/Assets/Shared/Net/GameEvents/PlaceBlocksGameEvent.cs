@@ -10,7 +10,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public short CharacterId;
+        public ushort CharacterId;
 
         /// <summary>
         /// Use StoreValues / RetrieveValues to get the 5 positions stored here
@@ -34,7 +34,7 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public PlaceBlocksGameEvent(int id, short characterId, short x, short y, short z, BlockId block) {
+        public PlaceBlocksGameEvent(int id, ushort characterId, short x, short y, short z, BlockId block) {
             Id = id;
             CharacterId = characterId;
             X = x;

@@ -1,167 +1,157 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Linq;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using Microsoft.AspNetCore.Identity;
-using Nerdbank.Streams;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Server.DbModel;
 using Shared;
 using Shared.Net;
-using Chunk = Server.DbModel.Chunk;
 
 namespace Server {
-    public class VoxelsEngineServer {
+    public class VoxelsEngineServer : IHostedService {
         // Data
         private readonly UserManager<IdentityUser> _userManager;
-        private GameState? _state;
+        private GameState _state = new();
         private GameState _stateBackup = new();
         private readonly GameSavesContext _context;
-        private readonly Game _currentSave;
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly CancellationToken _cancellationToken;
+        private DbGame? _currentDbSave;
+        private readonly WebSocketMessagingQueue _webSocketMessagingQueue;
+
+        private ReactiveDictionary<ushort, string> _connectedCharacters = new();
+        private readonly Dictionary<WebSocket, UserData> _websocketData = new();
+
+        private ushort _nextShortId = 0;
+
+        private ushort GetNextCharacterShortId() {
+            while (_connectedCharacters.ContainsKey(_nextShortId)) _nextShortId++;
+            return _nextShortId;
+        }
 
         // Running
-        public int Frames { get; private set; } = 0;
-        public int SimulatedFrameTime { get; set; } = 0; // For testing
+        private bool _isReady = false;
+        public bool IsReady => _isReady;
+        public GameState State => _state;
 
-        private const int TargetFrameTime = 20; // 20ms per frame = 50 FPS
-        private const int MaxCatchUpTime = 15; // up to 300ms delay is acceptable. Beyond that we throttle.
+        private ServerClock _serverClock;
 
-        private int _catchUpTime = 0;
-        private PriorityLevel _minimumPriority = PriorityLevel.All;
-        private readonly Stopwatch _frameStopwatch = new();
-
-        private readonly TickGameEvent _tick = new() {
-            Id = -1,
-            MinPriority = PriorityLevel.All
-        };
-
-        public VoxelsEngineServer(GameSavesContext gameSavesContext, UserManager<IdentityUser> userManager) {
+        public VoxelsEngineServer(GameSavesContext gameSavesContext, UserManager<IdentityUser> userManager, WebSocketMessagingQueue webSocketMessagingQueue) {
             try {
+                _webSocketMessagingQueue = webSocketMessagingQueue;
                 _userManager = userManager;
                 _context = gameSavesContext;
-                var save = _context.Games.FirstOrDefault();
-                if (save == null) {
-                    save = InitNewGame();
-                    _context.Games.Add(save);
-                    _context.SaveChanges();
-                }
-                _currentSave = save;
-                _state.Levels
-                    TODO: init save from initial state ? Create initial save ? Should it be empty and load on demand ?
-                _cancellationTokenSource = new CancellationTokenSource();
-                _cancellationToken = _cancellationTokenSource.Token;
-                StartFixedUpdateAsync().Forget();
+                _serverClock = new ServerClock(this);
             } catch (Exception e) {
                 throw new ApplicationException("Could not start Server", e);
             }
         }
 
-        private static Game InitNewGame() {
+        public async Task StartAsync(CancellationToken cancellationToken) {
+            var dbSave = await _context.Games
+                .Include(g => g.Levels)
+                .ThenInclude(l => l.Chunks)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (dbSave == null) {
+                dbSave = InitNewGame();
+                _context.Games.Add(dbSave);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            _currentDbSave = dbSave;
+
+            await InitStateAsync(_currentDbSave);
+
+            _connectedCharacters.ForEachAwaitAsync(async action => {
+                switch (action.Event) {
+                    case {Action: NotifyCollectionChangedAction.Add, IsSingleItem: true, NewItem: var item}:
+                        var dbCharacter = await _context.Characters.SingleOrDefaultAsync(c => c.Name == item.Value, cancellationToken: cancellationToken);
+                        if (dbCharacter == null) return;
+                        var character = MessagePackSerializer.Deserialize<Character>(dbCharacter.SerializedData);
+                        _webSocketMessagingQueue.Broadcast(new CharacterJoinGameEvent(0, item.Key, character));
+                        break;
+                    case {Action: NotifyCollectionChangedAction.Remove, IsSingleItem: true, NewItem: var item}:
+                        _webSocketMessagingQueue.Broadcast(new CharacterLeaveGameEvent(0, item.Key));
+                        break;
+                }
+            }, cancellationToken: cancellationToken);
+
+            _serverClock = new ServerClock(this);
+            _serverClock.StartFixedUpdateAsync().Forget();
+            _isReady = true;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken) {
+            _isReady = false;
+            _serverClock.Stop();
+            return Task.CompletedTask;
+        }
+
+        public void NotifyDisconnection(WebSocket webSocket) {
+            if (!_websocketData.ContainsKey(webSocket)) return;
+            var userData = _websocketData[webSocket];
+            if (userData.IsLogged) {
+                _connectedCharacters.Remove(userData.ShortId);
+            }
+        }
+
+        public void NotifyConnection(WebSocket webSocket) {
+            _websocketData.Add(webSocket, new UserData(false, 0));
+        }
+
+        private async UniTask InitStateAsync(DbGame currentDbSave) {
+            // load levels
+            foreach (var dbLevel in currentDbSave.Levels) {
+                var levelMap = new LevelMap(dbLevel.Name);
+                foreach (var dbChunk in dbLevel.Chunks.Where(c => c.IsGenerated)) {
+                    levelMap.Chunks[dbChunk.ChX, dbChunk.ChZ] = new() {
+                        Cells = MessagePackSerializer.Deserialize<Cell[,,]>(dbChunk.Cells),
+                        IsGenerated = true
+                    };
+                }
+
+                _state.Levels.Add(dbLevel.Name, levelMap);
+            }
+        }
+
+        private static DbGame InitNewGame() {
             Console.WriteLine("Generating a new GameState");
-            Game save = new Game {
+            DbGame save = new DbGame {
                 Seed = Random.Shared.Next(),
                 DataVersion = 1,
-                Levels = new List<Level> {
+                Levels = new List<DbLevel> {
                     new() {
                         Name = "Lobby",
                         Seed = Random.Shared.Next(),
-                        Chunks = new List<Chunk>(),
+                        Chunks = new List<DbChunk>(),
                         // spawn point initialized on the middle of the middle chunk
-                        SpawnPointX = LevelMap.LevelChunkSize * Shared.Chunk.Size + Shared.Chunk.Size / 2,
-                        SpawnPointY = Shared.Chunk.Size / 2,
-                        SpawnPointZ = LevelMap.LevelChunkSize * Shared.Chunk.Size + Shared.Chunk.Size / 2,
+                        SpawnPointX = LevelMap.LevelChunkSize * Chunk.Size + Chunk.Size / 2,
+                        SpawnPointY = Chunk.Size / 2,
+                        SpawnPointZ = LevelMap.LevelChunkSize * Chunk.Size + Chunk.Size / 2,
                     }
                 },
             };
-            
-            _engine.State.LevelGenerator.EnqueueChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
-            _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
 
             return save;
         }
 
-        private async UniTask StartFixedUpdateAsync() {
-            SideEffectManager sideEffectManager = new SideEffectManager();
-            sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
-            while (!_cancellationToken.IsCancellationRequested) {
-                await Tick(_cancellationToken, sideEffectManager);
-            }
-
-            sideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
-        }
-
-        private void UpdatePriorityLevel(PriorityLevel level) {
-            _minimumPriority = level;
-        }
-
-        public async UniTask Tick(CancellationToken cancellationToken, SideEffectManager sideEffectManager) {
-            if (_state == null) return;
-            _frameStopwatch.Restart();
-
-            _tick.MinPriority = _minimumPriority;
-            _tick.Apply(_state, sideEffectManager);
-
-            // Simulate work being done for a frame for test purpose
-            if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);
-
-            if (cancellationToken.IsCancellationRequested) return;
-
-            Frames++;
-
-            var elapsed = _frameStopwatch.ElapsedMilliseconds;
-            var remaining = TargetFrameTime - (int) elapsed;
-            if (remaining > 0) {
-                // We finished early, wait the remaining time or try to catch up
-                if (_catchUpTime > 0) {
-                    // We have time to catch up !
-                    if (remaining > _catchUpTime) {
-                        // Cover the catchUp immediately and wait the remaining of that
-                        await Task.Delay(remaining - _catchUpTime, cancellationToken);
-                        _catchUpTime = 0;
-                        // we can cover all processing needs
-                        _minimumPriority = PriorityLevel.All;
-                    } else {
-                        // can't full cover the catch up, deduce the time no waited and keep going immediatly
-                        _catchUpTime -= remaining;
-
-                        if (_catchUpTime > MaxCatchUpTime) {
-                            // we are very late, try to catch up doing only essential processing
-                            _minimumPriority = PriorityLevel.Must;
-                        } else {
-                            // we are somewhat late, try to avoid less important processing
-                            _minimumPriority = PriorityLevel.Should;
-                        }
-                    }
-                } else {
-                    // we are in time, wait for the next tick
-                    await Task.Delay(remaining, cancellationToken);
-                }
-            } else {
-                // We're behind schedule (this tick took too long), so skip waiting to catch up
-                // and register how late we are
-                _catchUpTime -= remaining;
-            }
-        }
-        
-        // TODO: gérer la connexion d'un nouveau joueur (créer un nouveau personnage)
-        // TODO: gérer la connexion joueur existant
-        // - identité
-        // - récupérer personnage
-
-
-        public async UniTask HandleMessage(
+        public async UniTask HandleMessageAsync(
             INetworkMessage netMessage,
             Func<INetworkMessage, bool> answer,
             Func<INetworkMessage, bool> broadcast
         ) {
             try {
+                if (!IsReady) {
+                    answer(new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
+                }
+
                 // lock the state in case of concurrent access
                 switch (netMessage) {
                     case IGameEvent evt:
@@ -177,16 +167,10 @@ namespace Server {
                         broadcast((INetworkMessage) evt);
                         break;
                     case NewGameNetworkMessage newGame:
-                        if (_state == null) {
-                            // ReSharper disable once InconsistentlySynchronizedField
-                            _state = newGame.GameState;
-                            broadcast(newGame);
-                        } else {
-                            if (newGame.GameState != null) {
-                                lock (_state) {
-                                    _state.UpdateValue(newGame.GameState);
-                                    broadcast(newGame);
-                                }
+                        if (newGame.GameState != null) {
+                            lock (_state) {
+                                _state.UpdateValue(newGame.GameState);
+                                broadcast(newGame);
                             }
                         }
 
@@ -195,28 +179,27 @@ namespace Server {
                     case HelloNetworkMessage hello:
                         Console.WriteLine("A client said hello : " + hello.Username);
                         var user = await _userManager.FindByNameAsync(hello.Username);
-                        if (user == null) {
-                            user = new IdentityUser(hello.Username);
-                            var result = await _userManager.CreateAsync(user);
-                            if (result.Succeeded) {
-                                answer(hello);
-                            } else {
-                                answer(new ErrorNetworkMessage($"Server error: Failed to find or create user {hello.Username}."));
-                            }
+                        try {
+                            var character = await GetOrCreateCharacterAsync(user, hello);
+                            _connectedCharacters.Add(GetNextCharacterShortId(), character.Name);
+                        } catch (Exception e) {
+                            answer(new ErrorNetworkMessage(e.Message));
+                            return;
                         }
+
+                        // TODO: broadcast add player with PlayerID short value so that we can yse a dictionary again
+                        answer(hello);
+
 
                         break;
                 }
 
                 // backup the state before applying
-                if (_state != null) {
-                    lock (_state) {
-                        _stateBackup.UpdateValue(_state);
-                    }
+                lock (_state) {
+                    _stateBackup.UpdateValue(_state);
                 }
             } catch (Exception e) {
-                Console.WriteLine($"An error occured with message {netMessage.GetType().Name}. Rolling state back.\n" +
-                                  e);
+                Console.WriteLine($"An error occured with message {netMessage.GetType().Name}. Rolling state back.\n" + e);
 
                 // treat the event as a transaction, cancel any partially applied event
                 if (_state != null) {
@@ -225,6 +208,50 @@ namespace Server {
                     }
                 }
             }
+        }
+
+        private async Task<Character> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
+            Character character;
+            if (user == null) {
+                // create a new user + player + character
+                user = new IdentityUser(hello.Username);
+                var result = await _userManager.CreateAsync(user);
+                if (result.Succeeded) {
+                    var dbLevel = _currentDbSave!.Levels.First();
+                    var pos = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
+                    character = new Character(hello.Username, pos, dbLevel.Name);
+                    var player = new DbPlayer {
+                        IdentityUser = user,
+                        Characters = new List<DbCharacter> {
+                            new() {
+                                Name = hello.Username,
+                                DbLevel = dbLevel,
+                                X = pos.X,
+                                Y = pos.Y,
+                                Z = pos.Z,
+                                SerializedData = MessagePackSerializer.Serialize(character)
+                            }
+                        }
+                    };
+                    _context.Players.Add(player);
+                    await _context.SaveChangesAsync();
+                } else {
+                    throw new ApplicationException($"Server error: Failed to find or create user {hello.Username}.");
+                }
+            } else {
+                var player = await _context.Players
+                    .Include(p => p.Characters)
+                    .FirstOrDefaultAsync(p => p.IdentityUser.Id == user.Id);
+                if (player == null) {
+                    throw new ApplicationException("All users should have a player on creation. Ask an admin !");
+                    // TODO: remove user if no player found so that it can re-creates ?
+                }
+
+                var dbCharacter = player.Characters.First();
+                character = MessagePackSerializer.Deserialize<Character>(dbCharacter.SerializedData);
+            }
+
+            return character;
         }
     }
 }

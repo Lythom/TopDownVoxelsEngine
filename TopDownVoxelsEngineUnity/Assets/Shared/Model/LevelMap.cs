@@ -2,63 +2,29 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using LoneStoneStudio.Tools;
 using MessagePack;
 
 namespace Shared {
     [MessagePackObject(true)]
     public class LevelMap : IDisposable, IUpdatable<LevelMap> {
         public const int LevelChunkSize = 128;
-        public readonly Chunk[,] Chunks;
-
-        public static void Log(string s) {
-        }
-
-        public static void LogException(Exception e) {
-        }
-
-        public ConcurrentQueue<int> GenerationQueue = new() {
-        };
-
-        public string LevelId;
+        public readonly Chunk[,] Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
+        public readonly ReactiveList<NPC> Npcs = new();
+        public readonly string LevelId;
 
         private readonly CancellationTokenSource _cts = new();
 
+        public LevelMap() {
+        }
+
         public LevelMap(string levelId) {
             LevelId = levelId;
-            GenerateChunksFromQueue(_cts.Token).Forget();
-
-            Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
-            for (int x = 0; x < LevelChunkSize; x++) {
-                for (int z = 0; z < LevelChunkSize; z++) {
-                    Chunks[x, z] = new Chunk() {
-                        Cells = new Cell[Chunk.Size, Chunk.Size, Chunk.Size],
-                        IsGenerated = false
-                    };
-                }
-            }
         }
 
 
         public void Dispose() {
             _cts.Cancel(false);
-        }
-
-        private async UniTaskVoid GenerateChunksFromQueue(CancellationToken cancellationToken) {
-            Log("Start job generating chunks");
-            while (!cancellationToken.IsCancellationRequested) {
-                await UniTask.Yield();
-                // dequeue until all is generated
-                while (GenerationQueue.TryDequeue(out int flatIndex)) {
-                    try {
-                        var (chX, chZ) = Chunk.GetCoordsFromIndex(flatIndex);
-                        LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, ref Chunks[chX, chZ]);
-                    } catch (Exception e) {
-                        LogException(e);
-                    }
-                }
-            }
-
-            Log("Stop job generating chunks");
         }
 
         public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
@@ -167,6 +133,7 @@ namespace Shared {
         }
 
         public void UpdateValue(LevelMap nextState) {
+            Npcs.SynchronizeToTarget(nextState.Npcs);
             var nextStateChunks = nextState.Chunks;
             for (int i = 0; i < Chunks.GetLength(0); i++) {
                 for (int j = 0; j < Chunks.GetLength(1); j++) {

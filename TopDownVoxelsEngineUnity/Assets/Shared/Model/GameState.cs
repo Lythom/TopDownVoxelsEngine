@@ -6,15 +6,14 @@ using MessagePack;
 namespace Shared {
     public class LocalState {
         public static LocalState Instance = new();
-        public short CurrentPlayerId = 0;
+        public ushort CurrentPlayerId = 0;
     }
 
     [MessagePackObject(true)]
     public class GameState : IUpdatable<GameState> {
         // Public state
         public bool IsApplyingEvent => _isApplyingEvent;
-        public readonly ReactiveDictionary<short, Character> Characters = new();
-        public readonly ReactiveList<NPC> NPCs = new();
+        public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
         public readonly float Gravity = 1.4f;
 
@@ -29,9 +28,8 @@ namespace Shared {
         public GameState() {
         }
 
-        public GameState(ReactiveDictionary<short, Character>? characters, ReactiveList<NPC>? npcs, ReactiveDictionary<string, LevelMap>? levels) {
+        public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveList<NPC>? npcs, ReactiveDictionary<string, LevelMap>? levels) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
-            if (npcs != null) NPCs.SynchronizeToTarget(npcs);
             if (levels != null) Levels.SynchronizeToTarget(levels);
         }
 
@@ -59,7 +57,6 @@ namespace Shared {
 
         public void UpdateValue(GameState nextState) {
             Characters.SynchronizeToTarget(nextState.Characters);
-            NPCs.SynchronizeToTarget(nextState.NPCs);
             Levels.SynchronizeToTarget(nextState.Levels);
         }
     }

@@ -29,7 +29,7 @@ namespace MessagePack.Formatters.Shared.Net
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(1);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Hey, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Username, options);
         }
 
         public global::Shared.Net.HelloNetworkMessage Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -42,14 +42,14 @@ namespace MessagePack.Formatters.Shared.Net
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __Hey__ = default(string);
+            var __Username__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        __Hey__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __Username__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -57,7 +57,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.HelloNetworkMessage(__Hey__);
+            var ____result = new global::Shared.Net.HelloNetworkMessage(__Username__);
             reader.Depth--;
             return ____result;
         }

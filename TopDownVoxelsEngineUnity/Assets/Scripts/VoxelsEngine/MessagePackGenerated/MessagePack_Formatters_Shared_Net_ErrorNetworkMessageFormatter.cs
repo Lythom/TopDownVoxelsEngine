@@ -16,10 +16,10 @@
 
 namespace MessagePack.Formatters.Shared.Net
 {
-    public sealed class PlaceBlocksGameEventFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.PlaceBlocksGameEvent>
+    public sealed class ErrorNetworkMessageFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.Net.ErrorNetworkMessage>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.PlaceBlocksGameEvent value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Net.ErrorNetworkMessage value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -28,16 +28,11 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(6);
-            writer.Write(value.Id);
-            writer.Write(value.CharacterId);
-            writer.Write(value.X);
-            writer.Write(value.Y);
-            writer.Write(value.Z);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Serialize(ref writer, value.Block, options);
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Message, options);
         }
 
-        public global::Shared.Net.PlaceBlocksGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Shared.Net.ErrorNetworkMessage Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -47,34 +42,14 @@ namespace MessagePack.Formatters.Shared.Net
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
-            var __X__ = default(short);
-            var __Y__ = default(short);
-            var __Z__ = default(short);
-            var __Block__ = default(global::Shared.BlockId);
+            var __Message__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        __Id__ = reader.ReadInt32();
-                        break;
-                    case 1:
-                        __CharacterId__ = reader.ReadUInt16();
-                        break;
-                    case 2:
-                        __X__ = reader.ReadInt16();
-                        break;
-                    case 3:
-                        __Y__ = reader.ReadInt16();
-                        break;
-                    case 4:
-                        __Z__ = reader.ReadInt16();
-                        break;
-                    case 5:
-                        __Block__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
+                        __Message__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -82,7 +57,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.PlaceBlocksGameEvent(__Id__, __CharacterId__, __X__, __Y__, __Z__, __Block__);
+            var ____result = new global::Shared.Net.ErrorNetworkMessage(__Message__);
             reader.Depth--;
             return ____result;
         }

@@ -63,6 +63,7 @@ namespace VoxelsEngine {
                     state.Levels.Add("World", new LevelMap("World"));
                     state.Characters.Add(0,
                         new Character(
+                            "Local",
                             new Vector3(LevelMap.LevelChunkSize * Chunk.Size / 2f + 4, 10f, LevelMap.LevelChunkSize * Chunk.Size / 2f + 4),
                             Vector3.zero,
                             0,

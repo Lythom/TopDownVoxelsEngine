@@ -4,31 +4,27 @@ using MessagePack;
 
 namespace Shared.Net {
     [MessagePackObject]
-    public class ChangeToolGameEvent : GameEvent {
+    public class CharacterLeaveGameEvent : GameEvent {
         [Key(0)]
         public int Id;
 
         [Key(1)]
         public ushort CharacterId;
 
-        [Key(2)]
-        public ToolId Tool;
-
         public override int GetId() => Id;
 
-        public ChangeToolGameEvent(int id, ushort characterId, ToolId tool) {
+        public CharacterLeaveGameEvent(int id, ushort characterId) {
             Id = id;
             CharacterId = characterId;
-            Tool = tool;
         }
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            gameState.Characters[CharacterId].SelectedTool.Value = Tool;
+            gameState.Characters.Remove(CharacterId);
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character must exists");
+            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character already unknown.");
         }
     }
 }

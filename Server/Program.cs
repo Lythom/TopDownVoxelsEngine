@@ -22,7 +22,8 @@ namespace Server {
                 .WithCompression(MessagePackCompression.Lz4BlockArray);
             MessagePackSerializer.DefaultOptions = option;
             Console.WriteLine("Server starting. Version " + Version);
-            CreateHostBuilder(args).Build().Run();
+            var host = CreateHostBuilder(args).Build();
+            host.Run();
         }
 
         private static BuildVersion SetupVersion() {

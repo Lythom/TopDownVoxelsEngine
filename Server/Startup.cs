@@ -13,6 +13,7 @@ using Server.DbModel;
 namespace Server {
     public class Startup {
         public void ConfigureServices(IServiceCollection services) {
+            services.AddSingleton<IHostApplicationLifetime>();
             services.AddMemoryCache();
             services.AddWebSockets(options => {
                 options.KeepAliveInterval = TimeSpan.FromSeconds(15);
@@ -24,10 +25,11 @@ namespace Server {
             services.AddSingleton<WebSocketMessagingQueue>();
             services.AddHostedService(p => p.GetRequiredService<WebSocketMessagingQueue>());
             // Warm up StarTeamServer service during startup
-            services.AddSingleton<VoxelsEngineServer>(sp => {
+            services.AddHostedService<VoxelsEngineServer>(sp => {
                 var context = sp.GetRequiredService<GameSavesContext>();
                 var userManager = sp.GetRequiredService<UserManager<IdentityUser>>();
-                return new VoxelsEngineServer(context, userManager);
+                var wmq = sp.GetRequiredService<WebSocketMessagingQueue>();
+                return new VoxelsEngineServer(context, userManager, wmq);
             });
         }
 

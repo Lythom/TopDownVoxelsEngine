@@ -5,6 +5,8 @@ using MessagePack;
 namespace Shared {
     [MessagePackObject(true)]
     public class Character : IUpdatable<Character> {
+        public string Name;
+
         // Calculated by the tick
         public Vector3 Position;
 
@@ -32,7 +34,16 @@ namespace Shared {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float UncompressAngle(byte angle) => angle * 360 / 255f;
 
+        public Character(string name, Vector3 position, string? levelName) {
+            Name = name;
+            Position = position;
+            Velocity = Vector3.zero;
+            Angle = 0;
+            Level.Value = levelName;
+        }
+
         public Character(
+            string name,
             Vector3 position,
             Vector3 velocity,
             byte angle,
@@ -47,6 +58,7 @@ namespace Shared {
             ReactiveDictionary<BlockId, int>? blocsInventory,
             ReactiveList<TemplateId>? knownTemplates
         ) {
+            Name = name;
             Position = position;
             Velocity = velocity;
             Angle = angle;
@@ -63,6 +75,7 @@ namespace Shared {
         }
 
         public void UpdateValue(Character nextState) {
+            Name = nextState.Name;
             Position = nextState.Position;
             Velocity = nextState.Velocity;
             Angle = nextState.Angle;

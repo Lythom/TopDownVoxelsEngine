@@ -14,17 +14,14 @@ TODO:
     - serveur
       1. Génération de map autour du spawn
       2. Attente de connexion client
-- [Serveur] lors d'une demande de connexion
-  - Si le personnage existe déjà, ne rien faire sinon associer le joueur identifié à son personnage
-  - Si le personnage n'existe pas, créer un nouveau personnage pour ce joueur au spawn.
+
 - Clarifier la génération de chunk
     - Généré par le serveur (normalement bien en amont, prégénérer large ?)
     - Synchronisé avec le client à la connexion
     - Rendu par le client un fois les infos reçues
       - Le serveur pousse les infos et devine les besoins du client, le client ne rend rien tant qu'il n'a pas reçu d'infos
-- Créer des messages
-  - PlayerJoinFromClient
-- Créer un tick qui résoud les changements dans le GameServer
+
+
 - Routine de persistance des chunks
 - synchro des chunks
   - transmis uniquement une fois et automatiquement à l'approche du personnage
@@ -55,3 +52,11 @@ Cas:
 - A reçoit ok(A6)
   - il supprime A6 de sa liste
   - tant que le premier élément de sa liste est une modification d'un autre joueur, il supprime l'élément (lite vide)
+
+Done:
+- [Serveur] lors d'une demande de connexion
+  - Si le personnage existe déjà, ne rien faire sinon associer le joueur identifié à son personnage
+  - Si le personnage n'existe pas, créer un nouveau personnage pour ce joueur au spawn.
+- Créer des messages
+  - PlayerJoinFromClient
+- Créer un tick qui résoud les changements dans le GameServer

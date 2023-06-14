@@ -9,7 +9,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public short CharacterId;
+        public ushort CharacterId;
 
         [Key(2)]
         public Vector3 Position;
@@ -22,7 +22,7 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public CharacterMoveGameEvent(int id, short characterId, Vector3 position, Vector3 velocity, byte angle) {
+        public CharacterMoveGameEvent(int id, ushort characterId, Vector3 position, Vector3 velocity, byte angle) {
             Id = id;
             CharacterId = characterId;
             Position = position;

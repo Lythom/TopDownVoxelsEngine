@@ -10,7 +10,7 @@ namespace Shared.Net {
     [Union(5, typeof(PlaceBlocksGameEvent))]
     [Union(6, typeof(TickGameEvent))]
     [Union(7, typeof(AckNetworkMessage))]
-    [Union(8, typeof(AckNetworkMessage))]
+    [Union(8, typeof(CharacterJoinGameEvent))]
     public interface INetworkMessage {
     }
 

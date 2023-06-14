@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ namespace Server {
         private static async UniTask ListenWebsocketBytesAsync(HttpContext context, WebSocket webSocket, WebSocketMessagingQueue messageSender) {
             var server = context.RequestServices.GetRequiredService<VoxelsEngineServer>();
 
+            server.NotifyConnection(webSocket);
+
             var buffer = new byte[1024 * Ko];
             bool socketOpen = true;
             while (socketOpen) {
@@ -58,7 +61,7 @@ namespace Server {
                         case WebSocketMessageType.Binary:
                             var bytes = new ArraySegment<byte>(buffer, 0, bufferOffset);
                             var msg = MessagePackSerializer.Deserialize<INetworkMessage>(bytes);
-                            await server.HandleMessage(
+                            await server.HandleMessageAsync(
                                 msg,
                                 answer => messageSender.Send(webSocket, answer),
                                 messageSender.Broadcast
@@ -68,6 +71,7 @@ namespace Server {
                 } else {
                     // Socket closed by client or timed out
                     Console.WriteLine("Client disconnected " + webSocket);
+                    server.NotifyDisconnection(webSocket);
                     socketOpen = false;
                     if (result.CloseStatus != null) await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
                 }
