@@ -39,7 +39,7 @@ namespace Server {
             }
         }
 
-        public bool Broadcast(INetworkMessage msg) {
+        public virtual bool Broadcast(INetworkMessage msg) {
             if (_outputQueue == null) return false;
             return _outputQueue.Writer.TryWrite(new Broadcast(msg));
         }

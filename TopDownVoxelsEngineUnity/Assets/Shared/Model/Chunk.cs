@@ -18,8 +18,8 @@ namespace Shared {
             }
         }
 
-        public static int GetFlatIndex(int chX, int chZ) {
-            return chX + LevelMap.LevelChunkSize * chZ;
+        public static ushort GetFlatIndex(int chX, int chZ) {
+            return (ushort) (chX + LevelMap.LevelChunkSize * chZ);
         }
 
         public static (int chX, int chZ) GetCoordsFromIndex(int flatIndex) {

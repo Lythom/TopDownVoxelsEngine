@@ -7,13 +7,6 @@ TODO:
   - Réseau
     - client
       1. Connexion au serveur (identification)
-      2. Demande de personnage
-      3. Demande de chunks
-      4. Rendu
-      5. Affichage
-    - serveur
-      1. Génération de map autour du spawn
-      2. Attente de connexion client
 
 - Clarifier la génération de chunk
     - Généré par le serveur (normalement bien en amont, prégénérer large ?)

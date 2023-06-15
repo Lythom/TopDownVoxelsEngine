@@ -23,7 +23,7 @@ namespace Shared {
             }
         }
 
-        public void EnqueueChunksAround(string levelId, int chX, int chZ, int range, ReactiveDictionary<string, LevelMap> levels) {
+        public void EnqueueUninitializedChunksAround(string levelId, int chX, int chZ, int range, ReactiveDictionary<string, LevelMap> levels) {
             var levelMap = levels[levelId];
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {

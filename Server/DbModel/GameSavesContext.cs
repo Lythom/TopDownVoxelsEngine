@@ -7,13 +7,13 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Server.DbModel {
-    public sealed class GameSavesContext : IdentityDbContext {
-        public DbSet<DbPlayer> Players { get; set; }
-        public DbSet<DbCharacter> Characters { get; set; }
-        public DbSet<DbChunk> Chunks { get; set; }
-        public DbSet<DbGame> Games { get; set; }
-        public DbSet<DbLevel> Levels { get; set; }
-        public DbSet<DbNpc> Npcs { get; set; }
+    public class GameSavesContext : IdentityDbContext {
+        public virtual DbSet<DbPlayer> Players { get; set; }
+        public virtual DbSet<DbCharacter> Characters { get; set; }
+        public virtual DbSet<DbChunk> Chunks { get; set; }
+        public virtual DbSet<DbGame> Games { get; set; }
+        public virtual DbSet<DbLevel> Levels { get; set; }
+        public virtual DbSet<DbNpc> Npcs { get; set; }
 
         public GameSavesContext() {
         }

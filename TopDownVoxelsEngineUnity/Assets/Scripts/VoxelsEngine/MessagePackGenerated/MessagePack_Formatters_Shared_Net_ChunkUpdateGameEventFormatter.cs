@@ -27,12 +27,12 @@ namespace MessagePack.Formatters.Shared.Net
                 return;
             }
 
-            writer.WriteArrayHeader(5);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(4);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
-            writer.Write(value.BlockInChunk);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.LevelId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Chunk>(formatterResolver).Serialize(ref writer, value.Chunk, options);
             writer.Write(value.ChunkPosition);
-            writer.Write(value.Angle);
         }
 
         public global::Shared.Net.ChunkUpdateGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -43,27 +43,28 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Shared.Net.ChunkUpdateGameEvent();
+            var __Id__ = default(int);
+            var __LevelId__ = default(string);
+            var __Chunk__ = default(global::Shared.Chunk);
+            var __ChunkPosition__ = default(ushort);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.Id = reader.ReadInt32();
+                        __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        ____result.CharacterId = reader.ReadByte();
+                        __LevelId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.BlockInChunk = reader.ReadInt16();
+                        __Chunk__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Chunk>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 3:
-                        ____result.ChunkPosition = reader.ReadInt16();
-                        break;
-                    case 4:
-                        ____result.Angle = reader.ReadByte();
+                        __ChunkPosition__ = reader.ReadUInt16();
                         break;
                     default:
                         reader.Skip();
@@ -71,6 +72,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
+            var ____result = new global::Shared.Net.ChunkUpdateGameEvent(__Id__, __LevelId__, __Chunk__, __ChunkPosition__);
             reader.Depth--;
             return ____result;
         }

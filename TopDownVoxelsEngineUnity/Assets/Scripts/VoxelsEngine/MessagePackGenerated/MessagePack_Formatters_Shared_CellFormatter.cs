@@ -43,7 +43,8 @@ namespace MessagePack.Formatters.Shared
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var ____result = new global::Shared.Cell();
+            var __Block__ = default(global::Shared.BlockId);
+            var __DamageLevel__ = default(byte);
 
             for (int i = 0; i < length; i++)
             {
@@ -57,17 +58,18 @@ namespace MessagePack.Formatters.Shared
                     case 5:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 461229747266UL) { goto FAIL; }
 
-                        ____result.Block = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
+                        __Block__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 11:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_DamageLevel().Slice(1))) { goto FAIL; }
 
-                        ____result.DamageLevel = reader.ReadByte();
+                        __DamageLevel__ = reader.ReadByte();
                         continue;
 
                 }
             }
 
+            var ____result = new global::Shared.Cell(__Block__, __DamageLevel__);
             reader.Depth--;
             return ____result;
         }

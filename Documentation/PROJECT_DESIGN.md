@@ -62,25 +62,21 @@ same id.
 If the client is the sender (id in the sentbox), it will not re-apply the event.
 
 The server will continuously provide state update of player / npc / elements positions and velocities, with a
-prioritization effort to update
-near data more frequently.
+prioritization effort to update near data more frequently.
 
 Prioritization is made using a priority accumulator for each state entry (using encaplusated data) EXCEPT for blocks.
 
-Mostly, each client will run it's own simulation at it's own pace (as long as it is not too far away) and the server
-will send both input updates (game event to apply) and state updated (values to override).
+Mostly, each client will run it's own simulation at it's own pace (as long as it is not too far away) and the server will send both input updates (game event to apply) and state updated (values to override).
 The client catches up out of sync content on the go.
-Game ticks are run at 50 ticks/seconds = 20 ms per tick, are applied as a TickGameEvent, and are implicitly executed by
-all clients and server.
+Game ticks are run at 50 ticks/seconds = 20 ms per tick, are applied as a TickGameEvent, and are implicitly executed by all clients and server.
 
-Every 10 seconds, the server will try a full reconciliation. The idea is to bundle all the "near state" of each player,
-and send :
+Every 10 seconds, the server will try a full reconciliation. The idea is to bundle all the "near state" of each player, and send :
 
 - id of the state (TickId)
 - List of events to (re) apply on it
   The client can then re apply sent event since this tick that the server did not ack.
 
-#### Example: position synchronisation
+#### position synchronisation
 
 https://sequencediagram.org/index.html#initialData=A4QwTgLglgxloDsIAIDCALcIYQKZgEEBzXJAKFElnhCTQBspSIBRBIqBXC8aORFAGV8AN1wBXMGQxYc+YswC0APmUyw2PIRJIAXMgDaAVWAATEHgC6yADJQU9AOSdg4lKfHIAVgHtxEqXVNeR0IFTVMDTltZn1jMwtcawBZXBQAA+8-MGQRe1wAZwLcZDTkWiJ6EtJkADMfBBwoBuRTQuQXNwLpSOCYpHDURmY2Di44k3MrZAAVDQQCgFsyvLwi6pQKqulhpFHOXEHd1nYD-VQQehhxKuR6EGQEPzF6W+AfAvtmhGRMmEwAI7+ZB8ADWOyYe1OXEGvWiCj0s3mSzK90ez1wrxK70+0AaPVkWgRYVUQXhoTiADEoAAPXCmSaJawEWq1WDoEpvfAFBoIEAkcqeABGLVIpjAPnsEJG0MOqmEYDEkn0bBEkpK4h+yyK-JKIDEMGQOK+DQANLl8utzVtcAAdBB-QHAsHIAAUIGAYAAFwVkDBLtd6ABKMgKpVgcJhgLnAM3TkPJ7iF5vD4mn6OkBAkpg0OiAJHSEnMa4fQAIQlIFM-oKDgexrxPzaIL8vqqvuA3I+v2b4lb7Rgx26Q0L+xhpOOo5LyFSGSykiNqYbpRQq0KxVa7Q7YB5vvtggIRkpC-nt18-nnNRg2V9rtMAEuvJlMmewCGgA
 
@@ -96,13 +92,48 @@ location :
 - The client read from input and immediately updates the CharacterAgent. It keeps interpolating from the last
   fixedUpdate GameState value toward the expected position.
 
-Other example: block placement
+#### Chunks generation and synchronisation
+
+![chunk_sync.png](Images%2Fchunk_sync.png)
+
+https://sequencediagram.org/index.html#initialData=C4S2BsFMAIFEDsBuB7E0AmkDOHn3gJfYbEDGAFgK7wDWOAhpdKeCJPMAFCcAO9ATqFIg+HaAGFW7Ln0Ehho4NADKkfokiV+3TpLYcAtAD5V6zfwBcEvPEilgMehtLQearDfoBzSN3DJkHmgAQWZyegBHShghGk5oBJU1DS1jUxTLaAARAgd+AFsQWzDqOmhGYGQtDCY3fg98b19EpLNUk2TzKwAFfhBkPqwYClKcWVd+ZAAPEELgAnjE9PM0zq0rADEQcGB+YapaHHg8A3YUAE8CLEWE+h2JA5poY-hoLwJCfgWWluX2v8yG3oYGg1BgmHy9HgmBIbw+BH49FAeBqJVoNx+xwc0GQGn4rQyVnEj3KACsqvNoAAD6DgejQABm23BAHIzqhoJCQGN6Dh2ZcMZBwEMHqU4Z9vj8EgDjHppFYECg2Lh8EQcJgcCNDoLoZx2OgMS05YYjMbgFYALKQJQ08nVKDQLDAJGOZy04joGxqkiax7XKUJM2yqQcKwANQRICZMCwaAdWqe2CUiG5IAARlBDYkg6aQ+boAAlOx3UiUB0OvbQpgACljaKeKdjGcgAEogA
+
+
+
+#### block placement
 
 - The server take the changelist of blocks from all players input and the missing data of clients
-    - if a client query a chunk, the whole chunk data is sent.
-- The client read from input, generate an event, send to erver and applied to the state during fixed update to
+- The client read from input, generate an event, send to server and applied to the state during fixed update to
   anticipate the server latency.
-- There is no immediate update, an animated VFX is played immediatly to cover the latency
+- There is some optimistic update, an animated VFX is played immediatly to cover the latency
+
+##### conflict scenario
+
+![bloc_conflict.png](Images%2Fbloc_conflict.png)
+
+https://sequencediagram.org/index.html#initialData=C4S2BsFMAIGEHsB2AzcZrngJwM7QCYzgCG0ADvDjPgOQCui0ARpgMYBQ7ZxWorI3RMGgApeHUh0sAIS48+A4kOgBlSFgBukrHN4h+g4WIlSAgp0TxgMeFqyr1WqQC5oAGRgArcduikNpBRU9gzMbNCQjAC2AFdRMNZRZHgAjhIYXj5S0NIAOohRxCB4UNDBTvalWJCskBpYpMRkWAAXOAB0+R54rGiRwHiFIEIgkYj9BJAlxdZ4hNABaPjEoEjk4vYUdBrwIFj5WPDg4EzErADWEYwr1ojLyiQLxEsrIGv4dGWO2u2cxtrSAC0AD41JptK4AAqUIgwFjwVg5ABM7H+UiBwLRMlcAFFENUAOYzarIq5+YC3ayTJ4vVaIVFZLCmEFgipQmEZMII6CmACsDJMTJBWNMuPxkCJOGAJL5ZJu-WoMEWIGWdPYrO0gOFjOkrgA8gBpAAU0iRAEoBQDtYLdao6GRmiB4qT5o80FKYJFyZTIOrvlJrdpRTlDsR8KxiFLkZazIGzK4ANqhACX4GT8WUzWTrGThGUU2EXvlQkgAF18njCcSYKa5RSFdTlaq3vSRXGma4ACoN2hNMhoNLqUlG9TVKQWtug-1YdlUTnwxGmABsMaFmMZwcrEurPKXdZ9jeeKteSHYliptiHGqkABpRBvXLLxuRJMJuHgYtKYH2B3Rk9AAAPoAjOg53mU1OkQDxgL6ZQQAJSwSSgPBR20FDhGLfAShobB8GqfIPi+cEpD9YisC1ddBWDAA5Q0jT5CcN3bYMACUjhOM5LmXO9TTvPlV2ZSig1cFR7UdZ1ZVdUh3SpIt6xLATmNcFjkx-EBB2RPiV0nEUuyUYQNNKZpICiUZ7FTdMJnmHBpJmT0o1oUJiDoL9oG8QUb3yEBwDKMSsCdIgaAsjNgHaO0HX850IM4a9yKU6A6OXC1YvbW0mFDcNI2EZdFKE+NwvEmBl2pN07P3BVct06BO306BDJgYzTKHYKrJgGyMDKgsCHoa4XJJdztE8xBvN8iKAowIK0xCsKjRkpUVUgC0gA
+
+- les modifications (ie. pose de blocs) dont identifées par un id uniquement généré par le client. ie. B2 pour le bloc posé par B et A5 pour celui posé par A.
+- A pose un Bloc et enregistre localement sa modification dans une liste ordonnée "en attente de validation"
+- B pose un bloc au même endroit en même temps et enregistre localement sa modification dans une liste ordonnée "en attente de validation"
+- le serveur reçoit B puis A et applique dans cet ordre. Le serveur de maintient pas de liste de validation car il applique dans l'ordre d'arrivée.
+    - Le serveur envoi ok à B et broadcastà A la modification
+    - Le serveur envoi nok à A
+- B reçoit ok(B2)
+    - il supprime B2 de sa liste
+    - tant que le premier élément de sa liste est une modification d'un autre joueur, il supprime l'élément (lite vide)
+- entre temps, A pose un bloc (A6) et enregistre localement cette modification dans sa liste "en attente de validation"
+- A reçoit B2
+    - il tente d'appliquer B2 lors de la réception du broacast mais erreur (ou pas). Il garde B2 dans sa liste "en attente de validation".
+- A reçoit nok(A5)
+    - il rollback dans l'ordre inverse toute sa liste d'en attente jusqu'à A5 inclus: A6, B2 (sans effet) puis A5
+    - il supprime A5 de sa liste (restent B2 et A6)
+    - il réapplique dans l'ordre toutes les modifications de sa liste "en attente de validation" (B2 puis A6)
+    - tant que le premier élément de sa liste est une modification d'un autre joueur, il supprime l'élément (reste A6)
+- A reçoit ok(A6)
+    - il supprime A6 de sa liste
+    - tant que le premier élément de sa liste est une modification d'un autre joueur, il supprime l'élément (lite vide)
+
 
 #### Client
 
@@ -128,9 +159,6 @@ Client connexion
 https://sequencediagram.org/index.html#initialData=CoSwLgNgpgBAwgewHZKgDxMmATA5AVyRgGMIQokwYADmQmAZygCcA3KfZnWAKw4Ch+cMhTABaAHwBlFu04AuGABEoAWwCGSbLG0lkqDMn5IEYWMxABzABZUEAMxgy2HZooCC+MNdEh7IYnUwTCJsfBIRShgACgYQGCQAS+IoBgZ1EGYoAEp+ZzlmMUlhckpFRBR0EJh1YhSABzBEqDzZV0l810UANUSLf1g4mGgI0qp1OiJ6lgZ9dUtYKoYwTTB+dQgqAAUs1XIuUjH+GBOnNs4O87d4ZmbJhIR8dnVw6eZZlHnYeseuEcPRPwoBAmPBIlQlitKMdTp0LhIAELqUG6JT6ZoMRQAJWS+HqAAussNvjM5gsYJDVjhwgDoacYEiUbA0SgMUVpFdFFtSZ9yZToRRsK0XBdiuCPGkEMRyMSYG8PkgvjUaeDjKZYAh2FwSqIADRw64AGVgtKoxAQqlUFBSNBgPEeLHWm2UyX0VSwYVGgPpEAQCHqMAAbDBglaGDD6ScdZRLiLrsBRDpBuYoObKsQzMwI5GDezo2Bym7DERag0mi1I6cTGYYJqWGCxvrOTBjV6oll6lktLK+Phs4Ls9XzFZbLXHPnFFJ4mBHmYGMT52ZKEEQOx57osmmDNVktYHZRdbLTTVmMwAFc1vCpdIAT0dA6AA
 ![client_connexion.png](Images%2Fclient_connexion.png)
 
-Conflit lors de la pose d'un bloc
-https://sequencediagram.org/index.html#initialData=C4S2BsFMAIGEHsB2AzcZrngJwM7QCYzgCG0ADvDjPgOQCui0ARpgMYBQ7ZxWorI3RMGgApeHUh0sAIS48+A4kOgBlSFgBukrHN4h+g4WIlSAgp0TxgMeFqyr1WqQC5oAGRgArcduikNpBRU9gzMbNCQjAC2AFdRMNZRZHgAjhIYXj5S0NIAOohRxCB4UNDBTvalWJCskBpYpMRkWAAXOAB0+R54rGiRwHiFIEIgkYj9BJAlxdZ4hNABaPjEoEjk4vYUdBrwIFj5WPDg4EzErADWEYwr1ojLyiQLxEsrIGv4dGWO2u2cxtrSAC0AD41JptK4AAqUIgwFjwVg5ABM7H+UiBwLRMlcAFFENUAOYzarIq5+YC3ayTJ4vVaIVFZLCmEFgipQmEZMII6CmACsDJMTJBWNMuPxkCJOGAJL5ZJu-WoMEWIGWdPYrO0gOFjOkrgA8gBpAAU0iRAEoBQDtYLdao6GRmiB4qT5o80FKYJFyZTIOrvlJrdpRTlDsR8KxiFLkZazIGzK4ANqhACX4GT8WUzWTrGThGUU2EXvlQkgAF18njCcSYKa5RSFdTlaq3vSRXGma4ACoN2hNMhoNLqUlG9TVKQWtug-1YdlUTnwxGmABsMaFmMZwcrEurPKXdZ9jeeKteSHYliptiHGqkABpRBvXLLxuRJMJuHgYtKYH2B3Rk9AAAPoAjOg53mU1OkQDxgL6ZQQAJSwSSgPBR20FDhGLfAShobB8GqfIPi+cEpD9YisC1ddBWDAA5Q0jT5CcN3bYMACUjhOM5LmXO9TTvPlV2ZSig1cFR7UdZ1ZVdUh3SpIt6xLATmNcFjkx-EBB2RPiV0nEUuyUYQNNKZpICiUZ7FTdMJnmHBpJmT0o1oUJiDoL9oG8QUb3yEBwDKMSsCdIgaAsjNgHaO0HX850IM4a9yKU6A6OXC1YvbW0mFDcNI2EZdFKE+NwvEmBl2pN07P3BVct06BO306BDJgYzTKHYKrJgGyMDKgsCHoa4XJJdztE8xBvN8iKAowIK0xCsKjRkpUVUgC0gA
-![bloc_conflict.png](Images%2Fbloc_conflict.png)
 
 ### Code safety
 

@@ -9,17 +9,19 @@ namespace Shared {
     [MessagePackObject(true)]
     public class LevelMap : IDisposable, IUpdatable<LevelMap> {
         public const int LevelChunkSize = 128;
-        public readonly Chunk[,] Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
-        public readonly ReactiveList<NPC> Npcs = new();
-        public readonly string LevelId;
+        public Chunk[,] Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
+        public ReactiveList<NPC> Npcs = new();
+        public string LevelId;
+        public Vector3 SpawnPosition;
 
         private readonly CancellationTokenSource _cts = new();
 
         public LevelMap() {
         }
 
-        public LevelMap(string levelId) {
+        public LevelMap(string levelId, Vector3 spawnPosition) {
             LevelId = levelId;
+            SpawnPosition = spawnPosition;
         }
 
 

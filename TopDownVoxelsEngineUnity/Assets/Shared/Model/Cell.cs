@@ -6,6 +6,11 @@ namespace Shared {
         public BlockId Block;
         public byte DamageLevel;
 
+        public Cell(BlockId block, byte damageLevel) {
+            Block = block;
+            DamageLevel = damageLevel;
+        }
+
         public Cell(BlockId idx) {
             Block = idx;
             DamageLevel = 0;

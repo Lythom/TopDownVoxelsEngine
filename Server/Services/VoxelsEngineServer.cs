@@ -27,7 +27,7 @@ namespace Server {
         private readonly WebSocketMessagingQueue _webSocketMessagingQueue;
 
         private ReactiveDictionary<ushort, string> _connectedCharacters = new();
-        private readonly Dictionary<WebSocket, UserData> _websocketData = new();
+        private readonly Dictionary<WebSocket, UserSessionData> _userSessionData = new();
 
         private ushort _nextShortId = 0;
 
@@ -95,21 +95,22 @@ namespace Server {
         }
 
         public void NotifyDisconnection(WebSocket webSocket) {
-            if (!_websocketData.ContainsKey(webSocket)) return;
-            var userData = _websocketData[webSocket];
+            if (!_userSessionData.ContainsKey(webSocket)) return;
+            var userData = _userSessionData[webSocket];
             if (userData.IsLogged) {
                 _connectedCharacters.Remove(userData.ShortId);
             }
         }
 
         public void NotifyConnection(WebSocket webSocket) {
-            _websocketData.Add(webSocket, new UserData(false, 0));
+            _userSessionData.Add(webSocket, new UserSessionData(false, GetNextCharacterShortId()));
         }
 
         private async UniTask InitStateAsync(DbGame currentDbSave) {
             // load levels
             foreach (var dbLevel in currentDbSave.Levels) {
-                var levelMap = new LevelMap(dbLevel.Name);
+                var spawnPosition = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
+                var levelMap = new LevelMap(dbLevel.Name, spawnPosition);
                 foreach (var dbChunk in dbLevel.Chunks.Where(c => c.IsGenerated)) {
                     levelMap.Chunks[dbChunk.ChX, dbChunk.ChZ] = new() {
                         Cells = MessagePackSerializer.Deserialize<Cell[,,]>(dbChunk.Cells),
@@ -118,7 +119,11 @@ namespace Server {
                 }
 
                 _state.Levels.Add(dbLevel.Name, levelMap);
+                var (chX, chZ) = LevelTools.GetChunkPosition(spawnPosition);
+                _state.LevelGenerator.EnqueueUninitializedChunksAround(levelMap.LevelId, chX, chZ, 6, _state.Levels);
             }
+
+            _state.LevelGenerator.GenerateFromQueue(PriorityLevel.All, _state.Levels);
         }
 
         private static DbGame InitNewGame() {
@@ -181,6 +186,7 @@ namespace Server {
                         var user = await _userManager.FindByNameAsync(hello.Username);
                         try {
                             var character = await GetOrCreateCharacterAsync(user, hello);
+                            TODO ici: spa normal ya un truc qui va pas entre l'association websocket serveur et l'association websocket message queue.
                             _connectedCharacters.Add(GetNextCharacterShortId(), character.Name);
                         } catch (Exception e) {
                             answer(new ErrorNetworkMessage(e.Message));
@@ -252,6 +258,35 @@ namespace Server {
             }
 
             return character;
+        }
+
+        public void ScheduleChunkUpload(ushort playerKey, string levelId, int chX, int chZ) {
+            var range = 3;
+            var userSessionData = _userSessionData.Select(u => u.Value).FirstOrDefault(u => u.ShortId == playerKey);
+            if (userSessionData == null) return;
+            for (int x = -range; x <= range; x++) {
+                for (int z = -range; z <= range; z++) {
+                    var distance = (uint) Math.Abs(x) + (uint) Math.Abs(z);
+                    var key = ChunkKeyPool.Get(levelId, chX + x, chZ + z);
+                    if (!userSessionData.UploadedChunks.Contains(key)) {
+                        // never sent this chunk, schedule sending
+                        userSessionData.UploadQueue.Enqueue(key, distance);
+                        userSessionData.UploadedChunks.Add(key);
+                    }
+
+                    ChunkKeyPool.Return(key);
+                }
+            }
+        }
+
+        public void SendScheduledChunks() {
+            foreach (var (ws, userSessionData) in _userSessionData) {
+                // try dequeue one chunk per user per tick
+                if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
+                    var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
+                    _webSocketMessagingQueue.Send(ws, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
+                }
+            }
         }
     }
 }

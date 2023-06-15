@@ -58,6 +58,8 @@ namespace Server {
 
             _tick.MinPriority = _minimumPriority;
             _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
+            TryGenerateChunks();
+            _voxelsEngineServer.SendScheduledChunks();
 
             // Simulate work being done for a frame for test purpose
             if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);
@@ -99,6 +101,18 @@ namespace Server {
                 // and register how late we are
                 _catchUpTime -= remaining;
             }
+        }
+
+        private void TryGenerateChunks() {
+            foreach (var (key, c) in _voxelsEngineServer.State.Characters) {
+                var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
+                if (c.Level.Value != null && _voxelsEngineServer.State.Levels.ContainsKey(c.Level.Value)) {
+                    _voxelsEngineServer.State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, 4, _voxelsEngineServer.State.Levels);
+                    _voxelsEngineServer.ScheduleChunkUpload(key, c.Level.Value, chx, chz);
+                }
+            }
+
+            _voxelsEngineServer.State.LevelGenerator.GenerateFromQueue(_minimumPriority, _voxelsEngineServer.State.Levels);
         }
     }
 }

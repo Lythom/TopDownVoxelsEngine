@@ -13,7 +13,6 @@ using Server.DbModel;
 namespace Server {
     public class Startup {
         public void ConfigureServices(IServiceCollection services) {
-            services.AddSingleton<IHostApplicationLifetime>();
             services.AddMemoryCache();
             services.AddWebSockets(options => {
                 options.KeepAliveInterval = TimeSpan.FromSeconds(15);

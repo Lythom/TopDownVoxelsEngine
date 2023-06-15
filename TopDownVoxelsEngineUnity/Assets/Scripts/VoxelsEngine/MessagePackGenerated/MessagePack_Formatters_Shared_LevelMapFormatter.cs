@@ -24,6 +24,8 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_Npcs() => new byte[1 + 4] { 164, 78, 112, 99, 115 };
         // LevelId
         private static global::System.ReadOnlySpan<byte> GetSpan_LevelId() => new byte[1 + 7] { 167, 76, 101, 118, 101, 108, 73, 100 };
+        // SpawnPosition
+        private static global::System.ReadOnlySpan<byte> GetSpan_SpawnPosition() => new byte[1 + 13] { 173, 83, 112, 97, 119, 110, 80, 111, 115, 105, 116, 105, 111, 110 };
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.LevelMap value, global::MessagePack.MessagePackSerializerOptions options)
         {
@@ -34,13 +36,15 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(3);
+            writer.WriteMapHeader(4);
             writer.WriteRaw(GetSpan_Chunks());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Chunk[,]>(formatterResolver).Serialize(ref writer, value.Chunks, options);
             writer.WriteRaw(GetSpan_Npcs());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>>(formatterResolver).Serialize(ref writer, value.Npcs, options);
             writer.WriteRaw(GetSpan_LevelId());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.LevelId, options);
+            writer.WriteRaw(GetSpan_SpawnPosition());
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.SpawnPosition, options);
         }
 
         public global::Shared.LevelMap Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -53,7 +57,12 @@ namespace MessagePack.Formatters.Shared
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
+            var __Chunks__IsInitialized = false;
+            var __Chunks__ = default(global::Shared.Chunk[,]);
+            var __Npcs__IsInitialized = false;
+            var __Npcs__ = default(global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>);
             var __LevelId__ = default(string);
+            var __SpawnPosition__ = default(global::Shared.Vector3);
 
             for (int i = 0; i < length; i++)
             {
@@ -67,23 +76,40 @@ namespace MessagePack.Formatters.Shared
                     case 6:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126905251883075UL) { goto FAIL; }
 
-                        reader.Skip();
+                        __Chunks__IsInitialized = true;
+                        __Chunks__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Chunk[,]>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 4:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 1935896654UL) { goto FAIL; }
 
-                        reader.Skip();
+                        __Npcs__IsInitialized = true;
+                        __Npcs__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveList<global::Shared.NPC>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 7:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 28228227578619212UL) { goto FAIL; }
 
                         __LevelId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         continue;
+                    case 13:
+                        if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_SpawnPosition().Slice(1))) { goto FAIL; }
+
+                        __SpawnPosition__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                        continue;
 
                 }
             }
 
-            var ____result = new global::Shared.LevelMap(__LevelId__);
+            var ____result = new global::Shared.LevelMap(__LevelId__, __SpawnPosition__);
+            if (__Chunks__IsInitialized)
+            {
+                ____result.Chunks = __Chunks__;
+            }
+
+            if (__Npcs__IsInitialized)
+            {
+                ____result.Npcs = __Npcs__;
+            }
+
             reader.Depth--;
             return ____result;
         }

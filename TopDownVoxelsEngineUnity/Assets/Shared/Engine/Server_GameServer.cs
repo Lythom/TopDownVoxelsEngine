@@ -34,21 +34,7 @@ namespace Shared {
         }
 
         private void InitState() {
-            // Les éléments simulé par le client sont:
-            // - [Character] position en fonction de la velocity et des collisions aux blocs adjacents
-            // - [NPC] position en fonction de la velocity et des collisions aux blocs adjacents
-            // - PlayerCharacter mise à jour optimiste de la position. Si la position du serveur diffère de celle calculée pour un tick donné, rollback et réapplique ?
-            // - PlayerCharacter tout mise à jour optimiste, on prend toujours la dernière version du serveur pour écraser lors du retour serveur
-            // Les éléments overwritten par le serveur sont :
-            // - tout le reste
-            // TODO: envoyer des numéros de ticks pour numéroter les packets et gérer les acks
-            // TODO: Spawn point
-            // TODO: join level message (that TP the player)
-            //Character playerCharacter = new Character();
-            //playerCharacter.Position = new Vector3(1028f, 4.5f, 1028f);
-            //State.Characters.Add(0, playerCharacter);
-
-            LevelMap level = new LevelMap("lobby");
+            LevelMap level = new LevelMap("lobby", new Vector3(64 + 8, 4, 64 + 8));
             State.Levels.Add("lobby", level);
         }
 

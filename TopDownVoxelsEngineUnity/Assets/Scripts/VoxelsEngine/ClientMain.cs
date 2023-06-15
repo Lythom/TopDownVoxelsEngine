@@ -60,7 +60,7 @@ namespace VoxelsEngine {
                 if (state == null) {
                     Logr.Log("Creating new game");
                     state = new GameState(null, null, null);
-                    state.Levels.Add("World", new LevelMap("World"));
+                    state.Levels.Add("World", new LevelMap("World", spawnPosition));
                     state.Characters.Add(0,
                         new Character(
                             "Local",
@@ -86,7 +86,7 @@ namespace VoxelsEngine {
                 // bootup local engine
                 _engine.State.UpdateValue(state);
                 state = null;
-                _engine.State.LevelGenerator.EnqueueChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
+                _engine.State.LevelGenerator.EnqueueUninitializedChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
                 _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
 
                 var agent = Instantiate(CharacterPrefab, _engine.transform, true);
