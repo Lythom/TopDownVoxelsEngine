@@ -1,40 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Cysharp.Threading.Tasks.Linq;
-using LoneStoneStudio.Tools;
 using MessagePack;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Server.DbModel;
 using Shared;
 using Shared.Net;
 
 namespace Server {
-    public class VoxelsEngineServer : IHostedService {
+    public class VoxelsEngineServer {
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+
         // Data
-        private readonly UserManager<IdentityUser> _userManager;
         private GameState _state = new();
         private GameState _stateBackup = new();
-        private readonly GameSavesContext _context;
-        private DbGame? _currentDbSave;
         private readonly WebSocketMessagingQueue _webSocketMessagingQueue;
 
-        private ReactiveDictionary<ushort, string> _connectedCharacters = new();
-        private readonly Dictionary<WebSocket, UserSessionData> _userSessionData = new();
-
-        private ushort _nextShortId = 0;
-
-        private ushort GetNextCharacterShortId() {
-            while (_connectedCharacters.ContainsKey(_nextShortId)) _nextShortId++;
-            return _nextShortId;
-        }
+        private readonly Dictionary<ushort, UserSessionData> _userSessionData = new();
 
         // Running
         private bool _isReady = false;
@@ -42,68 +30,63 @@ namespace Server {
         public GameState State => _state;
 
         private ServerClock _serverClock;
+        private readonly CancellationTokenSource _cts;
 
-        public VoxelsEngineServer(GameSavesContext gameSavesContext, UserManager<IdentityUser> userManager, WebSocketMessagingQueue webSocketMessagingQueue) {
+        public VoxelsEngineServer(WebSocketMessagingQueue webSocketMessagingQueue, IServiceScopeFactory serviceScopeFactory) {
+            _serviceScopeFactory = serviceScopeFactory;
             try {
+                _cts = new CancellationTokenSource();
                 _webSocketMessagingQueue = webSocketMessagingQueue;
-                _userManager = userManager;
-                _context = gameSavesContext;
                 _serverClock = new ServerClock(this);
             } catch (Exception e) {
                 throw new ApplicationException("Could not start Server", e);
             }
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken) {
-            var dbSave = await _context.Games
-                .Include(g => g.Levels)
-                .ThenInclude(l => l.Chunks)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (dbSave == null) {
-                dbSave = InitNewGame();
-                _context.Games.Add(dbSave);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
+        public async UniTask StartAsync() {
+            using (var scope = _serviceScopeFactory.CreateScope()) {
+                var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
 
-            _currentDbSave = dbSave;
-
-            await InitStateAsync(_currentDbSave);
-
-            _connectedCharacters.ForEachAwaitAsync(async action => {
-                switch (action.Event) {
-                    case {Action: NotifyCollectionChangedAction.Add, IsSingleItem: true, NewItem: var item}:
-                        var dbCharacter = await _context.Characters.SingleOrDefaultAsync(c => c.Name == item.Value, cancellationToken: cancellationToken);
-                        if (dbCharacter == null) return;
-                        var character = MessagePackSerializer.Deserialize<Character>(dbCharacter.SerializedData);
-                        _webSocketMessagingQueue.Broadcast(new CharacterJoinGameEvent(0, item.Key, character));
-                        break;
-                    case {Action: NotifyCollectionChangedAction.Remove, IsSingleItem: true, NewItem: var item}:
-                        _webSocketMessagingQueue.Broadcast(new CharacterLeaveGameEvent(0, item.Key));
-                        break;
+                var dbSave = await context.Games
+                    .Include(g => g.Levels)
+                    .ThenInclude(l => l.Chunks)
+                    .FirstOrDefaultAsync(_cts.Token);
+                if (dbSave == null) {
+                    dbSave = InitNewGame();
+                    context.Games.Add(dbSave);
+                    await context.SaveChangesAsync(_cts.Token);
                 }
-            }, cancellationToken: cancellationToken);
 
-            _serverClock = new ServerClock(this);
-            _serverClock.StartFixedUpdateAsync().Forget();
-            _isReady = true;
+                await InitStateAsync(dbSave);
+
+                _serverClock = new ServerClock(this);
+                _serverClock.StartFixedUpdateAsync().Forget();
+                _isReady = true;
+                Console.WriteLine("Server ready!");
+            }
         }
 
-        public Task StopAsync(CancellationToken cancellationToken) {
+        public UniTask StopAsync() {
             _isReady = false;
             _serverClock.Stop();
-            return Task.CompletedTask;
+            _cts.Cancel(false);
+            return UniTask.CompletedTask;
         }
 
-        public void NotifyDisconnection(WebSocket webSocket) {
-            if (!_userSessionData.ContainsKey(webSocket)) return;
-            var userData = _userSessionData[webSocket];
+        public void NotifyDisconnection(ushort shortId) {
+            if (!_userSessionData.ContainsKey(shortId)) return;
+            var userData = _userSessionData[shortId];
             if (userData.IsLogged) {
-                _connectedCharacters.Remove(userData.ShortId);
+                var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
+                characterLeaveGameEvent.Apply(_state, null);
+                _webSocketMessagingQueue.Broadcast(characterLeaveGameEvent);
             }
+
+            _userSessionData.Remove(shortId);
         }
 
-        public void NotifyConnection(WebSocket webSocket) {
-            _userSessionData.Add(webSocket, new UserSessionData(false, GetNextCharacterShortId()));
+        public void NotifyConnection(ushort shortId, WebSocket webSocket) {
+            _userSessionData.Add(shortId, new UserSessionData(false, shortId, webSocket));
         }
 
         private async UniTask InitStateAsync(DbGame currentDbSave) {
@@ -150,7 +133,8 @@ namespace Server {
         public async UniTask HandleMessageAsync(
             INetworkMessage netMessage,
             Func<INetworkMessage, bool> answer,
-            Func<INetworkMessage, bool> broadcast
+            Func<INetworkMessage, bool> broadcast,
+            ushort shortId
         ) {
             try {
                 if (!IsReady) {
@@ -181,23 +165,25 @@ namespace Server {
 
                         Console.WriteLine("Game State reset !");
                         break;
-                    case HelloNetworkMessage hello:
+                    case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
-                        var user = await _userManager.FindByNameAsync(hello.Username);
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+                        var user = await userManager.FindByNameAsync(hello.Username);
                         try {
                             var character = await GetOrCreateCharacterAsync(user, hello);
-                            TODO ici: spa normal ya un truc qui va pas entre l'association websocket serveur et l'association websocket message queue.
-                            _connectedCharacters.Add(GetNextCharacterShortId(), character.Name);
+                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, shortId, character);
+                            characterJoinGameEvent.Apply(_state, null);
+                            _userSessionData[shortId].IsLogged = true;
+                            _webSocketMessagingQueue.Broadcast(characterJoinGameEvent);
                         } catch (Exception e) {
                             answer(new ErrorNetworkMessage(e.Message));
+                            Console.WriteLine(e.ToString());
                             return;
                         }
 
-                        // TODO: broadcast add player with PlayerID short value so that we can yse a dictionary again
-                        answer(hello);
-
-
                         break;
+                    }
                 }
 
                 // backup the state before applying
@@ -217,35 +203,47 @@ namespace Server {
         }
 
         private async Task<Character> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
             Character character;
             if (user == null) {
                 // create a new user + player + character
                 user = new IdentityUser(hello.Username);
-                var result = await _userManager.CreateAsync(user);
+                var result = await userManager.CreateAsync(user);
                 if (result.Succeeded) {
-                    var dbLevel = _currentDbSave!.Levels.First();
-                    var pos = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
-                    character = new Character(hello.Username, pos, dbLevel.Name);
-                    var player = new DbPlayer {
-                        IdentityUser = user,
-                        Characters = new List<DbCharacter> {
-                            new() {
-                                Name = hello.Username,
-                                DbLevel = dbLevel,
-                                X = pos.X,
-                                Y = pos.Y,
-                                Z = pos.Z,
-                                SerializedData = MessagePackSerializer.Serialize(character)
+                    try {
+                        var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+                        var dbSave = await context.Games.Include(g => g.Levels).FirstAsync();
+                        var dbLevel = dbSave.Levels.First();
+                        var pos = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
+                        character = new Character(hello.Username, pos, dbLevel.Name);
+                        var player = new DbPlayer {
+                            IdentityUser = user,
+                            Characters = new List<DbCharacter> {
+                                new() {
+                                    Name = hello.Username,
+                                    Level = dbLevel,
+                                    X = pos.X,
+                                    Y = pos.Y,
+                                    Z = pos.Z,
+                                    SerializedData = MessagePackSerializer.Serialize(character)
+                                }
                             }
-                        }
-                    };
-                    _context.Players.Add(player);
-                    await _context.SaveChangesAsync();
+                        };
+
+                        context.Players.Add(player);
+                        await context.SaveChangesAsync();
+                    } catch (Exception e) {
+                        Console.WriteLine(e);
+                        var deleted = await userManager.DeleteAsync(user);
+                        throw;
+                    }
                 } else {
                     throw new ApplicationException($"Server error: Failed to find or create user {hello.Username}.");
                 }
             } else {
-                var player = await _context.Players
+                var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+                var player = await context.Players
                     .Include(p => p.Characters)
                     .FirstOrDefaultAsync(p => p.IdentityUser.Id == user.Id);
                 if (player == null) {
@@ -266,25 +264,25 @@ namespace Server {
             if (userSessionData == null) return;
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
+                    var i = chX + x;
+                    var j = chZ + z;
+                    if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
                     var distance = (uint) Math.Abs(x) + (uint) Math.Abs(z);
-                    var key = ChunkKeyPool.Get(levelId, chX + x, chZ + z);
-                    if (!userSessionData.UploadedChunks.Contains(key)) {
-                        // never sent this chunk, schedule sending
-                        userSessionData.UploadQueue.Enqueue(key, distance);
-                        userSessionData.UploadedChunks.Add(key);
-                    }
-
-                    ChunkKeyPool.Return(key);
+                    var key = new ChunkKey(levelId, i, j);
+                    if (userSessionData.UploadedChunks.Contains(key)) continue;
+                    // never sent this chunk, schedule sending
+                    userSessionData.UploadQueue.Enqueue(key, distance);
+                    userSessionData.UploadedChunks.Add(key);
                 }
             }
         }
 
         public void SendScheduledChunks() {
-            foreach (var (ws, userSessionData) in _userSessionData) {
+            foreach (var (_, userSessionData) in _userSessionData) {
                 // try dequeue one chunk per user per tick
                 if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
                     var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
-                    _webSocketMessagingQueue.Send(ws, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
+                    _webSocketMessagingQueue.Send(userSessionData.Ws, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
                 }
             }
         }

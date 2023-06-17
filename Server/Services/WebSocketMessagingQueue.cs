@@ -10,6 +10,9 @@ using Microsoft.Extensions.Hosting;
 using Shared.Net;
 
 namespace Server {
+    
+    TODO: fix service not calling "ExecuteAsync" also maybe seeral instances. MAKE SURE IT WORKS
+    
     /// <summary>
     /// Thread Safe way to manage sockets and message sending
     /// </summary>

@@ -26,13 +26,27 @@ namespace VoxelsEngine {
 
         private void HandleNetMessage(INetworkMessage obj) {
             switch (obj) {
+                case CharacterJoinGameEvent joinEvent:
+                    SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
+
+                    if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
+                        _started = true;
+                        SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
+                        SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
+                    }
+
+                    HandleEvent(joinEvent);
+                    break;
                 case IGameEvent gameEvent:
                     HandleEvent(gameEvent);
+                    break;
+                case ErrorNetworkMessage err:
+                    Debug.LogError("[Server Error] " + err);
                     break;
             }
         }
 
-        public void Start() {
+        public void StartLocal() {
             _started = true;
             SocketManager.OnNetworkMessage -= HandleNetMessage;
             SocketManager.OnNetworkMessage += HandleNetMessage;
@@ -90,7 +104,7 @@ namespace VoxelsEngine {
             SocketManager = new WebSocketManager();
             SocketManager.OnNetworkMessage += HandleNetMessage;
             await SocketManager.Init(serverURL);
-            await SocketManager.Send(new HelloNetworkMessage("Coucou toi"));
+            await SocketManager.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
         }
     }
 }

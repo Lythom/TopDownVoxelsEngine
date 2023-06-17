@@ -38,7 +38,7 @@ namespace Server {
             _cancellationTokenSource.Cancel(false);
         }
 
-        public async UniTask StartFixedUpdateAsync() {
+        public async UniTaskVoid StartFixedUpdateAsync() {
             SideEffectManager sideEffectManager = new SideEffectManager();
             sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
             while (!_cancellationToken.IsCancellationRequested) {
@@ -53,7 +53,10 @@ namespace Server {
         }
 
         public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager) {
-            if (_voxelsEngineServer.IsReady) return;
+            if (!_voxelsEngineServer.IsReady) {
+                await Task.Delay(2000, cancellationToken);
+                return;
+            }
             _frameStopwatch.Restart();
 
             _tick.MinPriority = _minimumPriority;

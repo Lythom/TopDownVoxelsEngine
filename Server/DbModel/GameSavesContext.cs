@@ -25,17 +25,46 @@ namespace Server.DbModel {
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<DbPlayer>()
-                .HasIndex(p => p.IdentityUserId)
-                .IsUnique();
+                .HasIndex(p => p.IdentityUserId);
+
+            modelBuilder.Entity<DbPlayer>()
+                .HasOne(p => p.IdentityUser)
+                .WithMany()
+                .HasForeignKey(p => p.IdentityUserId);
 
             modelBuilder.Entity<DbCharacter>()
                 .HasIndex(c => c.Name);
 
-            modelBuilder.Entity<DbChunk>()
-                .HasIndex(ch => new {chX = ch.ChX, chZ = ch.ChZ});
+            modelBuilder.Entity<DbCharacter>()
+                .HasOne(c => c.Player)
+                .WithMany(p => p.Characters)
+                .HasForeignKey(c => c.PlayerId);
+
+            modelBuilder.Entity<DbCharacter>()
+                .HasOne(c => c.Level)
+                .WithMany(p => p.Characters)
+                .HasForeignKey(c => c.LevelId);
+
+            modelBuilder.Entity<DbNpc>()
+                .HasOne(n => n.Level)
+                .WithMany(l => l.Npcs)
+                .HasForeignKey(n => n.LevelId);
 
             modelBuilder.Entity<DbLevel>()
                 .HasIndex(l => l.Name);
+            
+            modelBuilder.Entity<DbLevel>()
+                .HasOne(l => l.Game)
+                .WithMany(g => g.Levels)
+                .HasForeignKey(l => l.GameId);
+
+            modelBuilder.Entity<DbChunk>()
+                .HasIndex(ch => new {chX = ch.ChX, chZ = ch.ChZ});
+
+            modelBuilder.Entity<DbChunk>()
+                .HasOne(c => c.Level)
+                .WithMany(l => l.Chunks)
+                .HasForeignKey(c => c.LevelId);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -74,7 +103,7 @@ namespace Server.DbModel {
         // Navigation property for a list of characters associated with a player
         public ICollection<DbCharacter> Characters { get; set; }
 
-        public Guid IdentityUserId { get; set; }
+        public string IdentityUserId { get; set; }
         public IdentityUser IdentityUser { get; set; } // Navigation property
     }
 
@@ -90,11 +119,11 @@ namespace Server.DbModel {
 
         // Foreign key to player
         public Guid PlayerId { get; set; }
-        public DbPlayer DbPlayer { get; set; } // Navigation property
+        public DbPlayer Player { get; set; } // Navigation property
 
         // Foreign key to Level
         public Guid LevelId { get; set; }
-        public DbLevel DbLevel { get; set; } // Navigation property
+        public DbLevel Level { get; set; } // Navigation property
     }
 
     public class DbNpc {
@@ -109,7 +138,7 @@ namespace Server.DbModel {
 
         // Foreign key to Level
         public Guid LevelId { get; set; }
-        public DbLevel DbLevel { get; set; } // Navigation property
+        public DbLevel Level { get; set; } // Navigation property
     }
 
     public class DbLevel {
@@ -131,7 +160,9 @@ namespace Server.DbModel {
 
         // Foreign key to game
         public Guid GameId { get; set; }
-        public DbGame DbGame { get; set; } // Navigation property
+        public DbGame Game { get; set; } // Navigation property
+
+        public ICollection<DbCharacter> Characters { get; set; }
     }
 
     public class DbChunk {
@@ -145,7 +176,7 @@ namespace Server.DbModel {
 
         // Foreign key to level
         public Guid LevelId { get; set; }
-        public DbLevel DbLevel { get; set; } // Navigation property
+        public DbLevel Level { get; set; } // Navigation property
     }
 
     public class DbGame {

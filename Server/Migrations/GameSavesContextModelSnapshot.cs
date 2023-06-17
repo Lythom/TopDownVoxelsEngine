@@ -209,10 +209,13 @@ namespace Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Server.DbModel.Character", b =>
+            modelBuilder.Entity("Server.DbModel.DbCharacter", b =>
                 {
                     b.Property<Guid>("CharacterId")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LevelId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -222,7 +225,22 @@ namespace Server.Migrations
                     b.Property<Guid>("PlayerId")
                         .HasColumnType("TEXT");
 
+                    b.Property<byte[]>("SerializedData")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<float>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<float>("Y")
+                        .HasColumnType("REAL");
+
+                    b.Property<float>("Z")
+                        .HasColumnType("REAL");
+
                     b.HasKey("CharacterId");
+
+                    b.HasIndex("LevelId");
 
                     b.HasIndex("Name");
 
@@ -231,7 +249,7 @@ namespace Server.Migrations
                     b.ToTable("Characters");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Chunk", b =>
+            modelBuilder.Entity("Server.DbModel.DbChunk", b =>
                 {
                     b.Property<Guid>("ChunkId")
                         .ValueGeneratedOnAdd()
@@ -241,25 +259,28 @@ namespace Server.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
+                    b.Property<short>("ChX")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<short>("ChZ")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsGenerated")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("LevelId")
                         .HasColumnType("TEXT");
-
-                    b.Property<short>("chX")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<short>("chZ")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("ChunkId");
 
                     b.HasIndex("LevelId");
 
-                    b.HasIndex("chX", "chZ");
+                    b.HasIndex("ChX", "ChZ");
 
                     b.ToTable("Chunks");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Game", b =>
+            modelBuilder.Entity("Server.DbModel.DbGame", b =>
                 {
                     b.Property<Guid>("GameId")
                         .ValueGeneratedOnAdd()
@@ -276,7 +297,7 @@ namespace Server.Migrations
                     b.ToTable("Games");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Level", b =>
+            modelBuilder.Entity("Server.DbModel.DbLevel", b =>
                 {
                     b.Property<Guid>("LevelId")
                         .ValueGeneratedOnAdd()
@@ -292,14 +313,14 @@ namespace Server.Migrations
                     b.Property<int>("Seed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SpawnPointX")
-                        .HasColumnType("INTEGER");
+                    b.Property<float>("SpawnPointX")
+                        .HasColumnType("REAL");
 
-                    b.Property<int>("SpawnPointY")
-                        .HasColumnType("INTEGER");
+                    b.Property<float>("SpawnPointY")
+                        .HasColumnType("REAL");
 
-                    b.Property<int>("SpawnPointZ")
-                        .HasColumnType("INTEGER");
+                    b.Property<float>("SpawnPointZ")
+                        .HasColumnType("REAL");
 
                     b.HasKey("LevelId");
 
@@ -310,7 +331,40 @@ namespace Server.Migrations
                     b.ToTable("Levels");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Player", b =>
+            modelBuilder.Entity("Server.DbModel.DbNpc", b =>
+                {
+                    b.Property<Guid>("NpcId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LevelId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("SerializedData")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<int>("X")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Z")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("NpcId");
+
+                    b.HasIndex("LevelId");
+
+                    b.ToTable("Npcs");
+                });
+
+            modelBuilder.Entity("Server.DbModel.DbPlayer", b =>
                 {
                     b.Property<Guid>("PlayerId")
                         .ValueGeneratedOnAdd()
@@ -322,8 +376,7 @@ namespace Server.Migrations
 
                     b.HasKey("PlayerId");
 
-                    b.HasIndex("IdentityUserId")
-                        .IsUnique();
+                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("Players");
                 });
@@ -379,20 +432,28 @@ namespace Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Server.DbModel.Character", b =>
+            modelBuilder.Entity("Server.DbModel.DbCharacter", b =>
                 {
-                    b.HasOne("Server.DbModel.Player", "Player")
+                    b.HasOne("Server.DbModel.DbLevel", "Level")
+                        .WithMany("Characters")
+                        .HasForeignKey("LevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Server.DbModel.DbPlayer", "Player")
                         .WithMany("Characters")
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Level");
+
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Chunk", b =>
+            modelBuilder.Entity("Server.DbModel.DbChunk", b =>
                 {
-                    b.HasOne("Server.DbModel.Level", "Level")
+                    b.HasOne("Server.DbModel.DbLevel", "Level")
                         .WithMany("Chunks")
                         .HasForeignKey("LevelId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -401,9 +462,9 @@ namespace Server.Migrations
                     b.Navigation("Level");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Level", b =>
+            modelBuilder.Entity("Server.DbModel.DbLevel", b =>
                 {
-                    b.HasOne("Server.DbModel.Game", "Game")
+                    b.HasOne("Server.DbModel.DbGame", "Game")
                         .WithMany("Levels")
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -412,17 +473,43 @@ namespace Server.Migrations
                     b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Game", b =>
+            modelBuilder.Entity("Server.DbModel.DbNpc", b =>
+                {
+                    b.HasOne("Server.DbModel.DbLevel", "Level")
+                        .WithMany("Npcs")
+                        .HasForeignKey("LevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Level");
+                });
+
+            modelBuilder.Entity("Server.DbModel.DbPlayer", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
+                        .WithMany()
+                        .HasForeignKey("IdentityUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IdentityUser");
+                });
+
+            modelBuilder.Entity("Server.DbModel.DbGame", b =>
                 {
                     b.Navigation("Levels");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Level", b =>
+            modelBuilder.Entity("Server.DbModel.DbLevel", b =>
                 {
+                    b.Navigation("Characters");
+
                     b.Navigation("Chunks");
+
+                    b.Navigation("Npcs");
                 });
 
-            modelBuilder.Entity("Server.DbModel.Player", b =>
+            modelBuilder.Entity("Server.DbModel.DbPlayer", b =>
                 {
                     b.Navigation("Characters");
                 });

@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using System.Net.WebSockets;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,8 +13,11 @@ using Microsoft.Extensions.Hosting;
 using Server.DbModel;
 
 namespace Server {
-    public class Startup {
+    public class Startup : IAsyncDisposable {
+        private Func<UniTask>? _stopServer;
+
         public void ConfigureServices(IServiceCollection services) {
+            services.AddAuthorization();
             services.AddMemoryCache();
             services.AddWebSockets(options => {
                 options.KeepAliveInterval = TimeSpan.FromSeconds(15);
@@ -24,12 +29,15 @@ namespace Server {
             services.AddSingleton<WebSocketMessagingQueue>();
             services.AddHostedService(p => p.GetRequiredService<WebSocketMessagingQueue>());
             // Warm up StarTeamServer service during startup
-            services.AddHostedService<VoxelsEngineServer>(sp => {
-                var context = sp.GetRequiredService<GameSavesContext>();
-                var userManager = sp.GetRequiredService<UserManager<IdentityUser>>();
+            services.AddSingleton<VoxelsEngineServer>(sp => {
+                var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
                 var wmq = sp.GetRequiredService<WebSocketMessagingQueue>();
-                return new VoxelsEngineServer(context, userManager, wmq);
+                return new VoxelsEngineServer(wmq, serviceScopeFactory);
             });
+        }
+
+        public async ValueTask DisposeAsync() {
+            if (_stopServer != null) await _stopServer.Invoke();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -64,6 +72,10 @@ namespace Server {
                     await context.Response.WriteAsync("test " + context.RequestServices.GetRequiredService<WebSocketMessagingQueue>().OpenSocketsCount);
                 });
             });
+
+            var voxelsEngineServer = app.ApplicationServices.GetRequiredService<VoxelsEngineServer>();
+            _stopServer = voxelsEngineServer.StopAsync;
+            voxelsEngineServer.StartAsync().Forget();
         }
     }
 }

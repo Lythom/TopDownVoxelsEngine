@@ -11,7 +11,7 @@ namespace Shared {
         public const int LevelChunkSize = 128;
         public Chunk[,] Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
         public ReactiveList<NPC> Npcs = new();
-        public string LevelId;
+        public string LevelId = "";
         public Vector3 SpawnPosition;
 
         private readonly CancellationTokenSource _cts = new();

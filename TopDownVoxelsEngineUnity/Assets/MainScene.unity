@@ -670,7 +670,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Tracker: {fileID: 963194229}
-  CharacterPrefab: {fileID: 3328081743888343227, guid: 86b73b6086c8c3c49ac0f97527315f0b, type: 3}
+  PlayerCharacterPrefab: {fileID: 3328081743888343227, guid: 86b73b6086c8c3c49ac0f97527315f0b, type: 3}
+  ServerURL: ws://localhost:8080
 --- !u!1 &1307387711
 GameObject:
   m_ObjectHideFlags: 0

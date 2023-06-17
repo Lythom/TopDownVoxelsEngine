@@ -98,6 +98,53 @@ To update the database by running new (not already ran via table \_EFMigrationsH
 dotnet ef database update
 ```
 
+
+### Réinitialiser la base de dev
+
+Pour réinitialiser la base de données locale et régénérer le modèle à l'aide de Entity Framework Core, vous pouvez utiliser les commandes suivantes dans la console du gestionnaire de paquets (Package Manager Console) ou dans l'invite de commande (Command Prompt) :
+
+    Supprimer la base de données :
+
+```shell
+dotnet ef database drop
+```
+
+    Créer une nouvelle migration :
+
+```shell
+dotnet ef migrations add InitialCreate
+```
+
+    Appliquer la migration pour créer la base de données :
+
+```shell
+dotnet ef database update
+```
+
+Notez que vous devez être dans le répertoire du projet qui contient le fichier .csproj pour exécuter ces commandes. De plus, le nom InitialCreate est juste un exemple, vous pouvez le remplacer par le nom que vous voulez donner à votre migration.
+
+Si vous utilisez la console du gestionnaire de paquets dans Visual Studio, vous pouvez utiliser les commandes suivantes à la place :
+
+    Supprimer la base de données :
+
+```shell
+Drop-Database
+```
+
+    Créer une nouvelle migration :
+
+```shell
+Add-Migration InitialCreate
+```
+
+    Appliquer la migration pour créer la base de données :
+
+```shell
+Update-Database
+```
+
+Encore une fois, InitialCreate est juste un exemple et peut être remplacé par le nom que vous voulez donner à votre migration.
+
 ### Csproj
 
 The server .csproj files contains several specific and important import, do NOT MODIFY THIS FILE.

@@ -7,6 +7,8 @@ namespace Shared {
     public class LocalState {
         public static LocalState Instance = new();
         public ushort CurrentPlayerId = 0;
+        public string CurrentPlayerName = "Lythom";
+
     }
 
     [MessagePackObject(true)]

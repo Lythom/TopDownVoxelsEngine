@@ -13,6 +13,14 @@ namespace Server {
     internal static class WebSocketHandler {
         const int Ko = 1024;
 
+        private static ushort _nextShortId = 0;
+        private static Stack<ushort> _shortIdPool;
+
+        static WebSocketHandler() {
+            _shortIdPool = new Stack<ushort>();
+            for (int i = ushort.MaxValue; i >= 0; i--) _shortIdPool.Push((ushort) i);
+        }
+
         public static async Task InitWebSocketAsync(WebSocket webSocket, HttpContext context) {
             // Possible concurrent access to OpenSockets, lock the operation
             Console.WriteLine("New client !");
@@ -32,7 +40,8 @@ namespace Server {
         private static async UniTask ListenWebsocketBytesAsync(HttpContext context, WebSocket webSocket, WebSocketMessagingQueue messageSender) {
             var server = context.RequestServices.GetRequiredService<VoxelsEngineServer>();
 
-            server.NotifyConnection(webSocket);
+            var shortId = _shortIdPool.Pop();
+            server.NotifyConnection(shortId, webSocket);
 
             var buffer = new byte[1024 * Ko];
             bool socketOpen = true;
@@ -64,15 +73,17 @@ namespace Server {
                             await server.HandleMessageAsync(
                                 msg,
                                 answer => messageSender.Send(webSocket, answer),
-                                messageSender.Broadcast
+                                messageSender.Broadcast,
+                                shortId
                             );
                             break;
                     }
                 } else {
                     // Socket closed by client or timed out
                     Console.WriteLine("Client disconnected " + webSocket);
-                    server.NotifyDisconnection(webSocket);
+                    server.NotifyDisconnection(shortId);
                     socketOpen = false;
+                    _shortIdPool.Push(shortId);
                     if (result.CloseStatus != null) await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
                 }
             }

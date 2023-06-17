@@ -64,18 +64,6 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Players",
-                columns: table => new
-                {
-                    PlayerId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    IdentityUserId = table.Column<string>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Players", x => x.PlayerId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -182,15 +170,33 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Players",
+                columns: table => new
+                {
+                    PlayerId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    IdentityUserId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Players", x => x.PlayerId);
+                    table.ForeignKey(
+                        name: "FK_Players_AspNetUsers_IdentityUserId",
+                        column: x => x.IdentityUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Levels",
                 columns: table => new
                 {
                     LevelId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Seed = table.Column<int>(type: "INTEGER", nullable: false),
-                    SpawnPointX = table.Column<int>(type: "INTEGER", nullable: false),
-                    SpawnPointY = table.Column<int>(type: "INTEGER", nullable: false),
-                    SpawnPointZ = table.Column<int>(type: "INTEGER", nullable: false),
+                    SpawnPointX = table.Column<float>(type: "REAL", nullable: false),
+                    SpawnPointY = table.Column<float>(type: "REAL", nullable: false),
+                    SpawnPointZ = table.Column<float>(type: "REAL", nullable: false),
                     GameId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -210,11 +216,22 @@ namespace Server.Migrations
                 {
                     CharacterId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
-                    PlayerId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    X = table.Column<float>(type: "REAL", nullable: false),
+                    Y = table.Column<float>(type: "REAL", nullable: false),
+                    Z = table.Column<float>(type: "REAL", nullable: false),
+                    SerializedData = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    PlayerId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    LevelId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Characters", x => x.CharacterId);
+                    table.ForeignKey(
+                        name: "FK_Characters_Levels_LevelId",
+                        column: x => x.LevelId,
+                        principalTable: "Levels",
+                        principalColumn: "LevelId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Characters_Players_PlayerId",
                         column: x => x.PlayerId,
@@ -228,9 +245,10 @@ namespace Server.Migrations
                 columns: table => new
                 {
                     ChunkId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    chX = table.Column<short>(type: "INTEGER", nullable: false),
-                    chZ = table.Column<short>(type: "INTEGER", nullable: false),
+                    ChX = table.Column<short>(type: "INTEGER", nullable: false),
+                    ChZ = table.Column<short>(type: "INTEGER", nullable: false),
                     Cells = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    IsGenerated = table.Column<bool>(type: "INTEGER", nullable: false),
                     LevelId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -238,6 +256,29 @@ namespace Server.Migrations
                     table.PrimaryKey("PK_Chunks", x => x.ChunkId);
                     table.ForeignKey(
                         name: "FK_Chunks_Levels_LevelId",
+                        column: x => x.LevelId,
+                        principalTable: "Levels",
+                        principalColumn: "LevelId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Npcs",
+                columns: table => new
+                {
+                    NpcId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    X = table.Column<int>(type: "INTEGER", nullable: false),
+                    Y = table.Column<int>(type: "INTEGER", nullable: false),
+                    Z = table.Column<int>(type: "INTEGER", nullable: false),
+                    SerializedData = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    LevelId = table.Column<Guid>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Npcs", x => x.NpcId);
+                    table.ForeignKey(
+                        name: "FK_Npcs_Levels_LevelId",
                         column: x => x.LevelId,
                         principalTable: "Levels",
                         principalColumn: "LevelId",
@@ -282,6 +323,11 @@ namespace Server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Characters_LevelId",
+                table: "Characters",
+                column: "LevelId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Characters_Name",
                 table: "Characters",
                 column: "Name");
@@ -292,9 +338,9 @@ namespace Server.Migrations
                 column: "PlayerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Chunks_chX_chZ",
+                name: "IX_Chunks_ChX_ChZ",
                 table: "Chunks",
-                columns: new[] { "chX", "chZ" });
+                columns: new[] { "ChX", "ChZ" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chunks_LevelId",
@@ -312,10 +358,14 @@ namespace Server.Migrations
                 column: "Name");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Npcs_LevelId",
+                table: "Npcs",
+                column: "LevelId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Players_IdentityUserId",
                 table: "Players",
-                column: "IdentityUserId",
-                unique: true);
+                column: "IdentityUserId");
         }
 
         /// <inheritdoc />
@@ -343,16 +393,19 @@ namespace Server.Migrations
                 name: "Chunks");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "Npcs");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Players");
 
             migrationBuilder.DropTable(
                 name: "Levels");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Games");
