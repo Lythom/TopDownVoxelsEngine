@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using Shared;
 using Shared.Net;
@@ -12,8 +13,8 @@ namespace VoxelsEngine {
     /// - Simuler les actions d'un serveur localement (synchronisation d'états)
     /// </summary>
     public class ClientEngine : MonoBehaviour {
-        public IWebSocketManager SocketManager = new FakeEchoingSocketManager();
-        public bool IsLocalEngine() => SocketManager is FakeEchoingSocketManager;
+        public ISocketClient SocketClient = new FakeEchoingSocketClient();
+        public bool IsLocalEngine() => SocketClient is FakeEchoingSocketClient;
 
         [ShowInInspector]
         public GameState State = new(null, null, null);
@@ -25,6 +26,7 @@ namespace VoxelsEngine {
         private bool _started;
 
         private void HandleNetMessage(INetworkMessage obj) {
+            Logr.Log("Received " + obj);
             switch (obj) {
                 case CharacterJoinGameEvent joinEvent:
                     SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
@@ -41,22 +43,22 @@ namespace VoxelsEngine {
                     HandleEvent(gameEvent);
                     break;
                 case ErrorNetworkMessage err:
-                    Debug.LogError("[Server Error] " + err);
+                    Debug.LogError("[Server Error] " + err.Message);
                     break;
             }
         }
 
         public void StartLocal() {
             _started = true;
-            SocketManager.OnNetworkMessage -= HandleNetMessage;
-            SocketManager.OnNetworkMessage += HandleNetMessage;
+            SocketClient.OnNetworkMessage -= HandleNetMessage;
+            SocketClient.OnNetworkMessage += HandleNetMessage;
             SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
             SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
         }
 
         public void Stop() {
             _started = false;
-            SocketManager.OnNetworkMessage -= HandleNetMessage;
+            SocketClient.OnNetworkMessage -= HandleNetMessage;
             SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
         }
 
@@ -100,11 +102,18 @@ namespace VoxelsEngine {
 
         // TODO: auto reconnexion
 
-        public async Task InitRemote(string serverURL) {
-            SocketManager = new WebSocketManager();
-            SocketManager.OnNetworkMessage += HandleNetMessage;
-            await SocketManager.Init(serverURL);
-            await SocketManager.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
+        public async Task InitRemote(int port) {
+            SocketClient = new SocketClient();
+            SocketClient.OnNetworkMessage += HandleNetMessage;
+            await SocketClient.Init("localhost", port);
+            await Task.Delay(500);
+            await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
+        }
+
+        private void OnDestroy() {
+            if (SocketClient != null) {
+                SocketClient.Close();
+            }
         }
     }
 }

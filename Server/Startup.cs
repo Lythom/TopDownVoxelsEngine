@@ -1,16 +1,18 @@
 using System;
 using System.Net;
 using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using MessagePack;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Server.DbModel;
+using Shared.Net;
 
 namespace Server {
     public class Startup : IAsyncDisposable {
@@ -19,20 +21,14 @@ namespace Server {
         public void ConfigureServices(IServiceCollection services) {
             services.AddAuthorization();
             services.AddMemoryCache();
-            services.AddWebSockets(options => {
-                options.KeepAliveInterval = TimeSpan.FromSeconds(15);
-            });
             services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<GameSavesContext>()
                 .AddDefaultTokenProviders();
             services.AddDbContext<GameSavesContext>(GameSavesContext.ConfigureOptions);
-            services.AddSingleton<WebSocketMessagingQueue>();
-            services.AddHostedService(p => p.GetRequiredService<WebSocketMessagingQueue>());
             // Warm up StarTeamServer service during startup
             services.AddSingleton<VoxelsEngineServer>(sp => {
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
-                var wmq = sp.GetRequiredService<WebSocketMessagingQueue>();
-                return new VoxelsEngineServer(wmq, serviceScopeFactory);
+                return new VoxelsEngineServer(serviceScopeFactory, new SocketServer());
             });
         }
 
@@ -57,7 +53,19 @@ namespace Server {
                 if (context.Request.Path == "/ws") {
                     if (context.WebSockets.IsWebSocketRequest) {
                         using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync()) {
-                            await WebSocketHandler.InitWebSocketAsync(webSocket, context);
+                            try {
+                                var buffer = MessagePackSerializer.Serialize(new ErrorNetworkMessage("test"));
+                                await webSocket.SendAsync(buffer,
+                                    WebSocketMessageType.Binary,
+                                    WebSocketMessageFlags.EndOfMessage, CancellationToken.None);
+                                Console.WriteLine("Sent bytes : " + buffer.Length);
+                            } catch (Exception e) {
+                                Console.WriteLine(e);
+                                throw;
+                            }
+
+                            // await WebSocketHandler.InitWebSocketAsync(webSocket, context);
+                            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "testClose", CancellationToken.None);
                         }
                     } else {
                         context.Response.StatusCode = (int) HttpStatusCode.BadRequest;

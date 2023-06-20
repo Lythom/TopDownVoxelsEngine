@@ -14,6 +14,8 @@ using Server.DbModel;
 using Shared;
 using Shared.Net;
 
+#pragma warning disable CS8625
+
 namespace Server.Tests {
     [TestFixture]
     public class VoxelsEngineServerTests {
@@ -21,7 +23,7 @@ namespace Server.Tests {
         private Mock<IUserStore<IdentityUser>> _userStoreMock;
 
         private Mock<GameSavesContext> _contextMock;
-        private Mock<WebSocketMessagingQueue> _queueMock;
+        private Mock<SocketServer> _socketServerMock;
         private VoxelsEngineServer _server;
 
         private string TestUsername = "TestUsername";
@@ -35,7 +37,7 @@ namespace Server.Tests {
             // Créez une instance de UserManager<IdentityUser> en utilisant le mock
             _userManagerMock = new UserManager<IdentityUser>(_userStoreMock.Object, null, null, null, null, null, null, null, null);
             _contextMock = new Mock<GameSavesContext>();
-            _queueMock = new Mock<WebSocketMessagingQueue>();
+            _socketServerMock = new Mock<SocketServer>();
 
             var dbChunk0 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 0, ChZ = 0};
             var dbChunk1 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 1, ChZ = 0};
@@ -92,7 +94,7 @@ namespace Server.Tests {
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
 
             // Créez une instance de VoxelsEngineServer à tester
-            _server = new VoxelsEngineServer(_queueMock.Object, serviceScopeFactoryMock.Object);
+            _server = new VoxelsEngineServer(serviceScopeFactoryMock.Object, _socketServerMock.Object);
         }
 
         [Test]
@@ -126,12 +128,12 @@ namespace Server.Tests {
             await _server.StartAsync();
 
             var webSocket = new Mock<WebSocket>();
-            _server.NotifyConnection(_testShortId, webSocket.Object);
+            _server.NotifyConnection(_testShortId);
 
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
 
             // Act
-            await _server.HandleMessageAsync(helloMessage, _ => false, _ => false, _testShortId);
+            await _server.HandleMessageAsync(_testShortId, helloMessage);
 
             // Assert
 
@@ -139,7 +141,7 @@ namespace Server.Tests {
             Assert.IsTrue(_server.State.Characters.ContainsKey(_testShortId));
             Assert.AreEqual(TestUsername, _server.State.Characters[_testShortId].Name);
             // Check we correctly broadcasted CharacterJoinGameEvent after joining
-            _queueMock.Verify(q => q.Broadcast(It.Is<CharacterJoinGameEvent>(e => e.Character.Name == TestUsername)), Times.Once);
+            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterJoinGameEvent>(e => e.Character.Name == TestUsername)), Times.Once);
         }
 
 
@@ -152,8 +154,8 @@ namespace Server.Tests {
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
             await _server.StartAsync();
 
-            _server.NotifyConnection(_testShortId, webSocket.Object);
-            await _server.HandleMessageAsync(helloMessage, _ => false, _ => false, _testShortId);
+            _server.NotifyConnection(_testShortId);
+            await _server.HandleMessageAsync(_testShortId, helloMessage);
 
             // Act
             _server.NotifyDisconnection(_testShortId);
@@ -162,7 +164,7 @@ namespace Server.Tests {
             // Check the player character is unregistered
             Assert.IsFalse(_server.State.Characters.Any(c => c.Value.Name == helloMessage.Username));
             // Check we correctly broadcasted CharacterLeaveGameEvent after leaving
-            _queueMock.Verify(q => q.Broadcast(It.Is<CharacterLeaveGameEvent>(e => e.CharacterId == _testShortId)), Times.Once);
+            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterLeaveGameEvent>(e => e.CharacterId == _testShortId)), Times.Once);
         }
 
         [Test]
@@ -176,9 +178,9 @@ namespace Server.Tests {
 
             await _server.StartAsync();
 
-            _server.NotifyConnection(_testShortId, webSocket.Object);
+            _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(helloMessage, _ => false, _ => false, _testShortId);
+            await _server.HandleMessageAsync(_testShortId, helloMessage);
 
             var levelId = "Lobby";
             var chX = 1;
@@ -224,9 +226,9 @@ namespace Server.Tests {
 
             await _server.StartAsync();
 
-            _server.NotifyConnection(_testShortId, webSocket.Object);
+            _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(helloMessage, _ => false, _ => false, _testShortId);
+            await _server.HandleMessageAsync(_testShortId, helloMessage);
 
             var levelId = "Lobby";
             var chX = 32;
@@ -272,9 +274,9 @@ namespace Server.Tests {
 
             await _server.StartAsync();
 
-            _server.NotifyConnection(_testShortId, webSocket.Object);
+            _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(helloMessage, _ => false, _ => false, _testShortId);
+            await _server.HandleMessageAsync(_testShortId, helloMessage);
 
             var levelId = "Lobby";
             var chX = LevelMap.LevelChunkSize - 1;

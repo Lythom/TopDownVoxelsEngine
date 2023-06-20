@@ -101,51 +101,51 @@ namespace Server.DbModel {
         public Guid PlayerId { get; set; } // Assuming you are using Guids for Identity
 
         // Navigation property for a list of characters associated with a player
-        public ICollection<DbCharacter> Characters { get; set; }
+        public ICollection<DbCharacter>? Characters { get; set; }
 
-        public string IdentityUserId { get; set; }
-        public IdentityUser IdentityUser { get; set; } // Navigation property
+        public string? IdentityUserId { get; set; }
+        public IdentityUser? IdentityUser { get; set; } // Navigation property
     }
 
     public class DbCharacter {
         [Key]
         public Guid CharacterId { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
-        public byte[] SerializedData { get; set; } // Shared.Character
+        public byte[]? SerializedData { get; set; } // Shared.Character
 
         // Foreign key to player
         public Guid PlayerId { get; set; }
-        public DbPlayer Player { get; set; } // Navigation property
+        public DbPlayer? Player { get; set; } // Navigation property
 
         // Foreign key to Level
         public Guid LevelId { get; set; }
-        public DbLevel Level { get; set; } // Navigation property
+        public DbLevel? Level { get; set; } // Navigation property
     }
 
     public class DbNpc {
         [Key]
         public Guid NpcId { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
         public int Z { get; set; }
-        public byte[] SerializedData { get; set; } // Shared.Npc
+        public byte[]? SerializedData { get; set; } // Shared.Npc
 
         // Foreign key to Level
         public Guid LevelId { get; set; }
-        public DbLevel Level { get; set; } // Navigation property
+        public DbLevel? Level { get; set; } // Navigation property
     }
 
     public class DbLevel {
         [Key]
         public Guid LevelId { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         public int Seed { get; set; }
         public float SpawnPointX { get; set; }
@@ -153,16 +153,16 @@ namespace Server.DbModel {
         public float SpawnPointZ { get; set; }
 
         // Navigation property for a list of chunks associated with a level
-        public ICollection<DbChunk> Chunks { get; set; }
+        public ICollection<DbChunk>? Chunks { get; set; }
 
         // Navigation property for a list of chunks associated with a level
-        public ICollection<DbNpc> Npcs { get; set; }
+        public ICollection<DbNpc>? Npcs { get; set; }
 
         // Foreign key to game
         public Guid GameId { get; set; }
-        public DbGame Game { get; set; } // Navigation property
+        public DbGame? Game { get; set; } // Navigation property
 
-        public ICollection<DbCharacter> Characters { get; set; }
+        public ICollection<DbCharacter>? Characters { get; set; }
     }
 
     public class DbChunk {
@@ -171,12 +171,12 @@ namespace Server.DbModel {
 
         public short ChX { get; set; }
         public short ChZ { get; set; }
-        public byte[] Cells { get; set; }
+        public byte[]? Cells { get; set; }
         public bool IsGenerated { get; set; }
 
         // Foreign key to level
         public Guid LevelId { get; set; }
-        public DbLevel Level { get; set; } // Navigation property
+        public DbLevel? Level { get; set; } // Navigation property
     }
 
     public class DbGame {
@@ -187,6 +187,6 @@ namespace Server.DbModel {
         public int DataVersion { get; set; }
 
         // Navigation property for a list of levels associated with a game
-        public ICollection<DbLevel> Levels { get; set; }
+        public ICollection<DbLevel>? Levels { get; set; }
     }
 }

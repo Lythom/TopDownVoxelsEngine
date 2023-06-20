@@ -6,19 +6,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
-using Microsoft.Extensions.Hosting;
 using Shared.Net;
 
 namespace Server {
-    
-    TODO: fix service not calling "ExecuteAsync" also maybe seeral instances. MAKE SURE IT WORKS
-    
     /// <summary>
     /// Thread Safe way to manage sockets and message sending
     /// </summary>
-    public class WebSocketMessagingQueue : BackgroundService {
+    public class WebSocketMessagingQueue : IDisposable {
         private readonly List<WebSocket> _openSockets = new();
         private Channel<IMessage>? _outputQueue;
+        private CancellationTokenSource? _cts;
+
+        private Queue<Broadcast?> broadcastPool = new();
+        private Queue<Send> sendPool = new();
 
         public int OpenSocketsCount {
             get {
@@ -44,26 +44,41 @@ namespace Server {
 
         public virtual bool Broadcast(INetworkMessage msg) {
             if (_outputQueue == null) return false;
-            return _outputQueue.Writer.TryWrite(new Broadcast(msg));
+            if (broadcastPool.TryDequeue(out var b)) {
+                b!.Msg = msg;
+            } else {
+                b = new Broadcast(msg);
+            }
+
+            return _outputQueue.Writer.TryWrite(b);
         }
 
-        public bool Send(WebSocket recipient, INetworkMessage msg) {
+        public virtual bool Send(WebSocket recipient, INetworkMessage msg) {
             if (_outputQueue == null) return false;
+            if (sendPool.TryDequeue(out var s)) {
+                s.Recipient = recipient;
+                s.Msg = msg;
+            } else {
+                s = new Send(recipient, msg);
+            }
+
             return _outputQueue.Writer.TryWrite(new Send(recipient, msg));
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken) {
+        public void Start() {
+            _cts = new CancellationTokenSource();
             _outputQueue = Channel.CreateSingleConsumerUnbounded<IMessage>();
-            return base.StartAsync(cancellationToken);
+            ExecuteAsync(_cts.Token).Forget();
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        private async UniTask ExecuteAsync(CancellationToken stoppingToken) {
             if (_outputQueue == null) return;
             while (!stoppingToken.IsCancellationRequested) {
                 try {
                     IMessage queuedMessage = await _outputQueue.Reader.ReadAsync(stoppingToken);
                     switch (queuedMessage) {
                         case Broadcast b:
+
                             List<WebSocket>? sockets = null;
                             lock (_openSockets) {
                                 sockets = _openSockets.ToList();
@@ -73,9 +88,11 @@ namespace Server {
                                 await SendAsync(stoppingToken, socket, b.Msg);
                             }
 
+                            broadcastPool.Enqueue(b);
                             break;
                         case Send s:
                             await SendAsync(stoppingToken, s.Recipient, s.Msg);
+                            sendPool.Enqueue(s);
                             break;
                     }
                 } catch (Exception e) {
@@ -84,19 +101,16 @@ namespace Server {
             }
         }
 
-        public override void Dispose() {
-            base.Dispose();
+        public void Dispose() {
             _outputQueue?.Writer.TryComplete();
+            _cts?.Cancel(false);
         }
 
         private async Task SendAsync(CancellationToken stoppingToken, WebSocket ws, INetworkMessage msg) {
             if (ws.State != WebSocketState.Open) {
-                await Console.Error.WriteLineAsync("[WebSocketSender] Message not sent: socket must be open. Closing the socket.");
                 lock (_openSockets) {
                     _openSockets.Remove(ws);
                 }
-
-                await ws.CloseAsync(WebSocketCloseStatus.InternalServerError, "A message was queued but the socket is not longer open", stoppingToken);
             }
 
             await ws.SendAsync(MessagePackSerializer.Serialize(msg), WebSocketMessageType.Binary, true, stoppingToken);

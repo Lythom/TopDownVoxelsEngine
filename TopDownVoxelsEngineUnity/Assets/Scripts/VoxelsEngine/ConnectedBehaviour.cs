@@ -85,7 +85,7 @@ namespace VoxelsEngine {
         }
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        protected IWebSocketManager? SocketManager => ClientEngine == null ? null : ClientEngine.SocketManager;
+        protected ISocketClient? SocketClient => ClientEngine == null ? null : ClientEngine.SocketClient;
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         protected SideEffectManager? SideEffectManager => ClientEngine == null ? null : ClientEngine.SideEffectManager;
@@ -285,7 +285,7 @@ namespace VoxelsEngine {
             OnClick(component, action, throttle, ResetToken, handleNotInteractive);
 
         protected async UniTask<INetworkMessage?> SendMessageAsync(INetworkMessage msg, TimeSpan timeout) {
-            if (SocketManager == null) {
+            if (SocketClient == null) {
                 Logr.Log("Not connected to a server.");
                 return null;
             }
@@ -301,24 +301,24 @@ namespace VoxelsEngine {
                 }
             }
 
-            SocketManager.OnNetworkMessage += HandleAnswer;
-            await SocketManager.Send(msg);
+            SocketClient.OnNetworkMessage += HandleAnswer;
+            await SocketClient.Send(msg);
             await UniTask.WhenAny(
                 answerReceived.Task,
                 UniTask.Delay(timeout, DelayType.Realtime, cancellationToken: ResetToken).SuppressCancellationThrow()
             );
-            if (SocketManager != null) SocketManager.OnNetworkMessage -= HandleAnswer;
+            if (SocketClient != null) SocketClient.OnNetworkMessage -= HandleAnswer;
             return answerReceived.GetStatus(0) == UniTaskStatus.Succeeded ? answerReceived.GetResult(0) : null;
         }
 
         protected void SendBlindMessageOptimistic(GameEvent msg) {
-            if (SocketManager == null) {
+            if (SocketClient == null) {
                 Logr.Log("Not connected to a server.");
                 return;
             }
 
             ClientEngine.HandleEvent(msg);
-            SocketManager.Send(msg).Forget();
+            SocketClient.Send(msg).Forget();
         }
 
         /// <summary>

@@ -22,7 +22,7 @@ namespace VoxelsEngine {
 
         public CharacterAgent CharacterPrefab = null!;
 
-        public string ServerURL = "ws://localhost:8080";
+        public int ServerPort = 9999;
         private ClientEngine? _engine;
         private PlayerCharacterAgent? _agent;
 
@@ -43,13 +43,13 @@ namespace VoxelsEngine {
         }
 
         private void OnDestroy() {
-            if (_engine != null) _engine.SocketManager.Close();
+            if (_engine != null) _engine.SocketClient.Close();
         }
 
         private async UniTask StartRemotePlay() {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
-            await _engine.InitRemote(ServerURL);
+            await _engine.InitRemote(ServerPort);
         }
 
         private async UniTask StartLocalPlay() {

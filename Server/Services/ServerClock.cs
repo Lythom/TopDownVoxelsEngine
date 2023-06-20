@@ -57,12 +57,13 @@ namespace Server {
                 await Task.Delay(2000, cancellationToken);
                 return;
             }
+
             _frameStopwatch.Restart();
 
             _tick.MinPriority = _minimumPriority;
             _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
             TryGenerateChunks();
-            _voxelsEngineServer.SendScheduledChunks();
+            await _voxelsEngineServer.SendScheduledChunksAsync();
 
             // Simulate work being done for a frame for test purpose
             if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);

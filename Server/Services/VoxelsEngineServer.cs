@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -20,7 +19,6 @@ namespace Server {
         // Data
         private GameState _state = new();
         private GameState _stateBackup = new();
-        private readonly WebSocketMessagingQueue _webSocketMessagingQueue;
 
         private readonly Dictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -29,14 +27,15 @@ namespace Server {
         public bool IsReady => _isReady;
         public GameState State => _state;
 
+        private SocketServer _socketServer;
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
-        public VoxelsEngineServer(WebSocketMessagingQueue webSocketMessagingQueue, IServiceScopeFactory serviceScopeFactory) {
+        public VoxelsEngineServer(IServiceScopeFactory serviceScopeFactory, SocketServer socketServer) {
             _serviceScopeFactory = serviceScopeFactory;
             try {
                 _cts = new CancellationTokenSource();
-                _webSocketMessagingQueue = webSocketMessagingQueue;
+                _socketServer = socketServer;
                 _serverClock = new ServerClock(this);
             } catch (Exception e) {
                 throw new ApplicationException("Could not start Server", e);
@@ -48,7 +47,7 @@ namespace Server {
                 var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
 
                 var dbSave = await context.Games
-                    .Include(g => g.Levels)
+                    .Include(g => g.Levels!)
                     .ThenInclude(l => l.Chunks)
                     .FirstOrDefaultAsync(_cts.Token);
                 if (dbSave == null) {
@@ -57,19 +56,27 @@ namespace Server {
                     await context.SaveChangesAsync(_cts.Token);
                 }
 
-                await InitStateAsync(dbSave);
+                InitState(dbSave);
 
                 _serverClock = new ServerClock(this);
                 _serverClock.StartFixedUpdateAsync().Forget();
+
+                _socketServer.OnNetworkMessage += HandleMessage;
+                _socketServer.OnOpen += NotifyConnection;
+                _socketServer.OnClose += NotifyDisconnection;
+                _socketServer.Init(9999);
+
                 _isReady = true;
                 Console.WriteLine("Server ready!");
             }
         }
 
+
         public UniTask StopAsync() {
             _isReady = false;
             _serverClock.Stop();
             _cts.Cancel(false);
+            _socketServer.Close();
             return UniTask.CompletedTask;
         }
 
@@ -79,22 +86,23 @@ namespace Server {
             if (userData.IsLogged) {
                 var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
                 characterLeaveGameEvent.Apply(_state, null);
-                _webSocketMessagingQueue.Broadcast(characterLeaveGameEvent);
+                _socketServer.Broadcast(characterLeaveGameEvent).GetAwaiter().GetResult();
             }
 
             _userSessionData.Remove(shortId);
         }
 
-        public void NotifyConnection(ushort shortId, WebSocket webSocket) {
-            _userSessionData.Add(shortId, new UserSessionData(false, shortId, webSocket));
+        public void NotifyConnection(ushort shortId) {
+            _userSessionData.Add(shortId, new UserSessionData(false, shortId));
         }
 
-        private async UniTask InitStateAsync(DbGame currentDbSave) {
+        private void InitState(DbGame currentDbSave) {
+            if (currentDbSave.Levels == null) throw new ApplicationException("load levels with chunks please");
             // load levels
             foreach (var dbLevel in currentDbSave.Levels) {
                 var spawnPosition = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
                 var levelMap = new LevelMap(dbLevel.Name, spawnPosition);
-                foreach (var dbChunk in dbLevel.Chunks.Where(c => c.IsGenerated)) {
+                foreach (var dbChunk in dbLevel.Chunks!.Where(c => c.IsGenerated)) {
                     levelMap.Chunks[dbChunk.ChX, dbChunk.ChZ] = new() {
                         Cells = MessagePackSerializer.Deserialize<Cell[,,]>(dbChunk.Cells),
                         IsGenerated = true
@@ -120,9 +128,9 @@ namespace Server {
                         Seed = Random.Shared.Next(),
                         Chunks = new List<DbChunk>(),
                         // spawn point initialized on the middle of the middle chunk
-                        SpawnPointX = LevelMap.LevelChunkSize * Chunk.Size + Chunk.Size / 2,
+                        SpawnPointX = (LevelMap.LevelChunkSize / 2) * Chunk.Size + Chunk.Size / 2,
                         SpawnPointY = Chunk.Size / 2,
-                        SpawnPointZ = LevelMap.LevelChunkSize * Chunk.Size + Chunk.Size / 2,
+                        SpawnPointZ = (LevelMap.LevelChunkSize / 2) * Chunk.Size + Chunk.Size / 2,
                     }
                 },
             };
@@ -130,15 +138,17 @@ namespace Server {
             return save;
         }
 
-        public async UniTask HandleMessageAsync(
-            INetworkMessage netMessage,
-            Func<INetworkMessage, bool> answer,
-            Func<INetworkMessage, bool> broadcast,
-            ushort shortId
-        ) {
+        public void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
+            Logr.Log("Received message sync: " + netMessage);
+            HandleMessageAsync(clientShortId, netMessage).Forget();
+        }
+
+        public async UniTask HandleMessageAsync(ushort clientShortId, INetworkMessage netMessage) {
             try {
+                Logr.Log("Received message: " + netMessage);
+
                 if (!IsReady) {
-                    answer(new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
+                    await _socketServer.Send(clientShortId, new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
                 }
 
                 // lock the state in case of concurrent access
@@ -153,17 +163,7 @@ namespace Server {
                             evt.Apply(_state, null);
                         }
 
-                        broadcast((INetworkMessage) evt);
-                        break;
-                    case NewGameNetworkMessage newGame:
-                        if (newGame.GameState != null) {
-                            lock (_state) {
-                                _state.UpdateValue(newGame.GameState);
-                                broadcast(newGame);
-                            }
-                        }
-
-                        Console.WriteLine("Game State reset !");
+                        await _socketServer.Broadcast((INetworkMessage) evt);
                         break;
                     case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
@@ -172,12 +172,12 @@ namespace Server {
                         var user = await userManager.FindByNameAsync(hello.Username);
                         try {
                             var character = await GetOrCreateCharacterAsync(user, hello);
-                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, shortId, character);
+                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character);
                             characterJoinGameEvent.Apply(_state, null);
-                            _userSessionData[shortId].IsLogged = true;
-                            _webSocketMessagingQueue.Broadcast(characterJoinGameEvent);
+                            _userSessionData[clientShortId].IsLogged = true;
+                            await _socketServer.Broadcast(characterJoinGameEvent);
                         } catch (Exception e) {
-                            answer(new ErrorNetworkMessage(e.Message));
+                            await _socketServer.Send(clientShortId, new ErrorNetworkMessage(e.Message));
                             Console.WriteLine(e.ToString());
                             return;
                         }
@@ -277,12 +277,12 @@ namespace Server {
             }
         }
 
-        public void SendScheduledChunks() {
-            foreach (var (_, userSessionData) in _userSessionData) {
+        public async UniTask SendScheduledChunksAsync() {
+            foreach (var (userKey, userSessionData) in _userSessionData) {
                 // try dequeue one chunk per user per tick
                 if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
                     var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
-                    _webSocketMessagingQueue.Send(userSessionData.Ws, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
+                    await _socketServer.Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
                 }
             }
         }

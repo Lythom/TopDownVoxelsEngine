@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using LoneStoneStudio.Tools;
 using MessagePack;
 using MessagePack.Resolvers;
 using Shared;
@@ -82,7 +81,6 @@ namespace VoxelsEngine {
 
             if (!_serializerRegistered) {
                 StaticCompositeResolver.Instance.Register(
-                    DynamicEnumAsStringResolver.Instance,
                     StandardResolver.Instance,
                     GeneratedResolver.Instance
                 );
