@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +18,8 @@ namespace Server {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         // Data
-        private GameState _state = new();
-        private GameState _stateBackup = new();
+        private readonly GameState _state = new();
+        private readonly GameState _stateBackup = new();
 
         private readonly Dictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -27,7 +28,9 @@ namespace Server {
         public bool IsReady => _isReady;
         public GameState State => _state;
 
-        private SocketServer _socketServer;
+        private readonly SocketServer _socketServer;
+        private readonly Queue<InputMessage> _inbox = new();
+        private readonly Queue<OutputMessage> _outbox = new();
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
@@ -42,32 +45,51 @@ namespace Server {
             }
         }
 
-        public async UniTask StartAsync() {
-            using (var scope = _serviceScopeFactory.CreateScope()) {
-                var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+        public async UniTask StartAsync(int port) {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
 
-                var dbSave = await context.Games
-                    .Include(g => g.Levels!)
-                    .ThenInclude(l => l.Chunks)
-                    .FirstOrDefaultAsync(_cts.Token);
-                if (dbSave == null) {
-                    dbSave = InitNewGame();
-                    context.Games.Add(dbSave);
-                    await context.SaveChangesAsync(_cts.Token);
+            var dbSave = await context.Games
+                .Include(g => g.Levels!)
+                .ThenInclude(l => l.Chunks)
+                .FirstOrDefaultAsync(_cts.Token);
+            if (dbSave == null) {
+                dbSave = InitNewGame();
+                context.Games.Add(dbSave);
+                await context.SaveChangesAsync(_cts.Token);
+            }
+
+            InitState(dbSave);
+
+            _socketServer.OnNetworkMessage += HandleMessage;
+            _socketServer.OnOpen += NotifyConnection;
+            _socketServer.OnClose += NotifyDisconnection;
+            _socketServer.Init(port);
+
+            _serverClock = new ServerClock(this);
+            _serverClock.StartFixedUpdateAsync(_inbox).Forget();
+            StartNetworkSendingAsync().Forget();
+
+            _isReady = true;
+            Console.WriteLine("Server ready!");
+        }
+
+        private async UniTask StartNetworkSendingAsync() {
+            while (!_cts.Token.IsCancellationRequested) {
+                try {
+                    if (_outbox.TryDequeue(out var m)) {
+                        if (m.IsBroadcast) {
+                            await _socketServer.Broadcast(m.Message);
+                        } else {
+                            await _socketServer.Send(m.Id, m.Message);
+                        }
+                    } else {
+                        await UniTask.Yield();
+                    }
+                } catch (Exception e) {
+                    Logr.LogException(e);
+                    throw;
                 }
-
-                InitState(dbSave);
-
-                _serverClock = new ServerClock(this);
-                _serverClock.StartFixedUpdateAsync().Forget();
-
-                _socketServer.OnNetworkMessage += HandleMessage;
-                _socketServer.OnOpen += NotifyConnection;
-                _socketServer.OnClose += NotifyDisconnection;
-                _socketServer.Init(9999);
-
-                _isReady = true;
-                Console.WriteLine("Server ready!");
             }
         }
 
@@ -80,20 +102,48 @@ namespace Server {
             return UniTask.CompletedTask;
         }
 
+        public void SelfApply(InputMessage m) {
+            _inbox.Enqueue(m);
+        }
+
+        public void Send(ushort id, INetworkMessage m) {
+            _outbox.Enqueue(new OutputMessage(id, m));
+        }
+
+        public void Broadcast(INetworkMessage m) {
+            _outbox.Enqueue(new OutputMessage(m));
+        }
+
         public void NotifyDisconnection(ushort shortId) {
-            if (!_userSessionData.ContainsKey(shortId)) return;
-            var userData = _userSessionData[shortId];
-            if (userData.IsLogged) {
-                var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
-                characterLeaveGameEvent.Apply(_state, null);
-                _socketServer.Broadcast(characterLeaveGameEvent).GetAwaiter().GetResult();
+            lock (_userSessionData) {
+                if (!_userSessionData.ContainsKey(shortId)) return;
+                var userData = _userSessionData[shortId];
+                if (userData.IsLogged) {
+                    var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
+                    SelfApply(new InputMessage(shortId, characterLeaveGameEvent));
+                    Broadcast(characterLeaveGameEvent);
+                }
+
+                _userSessionData.Remove(shortId);
             }
 
-            _userSessionData.Remove(shortId);
+            // If any unsent element for this user, cancel.
+            lock (_outbox) {
+                var tmpQueue = new Queue<OutputMessage>();
+                while (_outbox.TryDequeue(out var e)) {
+                    if (e.Id != shortId) tmpQueue.Enqueue(e);
+                }
+
+                while (tmpQueue.TryDequeue(out var e)) {
+                    _outbox.Enqueue(e);
+                }
+            }
         }
 
         public void NotifyConnection(ushort shortId) {
-            _userSessionData.Add(shortId, new UserSessionData(false, shortId));
+            lock (_userSessionData) {
+                _userSessionData.Add(shortId, new UserSessionData(false, shortId));
+            }
         }
 
         private void InitState(DbGame currentDbSave) {
@@ -117,6 +167,7 @@ namespace Server {
             _state.LevelGenerator.GenerateFromQueue(PriorityLevel.All, _state.Levels);
         }
 
+        [SuppressMessage("ReSharper", "PossibleLossOfFraction", Justification = "Manipulate only powers of 2.")]
         private static DbGame InitNewGame() {
             Console.WriteLine("Generating a new GameState");
             DbGame save = new DbGame {
@@ -139,16 +190,19 @@ namespace Server {
         }
 
         public void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
-            Logr.Log("Received message sync: " + netMessage);
-            HandleMessageAsync(clientShortId, netMessage).Forget();
+            lock (_inbox) {
+                _inbox.Enqueue(new InputMessage {Id = clientShortId, Message = netMessage});
+            }
         }
 
-        public async UniTask HandleMessageAsync(ushort clientShortId, INetworkMessage netMessage) {
+        public async UniTask HandleMessageAsync(InputMessage m) {
+            var clientShortId = m.Id;
+            var netMessage = m.Message;
             try {
                 Logr.Log("Received message: " + netMessage);
 
                 if (!IsReady) {
-                    await _socketServer.Send(clientShortId, new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
+                    Send(clientShortId, new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
                 }
 
                 // lock the state in case of concurrent access
@@ -159,11 +213,8 @@ namespace Server {
                                 "The state of the game was not found. Please init a game before applying events.");
                         // ReSharper disable once InconsistentlySynchronizedField
                         evt.AssertApplicationConditions(in _state);
-                        lock (_state) {
-                            evt.Apply(_state, null);
-                        }
-
-                        await _socketServer.Broadcast((INetworkMessage) evt);
+                        evt.Apply(State, null);
+                        Broadcast(evt);
                         break;
                     case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
@@ -171,13 +222,16 @@ namespace Server {
                         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
                         var user = await userManager.FindByNameAsync(hello.Username);
                         try {
-                            var character = await GetOrCreateCharacterAsync(user, hello);
-                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character);
-                            characterJoinGameEvent.Apply(_state, null);
-                            _userSessionData[clientShortId].IsLogged = true;
-                            await _socketServer.Broadcast(characterJoinGameEvent);
+                            var (character, levelSpawn) = await GetOrCreateCharacterAsync(user, hello);
+                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
+                            characterJoinGameEvent.Apply(State, null);
+                            lock (_userSessionData) {
+                                _userSessionData[clientShortId].IsLogged = true;
+                            }
+
+                            Broadcast(characterJoinGameEvent);
                         } catch (Exception e) {
-                            await _socketServer.Send(clientShortId, new ErrorNetworkMessage(e.Message));
+                            Send(clientShortId, new ErrorNetworkMessage(e.Message));
                             Console.WriteLine(e.ToString());
                             return;
                         }
@@ -202,10 +256,11 @@ namespace Server {
             }
         }
 
-        private async Task<Character> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
+        private async UniTask<(Character character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
             using var scope = _serviceScopeFactory.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
             Character character;
+            Vector3 spawnPosition;
             if (user == null) {
                 // create a new user + player + character
                 user = new IdentityUser(hello.Username);
@@ -213,8 +268,10 @@ namespace Server {
                 if (result.Succeeded) {
                     try {
                         var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
-                        var dbSave = await context.Games.Include(g => g.Levels).FirstAsync();
-                        var dbLevel = dbSave.Levels.First();
+                        var dbSave = await context.Games
+                            .Include(g => g.Levels)
+                            .FirstAsync();
+                        var dbLevel = dbSave.Levels!.First();
                         var pos = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
                         character = new Character(hello.Username, pos, dbLevel.Name);
                         var player = new DbPlayer {
@@ -233,9 +290,10 @@ namespace Server {
 
                         context.Players.Add(player);
                         await context.SaveChangesAsync();
+                        spawnPosition = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
                     } catch (Exception e) {
                         Console.WriteLine(e);
-                        var deleted = await userManager.DeleteAsync(user);
+                        await userManager.DeleteAsync(user);
                         throw;
                     }
                 } else {
@@ -245,7 +303,8 @@ namespace Server {
                 var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
                 var player = await context.Players
                     .Include(p => p.Characters)
-                    .FirstOrDefaultAsync(p => p.IdentityUser.Id == user.Id);
+                    .ThenInclude(c => c.Level)
+                    .FirstOrDefaultAsync(p => p.IdentityUser!.Id == user.Id);
                 if (player == null) {
                     throw new ApplicationException("All users should have a player on creation. Ask an admin !");
                     // TODO: remove user if no player found so that it can re-creates ?
@@ -253,14 +312,21 @@ namespace Server {
 
                 var dbCharacter = player.Characters.First();
                 character = MessagePackSerializer.Deserialize<Character>(dbCharacter.SerializedData);
+                spawnPosition = new Vector3(dbCharacter.Level!.SpawnPointX, dbCharacter.Level!.SpawnPointY, dbCharacter.Level!.SpawnPointZ);
             }
 
-            return character;
+            return (character, spawnPosition);
         }
 
         public void ScheduleChunkUpload(ushort playerKey, string levelId, int chX, int chZ) {
             var range = 3;
-            var userSessionData = _userSessionData.Select(u => u.Value).FirstOrDefault(u => u.ShortId == playerKey);
+            UserSessionData? userSessionData;
+            lock (_userSessionData) {
+                userSessionData = _userSessionData
+                    .Select(u => u.Value)
+                    .FirstOrDefault(u => u.ShortId == playerKey);
+            }
+
             if (userSessionData == null) return;
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
@@ -277,12 +343,14 @@ namespace Server {
             }
         }
 
-        public async UniTask SendScheduledChunksAsync() {
-            foreach (var (userKey, userSessionData) in _userSessionData) {
-                // try dequeue one chunk per user per tick
-                if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
-                    var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
-                    await _socketServer.Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
+        public void SendScheduledChunks() {
+            lock (_userSessionData) {
+                foreach (var (userKey, userSessionData) in _userSessionData) {
+                    // try dequeue one chunk per user per tick
+                    if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
+                        var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
+                        Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
+                    }
                 }
             }
         }

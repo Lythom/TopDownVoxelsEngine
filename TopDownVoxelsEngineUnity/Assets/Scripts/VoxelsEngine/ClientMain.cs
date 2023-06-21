@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using Shared;
@@ -115,6 +114,7 @@ namespace VoxelsEngine {
         }
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {
+            LocalState.Instance.CurrentPlayerId = shortId;
             _agent = Instantiate(PlayerCharacterPrefab, _engine!.transform, true);
             _agent.CharacterId = shortId;
             _agent.CameraTransform = Tracker.transform;

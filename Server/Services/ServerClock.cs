@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -38,11 +39,11 @@ namespace Server {
             _cancellationTokenSource.Cancel(false);
         }
 
-        public async UniTaskVoid StartFixedUpdateAsync() {
+        public async UniTaskVoid StartFixedUpdateAsync(Queue<InputMessage> inbox) {
             SideEffectManager sideEffectManager = new SideEffectManager();
             sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
             while (!_cancellationToken.IsCancellationRequested) {
-                await TickAsync(_cancellationToken, sideEffectManager);
+                await TickAsync(_cancellationToken, sideEffectManager, inbox);
             }
 
             sideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
@@ -52,7 +53,7 @@ namespace Server {
             _minimumPriority = level;
         }
 
-        public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager) {
+        public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager, Queue<InputMessage> inbox) {
             if (!_voxelsEngineServer.IsReady) {
                 await Task.Delay(2000, cancellationToken);
                 return;
@@ -63,7 +64,16 @@ namespace Server {
             _tick.MinPriority = _minimumPriority;
             _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
             TryGenerateChunks();
-            await _voxelsEngineServer.SendScheduledChunksAsync();
+            _voxelsEngineServer.SendScheduledChunks();
+
+            // read and apply message as part of the tick, and after the tick event
+            // why after? 'coz clients will have latency so the server simulation will be closer by being one frame late.
+            bool hasInput;
+            InputMessage m;
+            do {
+                lock (inbox) hasInput = inbox.TryDequeue(out m);
+                if (hasInput) await _voxelsEngineServer.HandleMessageAsync(m);
+            } while (hasInput);
 
             // Simulate work being done for a frame for test purpose
             if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);

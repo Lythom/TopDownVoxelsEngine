@@ -19,10 +19,11 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public CharacterJoinGameEvent(int id, ushort characterId, Character character) {
+        public CharacterJoinGameEvent(int id, ushort characterId, Character character, Vector3 levelSpawn) {
             Id = id;
             CharacterId = characterId;
             Character = character;
+            LevelSpawn = levelSpawn;
         }
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
@@ -31,6 +32,7 @@ namespace Shared.Net {
             if (levelId != null && !gameState.Levels.ContainsKey(levelId)) {
                 gameState.Levels[levelId] = new LevelMap(levelId, LevelSpawn);
             }
+
             gameState.Characters.Add(CharacterId, new Character(Character.Name, Character.Position, levelId));
             gameState.Characters[CharacterId].UpdateValue(Character);
         }

@@ -101,7 +101,7 @@ namespace Server.DbModel {
         public Guid PlayerId { get; set; } // Assuming you are using Guids for Identity
 
         // Navigation property for a list of characters associated with a player
-        public ICollection<DbCharacter>? Characters { get; set; }
+        public ICollection<DbCharacter> Characters { get; set; }
 
         public string? IdentityUserId { get; set; }
         public IdentityUser? IdentityUser { get; set; } // Navigation property

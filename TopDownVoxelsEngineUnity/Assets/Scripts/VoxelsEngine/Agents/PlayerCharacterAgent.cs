@@ -214,7 +214,8 @@ namespace VoxelsEngine {
             _character.Velocity = velocity;
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
 
-            transform.position = _character.Position += _character.Velocity * Time.deltaTime;
+            if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
+            transform.position = _character.Position;
         }
 
         /// <summary>
@@ -223,11 +224,9 @@ namespace VoxelsEngine {
         private void FixedUpdate() {
             // optimistic update
             if (_character == null) return;
-            // Récupérer la rotation actuelle du GameObject
-            UnityEngine.Vector3 currentRotation = transform.eulerAngles;
-            currentRotation.y = Character.UncompressAngle(_character.Angle);
-            transform.eulerAngles = currentRotation;
-            transform.position = _character.Position;
+            if (UnityEngine.Vector3.Distance(_character.Position, transform.position) > 1) {
+                transform.position = _character.Position;
+            }
         }
 
         private (Vector3Int?, Vector3Int?) GetBlocksOnPlane(Ray mouseRay, Plane plane) {

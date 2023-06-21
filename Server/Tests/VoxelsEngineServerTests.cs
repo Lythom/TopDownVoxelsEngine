@@ -103,7 +103,7 @@ namespace Server.Tests {
             var cancellationToken = CancellationToken.None;
 
             // Act
-            await _server.StartAsync();
+            await _server.StartAsync(9004);
 
             // Assert
             Assert.IsTrue(_server.IsReady);
@@ -125,7 +125,7 @@ namespace Server.Tests {
         public async Task HandleMessageAsync_WhenPassedHelloNetworkMessage_AddsCharacterToConnectedCharacters() {
             // Arrange
             var cancellationToken = CancellationToken.None;
-            await _server.StartAsync();
+            await _server.StartAsync(9005);
 
             var webSocket = new Mock<WebSocket>();
             _server.NotifyConnection(_testShortId);
@@ -133,7 +133,7 @@ namespace Server.Tests {
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
 
             // Act
-            await _server.HandleMessageAsync(_testShortId, helloMessage);
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
 
             // Assert
 
@@ -152,10 +152,10 @@ namespace Server.Tests {
 
             var cancellationToken = CancellationToken.None;
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.StartAsync();
+            await _server.StartAsync(9000);
 
             _server.NotifyConnection(_testShortId);
-            await _server.HandleMessageAsync(_testShortId, helloMessage);
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
 
             // Act
             _server.NotifyDisconnection(_testShortId);
@@ -176,11 +176,11 @@ namespace Server.Tests {
             var cancellationToken = CancellationToken.None;
             var webSocket = new Mock<WebSocket>();
 
-            await _server.StartAsync();
+            await _server.StartAsync(9001);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(_testShortId, helloMessage);
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
 
             var levelId = "Lobby";
             var chX = 1;
@@ -224,11 +224,11 @@ namespace Server.Tests {
             var cancellationToken = CancellationToken.None;
             var webSocket = new Mock<WebSocket>();
 
-            await _server.StartAsync();
+            await _server.StartAsync(9002);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(_testShortId, helloMessage);
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
 
             var levelId = "Lobby";
             var chX = 32;
@@ -272,11 +272,11 @@ namespace Server.Tests {
             var cancellationToken = CancellationToken.None;
             var webSocket = new Mock<WebSocket>();
 
-            await _server.StartAsync();
+            await _server.StartAsync(9003);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
-            await _server.HandleMessageAsync(_testShortId, helloMessage);
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
 
             var levelId = "Lobby";
             var chX = LevelMap.LevelChunkSize - 1;

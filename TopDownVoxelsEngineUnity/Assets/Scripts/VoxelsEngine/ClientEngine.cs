@@ -29,8 +29,6 @@ namespace VoxelsEngine {
             Logr.Log("Received " + obj);
             switch (obj) {
                 case CharacterJoinGameEvent joinEvent:
-                    SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
-
                     if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
                         _started = true;
                         SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
@@ -38,6 +36,7 @@ namespace VoxelsEngine {
                     }
 
                     HandleEvent(joinEvent);
+                    SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
                     break;
                 case IGameEvent gameEvent:
                     HandleEvent(gameEvent);

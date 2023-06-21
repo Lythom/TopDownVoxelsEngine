@@ -83,7 +83,7 @@ namespace Server {
 
             var voxelsEngineServer = app.ApplicationServices.GetRequiredService<VoxelsEngineServer>();
             _stopServer = voxelsEngineServer.StopAsync;
-            voxelsEngineServer.StartAsync().Forget();
+            voxelsEngineServer.StartAsync(9006).Forget();
         }
     }
 }

@@ -46,16 +46,34 @@ namespace Shared.Net {
             int messageLength = 0;
 
             // Read the message in chunks
-            while (_cts != null
-                   && !_cts.Token.IsCancellationRequested
-                   && _client.Connected
-                   && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
-                messageLength += bytesRead; // update message length
+            try {
+                while (_cts != null
+                       && !_cts.Token.IsCancellationRequested
+                       && _client.Connected
+                       && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
+                    messageLength += bytesRead; // update message length
 
-                if (stream.DataAvailable) continue; // while there is more data, keep reading in the buffer
-                var msg = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                OnNetworkMessage?.Invoke(msg);
-                messageLength = 0; // reset message length for next message
+                    if (stream.DataAvailable) continue; // while there is more data, keep reading in the buffer
+                    var msg = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
+                    OnNetworkMessage?.Invoke(msg);
+                    messageLength = 0; // reset message length for next message
+                }
+            } catch (Exception e) {
+                Logr.LogException(e);
+                throw;
+            } finally {
+                try {
+                    await stream.FlushAsync();
+                } catch (Exception e) {
+                    Logr.LogException(e);
+                }
+
+                try {
+                    stream.Close();
+                    _client.Close();
+                } catch (Exception e) {
+                    Logr.LogException(e);
+                }
             }
         }
 
@@ -70,8 +88,15 @@ namespace Shared.Net {
 
         public void Close() {
             _cts?.Cancel();
-            _client.GetStream().Close();
-            _client.Close();
+            try {
+                _client.GetStream().Close();
+            } catch {
+            }
+
+            try {
+                _client.Close();
+            } catch {
+            }
         }
     }
 }

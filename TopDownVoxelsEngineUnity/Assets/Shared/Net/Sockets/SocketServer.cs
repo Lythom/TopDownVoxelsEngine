@@ -18,8 +18,8 @@ namespace Shared.Net {
         public Action<ushort>? OnClose { get; set; }
         public Action<Exception>? OnReconnectionFailed { get; set; }
 
-        private Stack<ushort> _shortIdPool = new();
-        private Dictionary<ushort, TcpClient> _clients = new();
+        private readonly Stack<ushort> _shortIdPool = new();
+        private readonly Dictionary<ushort, TcpClient> _clients = new();
         public TcpClient? GetClient(ushort shortId) => _clients.ContainsKey(shortId) ? _clients[shortId] : null;
 
         public void Init(int port) {
@@ -58,30 +58,38 @@ namespace Shared.Net {
 
             Logr.Log("New client ! " + shortId);
 
-            while (_cts != null
-                   && !_cts.Token.IsCancellationRequested
-                   && client.Connected
-                   && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
-                messageLength += bytesRead; // update message length
+            try {
+                while (_cts != null
+                       && !_cts.Token.IsCancellationRequested
+                       && client.Connected
+                       && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
+                    messageLength += bytesRead; // update message length
 
-                if (!stream.DataAvailable) // if no more data, process the message
-                {
-                    var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                    OnNetworkMessage?.Invoke(shortId, request);
-                    messageLength = 0; // reset message length for next message
+                    if (!stream.DataAvailable) // if no more data, process the message
+                    {
+                        var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
+                        OnNetworkMessage?.Invoke(shortId, request);
+                        messageLength = 0; // reset message length for next message
+                    }
                 }
+            } catch (Exception e) {
+                Logr.LogException(e);
+                throw;
             }
 
+            _clients.Remove(shortId);
             OnClose?.Invoke(shortId);
+            _shortIdPool.Push(shortId);
         }
 
         public async UniTask Send(ushort target, INetworkMessage msg) {
             Logr.Log("Sent " + msg);
             var client = GetClient(target);
-            if (client != null) {
-                var stream = client.GetStream();
-                var buffer = MessagePackSerializer.Serialize(msg);
+            if (client != null && client.Connected) {
                 var token = _cts?.Token ?? CancellationToken.None;
+                var buffer = MessagePackSerializer.Serialize(msg);
+
+                var stream = client.GetStream();
                 await stream.WriteAsync(buffer, 0, buffer.Length, token);
                 await stream.FlushAsync(token);
             }
@@ -97,9 +105,11 @@ namespace Shared.Net {
             var token = _cts?.Token ?? CancellationToken.None;
 
             foreach (var (_, client) in _clients) {
-                var stream = client.GetStream();
-                await stream.WriteAsync(buffer, 0, buffer.Length, token);
-                await stream.FlushAsync(token);
+                if (client.Connected) {
+                    var stream = client.GetStream();
+                    await stream.WriteAsync(buffer, 0, buffer.Length, token);
+                    await stream.FlushAsync(token);
+                }
             }
         }
     }

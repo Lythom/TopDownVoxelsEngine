@@ -28,10 +28,11 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(3);
+            writer.WriteArrayHeader(4);
             writer.Write(value.Id);
             writer.Write(value.CharacterId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Serialize(ref writer, value.Character, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.LevelSpawn, options);
         }
 
         public global::Shared.Net.CharacterJoinGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -47,6 +48,7 @@ namespace MessagePack.Formatters.Shared.Net
             var __Id__ = default(int);
             var __CharacterId__ = default(ushort);
             var __Character__ = default(global::Shared.Character);
+            var __LevelSpawn__ = default(global::Shared.Vector3);
 
             for (int i = 0; i < length; i++)
             {
@@ -61,13 +63,16 @@ namespace MessagePack.Formatters.Shared.Net
                     case 2:
                         __Character__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 3:
+                        __LevelSpawn__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterJoinGameEvent(__Id__, __CharacterId__, __Character__);
+            var ____result = new global::Shared.Net.CharacterJoinGameEvent(__Id__, __CharacterId__, __Character__, __LevelSpawn__);
             reader.Depth--;
             return ____result;
         }
