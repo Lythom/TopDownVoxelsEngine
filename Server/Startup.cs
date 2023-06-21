@@ -77,7 +77,7 @@ namespace Server {
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapGet("/", async context => {
-                    await context.Response.WriteAsync("test " + context.RequestServices.GetRequiredService<WebSocketMessagingQueue>().OpenSocketsCount);
+                    await context.Response.WriteAsync("test ");
                 });
             });
 
