@@ -59,14 +59,12 @@ namespace Shared.Net {
             Logr.Log("New client ! " + shortId);
 
             try {
-                while (_cts != null
-                       && !_cts.Token.IsCancellationRequested
-                       && client.Connected
-                       && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
+                while ((bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
                     messageLength += bytesRead; // update message length
 
-                    if (!stream.DataAvailable) // if no more data, process the message
-                    {
+                    if (_cts == null || _cts.Token.IsCancellationRequested || !client.Connected) break;
+                    if (!stream.DataAvailable) {
+                        // if no more data, process the message
                         var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
                         OnNetworkMessage?.Invoke(shortId, request);
                         messageLength = 0; // reset message length for next message
@@ -74,7 +72,6 @@ namespace Shared.Net {
                 }
             } catch (Exception e) {
                 Logr.LogException(e);
-                throw;
             }
 
             _clients.Remove(shortId);

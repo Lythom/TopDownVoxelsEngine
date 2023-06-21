@@ -114,7 +114,7 @@ namespace VoxelsEngine {
         }
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {
-            LocalState.Instance.CurrentPlayerId = shortId;
+            LocalState.Instance.CurrentPlayerId.Value = shortId;
             _agent = Instantiate(PlayerCharacterPrefab, _engine!.transform, true);
             _agent.CharacterId = shortId;
             _agent.CameraTransform = Tracker.transform;

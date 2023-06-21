@@ -104,7 +104,7 @@ namespace VoxelsEngine {
         public async Task InitRemote(int port) {
             SocketClient = new SocketClient();
             SocketClient.OnNetworkMessage += HandleNetMessage;
-            await SocketClient.Init("localhost", port);
+            await SocketClient.Init("192.168.1.157", port);
             await Task.Delay(500);
             await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
         }

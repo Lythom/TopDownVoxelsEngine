@@ -6,9 +6,8 @@ using MessagePack;
 namespace Shared {
     public class LocalState {
         public static LocalState Instance = new();
-        public ushort CurrentPlayerId = 0;
-        public string CurrentPlayerName = "Lythom";
-
+        public readonly Reactive<ushort> CurrentPlayerId = new(0);
+        public string CurrentPlayerName = "Lythom2";
     }
 
     [MessagePackObject(true)]

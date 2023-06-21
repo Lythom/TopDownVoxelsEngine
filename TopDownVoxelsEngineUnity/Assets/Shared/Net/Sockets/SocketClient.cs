@@ -52,7 +52,7 @@ namespace Shared.Net {
                        && _client.Connected
                        && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
                     messageLength += bytesRead; // update message length
-
+                    if (_cts.IsCancellationRequested) break;
                     if (stream.DataAvailable) continue; // while there is more data, keep reading in the buffer
                     var msg = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
                     OnNetworkMessage?.Invoke(msg);
@@ -62,41 +62,24 @@ namespace Shared.Net {
                 Logr.LogException(e);
                 throw;
             } finally {
-                try {
-                    await stream.FlushAsync();
-                } catch (Exception e) {
-                    Logr.LogException(e);
-                }
-
-                try {
-                    stream.Close();
-                    _client.Close();
-                } catch (Exception e) {
-                    Logr.LogException(e);
-                }
+                _client.GetStream().Close();
+                _client.Close();
             }
         }
 
         public async UniTask Send(INetworkMessage msg) {
+            if (_cts == null || _cts.IsCancellationRequested) return;
             var stream = _client.GetStream();
             var buffer = MessagePackSerializer.Serialize(msg);
             var token = _cts?.Token ?? CancellationToken.None;
             await stream.WriteAsync(buffer, 0, buffer.Length, token);
+            if (_cts == null || _cts.IsCancellationRequested) return;
             await stream.FlushAsync(token);
             Logr.Log("Sent to server: " + msg);
         }
 
         public void Close() {
-            _cts?.Cancel();
-            try {
-                _client.GetStream().Close();
-            } catch {
-            }
-
-            try {
-                _client.Close();
-            } catch {
-            }
+            _cts?.Cancel(false);
         }
     }
 }

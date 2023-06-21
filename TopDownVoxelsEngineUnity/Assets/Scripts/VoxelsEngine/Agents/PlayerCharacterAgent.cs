@@ -19,12 +19,17 @@ namespace VoxelsEngine {
         public float JumpChargeIntensity = 1f;
 
         public int PlacementRadius = 4;
+        
+        // visual is slightly delayed because FPS rate might be a bit faster than update rate
+        // this is to bring smoother visual
+        public float VisualSnappingStrength = 0.8f;
+
 
         [RequiredInScene]
         public Transform CameraTransform = null!;
 
         private Controls _controls = null!;
-        private readonly Cooldown _placeCooldown = new(0.1f);
+        private readonly Cooldown _placeCooldown = new(0.02f);
         private readonly Cooldown _jumpCooldown = new(0.5f);
         private float _jumpChargeStart;
         private float _spawnedTime;
@@ -215,7 +220,7 @@ namespace VoxelsEngine {
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
 
             if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
-            transform.position = _character.Position;
+            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength);
         }
 
         /// <summary>
