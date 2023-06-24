@@ -17,6 +17,7 @@ namespace Shared {
         public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
         public readonly float Gravity = 1.4f;
+        public readonly Selectors Selectors;
 
         // internal or non serialized properties
         [IgnoreMember]
@@ -27,11 +28,13 @@ namespace Shared {
         private bool _isApplyingEvent;
 
         public GameState() {
+            Selectors = new Selectors(this);
         }
 
         public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveList<NPC>? npcs, ReactiveDictionary<string, LevelMap>? levels) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (levels != null) Levels.SynchronizeToTarget(levels);
+            Selectors = new Selectors(this);
         }
 
         public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {

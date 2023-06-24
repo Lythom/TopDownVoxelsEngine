@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using Shared;
 using Shared.Net;
@@ -81,18 +82,18 @@ namespace VoxelsEngine {
                 }
 
                 State.LevelGenerator.GenerateFromQueue(_minLevel, State.Levels);
+            } else {
+                var c = State.Characters[LocalState.Instance.CurrentPlayerId];
+                SocketClient.Send(
+                    new CharacterMoveGameEvent(
+                        0,
+                        LocalState.Instance.CurrentPlayerId,
+                        c.Position,
+                        c.Velocity,
+                        c.Angle
+                    )
+                ).Forget();
             }
-
-            // var c = State.Characters[LocalState.Instance.CurrentPlayerId];
-            // SocketManager.Send(
-            //     new CharacterMoveGameEvent(
-            //         0,
-            //         LocalState.Instance.CurrentPlayerId,
-            //         c.Position,
-            //         c.Velocity,
-            //         c.Angle
-            //     )
-            // ).Forget();
         }
 
         public void HandleEvent(IGameEvent evt) {

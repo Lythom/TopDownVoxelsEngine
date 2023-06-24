@@ -9,17 +9,7 @@ namespace VoxelsEngine.UI {
         public Image Preview = null!;
 
         protected override void OnSetup(GameState state) {
-            var playerStateSelector = new Reactive<Character?>(null);
-            Subscribe(LocalState.Instance.CurrentPlayerId, state.Characters, (id, characters) => {
-                playerStateSelector.Value = characters.Dictionary.TryGetValue(id, out var value) ? value : null;
-            });
-
-            var playerBlockSelector = new Reactive<BlockId>(BlockId.Dirt);
-            playerBlockSelector.BindCompoundValue(playerStateSelector, c => c?.SelectedBlock, ResetToken);
-            var playerToolSelector = new Reactive<ToolId>(ToolId.None);
-            playerToolSelector.BindCompoundValue(playerStateSelector, c => c?.SelectedTool, ResetToken);
-
-            Subscribe(playerBlockSelector, playerToolSelector, (block, tool) => {
+            Subscribe(state.Selectors.PlayerBlockSelector, state.Selectors.PlayerToolSelector, (block, tool) => {
                 this.SmartActive(tool == ToolId.PlaceBlock || tool == ToolId.ExchangeBlock);
                 var lib = Configurator.Instance.BlocksRenderingLibrary;
                 int id = (int) block;

@@ -5,9 +5,8 @@ using Vector3 = Shared.Vector3;
 
 namespace VoxelsEngine {
     public class CharacterAgent : ConnectedBehaviour {
-        
         // TODO: sync CharacterAgents and characters (use sync prefab list ?)
-        
+
         public ushort CharacterId = 0;
         private Character? _character;
         private Vector3 _nextPosition;
@@ -24,20 +23,11 @@ namespace VoxelsEngine {
                 null,
                 ResetToken
             );
-            var localPlayerStateSelector = ReactiveHelpers.CreateSelector(
-                state.Characters,
-                characters => characters.Dictionary.TryGetValue(LocalState.Instance.CurrentPlayerId, out var value) ? value : null,
-                null,
-                ResetToken
-            );
             Reactive<string?> levelIdSelector = new(null);
-            levelIdSelector.BindCompoundValue(playerStateSelector, pss => pss?.Level, ResetToken);
-
-            Reactive<string?> localLevelIdSelector = new(null);
-            localLevelIdSelector.BindCompoundValue(localPlayerStateSelector, pss => pss?.Level, ResetToken);
+            levelIdSelector.BindNestedSelector(playerStateSelector, pss => pss?.Level, ResetToken);
 
             Subscribe(playerStateSelector, p => _character = p);
-            Subscribe(levelIdSelector, localLevelIdSelector, (levelId, localLevelId) => {
+            Subscribe(levelIdSelector, state.Selectors.LocalPlayerLevelIdSelector, (levelId, localLevelId) => {
                 this.SmartActive(levelId == localLevelId);
             });
         }

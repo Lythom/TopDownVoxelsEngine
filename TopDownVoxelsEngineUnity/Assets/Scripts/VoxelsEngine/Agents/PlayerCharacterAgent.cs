@@ -41,6 +41,7 @@ namespace VoxelsEngine {
         private Character? _character;
 
         private Vector3 _nextPosition;
+        private string? _levelId;
 
         private void Awake() {
             _controls = new Controls();
@@ -57,14 +58,8 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state) {
-            var playerId = LocalState.Instance.CurrentPlayerId;
-            var playerStateSelector = ReactiveHelpers.CreateSelector(
-                state.Characters,
-                characters => characters.Dictionary.TryGetValue(playerId, out var value) ? value : null,
-                null,
-                ResetToken
-            );
-            Subscribe(playerStateSelector, p => _character = p);
+            Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
+            Subscribe(state.Selectors.LocalPlayerLevelIdSelector, lId => _levelId = lId);
         }
 
         public void OnDisable() {
@@ -77,9 +72,8 @@ namespace VoxelsEngine {
         /// </summary>
         private void Update() {
             if (_character == null) return;
-            var levelId = _character.Level.Value;
-            if (levelId == null || !ClientEngine.State.Levels.ContainsKey(levelId)) return;
-            if (!ClientEngine.State.Levels.TryGetValue(levelId, out var level)) return;
+            if (_levelId == null || !ClientEngine.State.Levels.ContainsKey(_levelId)) return;
+            if (!ClientEngine.State.Levels.TryGetValue(_levelId, out var level)) return;
 
             Vector3 pos = _character.Position;
 
@@ -220,6 +214,7 @@ namespace VoxelsEngine {
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
 
             if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
+            // apply a lerp transition for smooth animation
             transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength);
         }
 

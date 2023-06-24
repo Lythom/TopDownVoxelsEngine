@@ -37,16 +37,8 @@ namespace VoxelsEngine {
         private Character? _character = null;
 
         protected override void OnSetup(GameState state) {
-            var playerStateSelector = new Reactive<Character?>(null);
-            Subscribe(LocalState.Instance.CurrentPlayerId, state.Characters, (id, characters) => {
-                playerStateSelector.Value = characters.Dictionary.TryGetValue(id, out var value) ? value : null;
-            });
-
-            var playerLevelSelector = new Reactive<string?>(playerStateSelector.Value?.Level.Value);
-            playerLevelSelector.BindCompoundValue(playerStateSelector, c => c?.Level, ResetToken);
-
-            Subscribe(playerStateSelector, p => _character = p);
-            Subscribe(playerLevelSelector, levelId => {
+            Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
+            Subscribe(state.Selectors.LocalPlayerLevelIdSelector, levelId => {
                 _level = null;
                 if (levelId == null) return;
                 RenderedChunks.Clear();

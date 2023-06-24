@@ -30,7 +30,7 @@ namespace LoneStoneStudio.Tools {
         /// <typeparam name="TS2">Compound source type</typeparam>
         /// <typeparam name="TT">Target type</typeparam>
         /// <returns></returns>
-        public static void BindCompoundValue<TS, TS2, TT>(
+        public static void BindNestedSelector<TS, TS2, TT>(
             this IAsyncReactiveProperty<TT> target,
             IUniTaskAsyncEnumerable<TS> source,
             Func<TS, IUniTaskAsyncEnumerable<TS2>?> compoundGetter,
@@ -62,14 +62,14 @@ namespace LoneStoneStudio.Tools {
             }, cancellationToken);
         }
 
-        public static void BindCompoundValue<TS, TT>(
+        public static void BindNestedSelector<TS, TT>(
             this IAsyncReactiveProperty<TT?> target,
             IAsyncReactiveProperty<TS> source,
             Func<TS, IAsyncReactiveProperty<TT?>?> compoundSourceGetter,
             CancellationToken cancellationToken
         ) {
             var defaultValue = target.Value;
-            BindCompoundValue(target, source, compoundSourceGetter, (t, v, _) => t.Value = v, defaultValue, cancellationToken);
+            BindNestedSelector(target, source, compoundSourceGetter, (t, v, _) => t.Value = v, defaultValue, cancellationToken);
         }
 
         /// <summary>
