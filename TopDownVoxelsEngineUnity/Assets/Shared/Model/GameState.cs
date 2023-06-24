@@ -17,6 +17,8 @@ namespace Shared {
         public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
         public readonly float Gravity = 1.4f;
+
+        [IgnoreMember]
         public readonly Selectors Selectors;
 
         // internal or non serialized properties

@@ -20,6 +20,8 @@ namespace VoxelsEngine {
         [ShowInInspector]
         public GameState State = new(null, null, null);
 
+        public readonly SessionStateMachine SessionState = new();
+
         public readonly SideEffectManager SideEffectManager = new();
 
         private readonly TickGameEvent _tick = new();
@@ -31,13 +33,26 @@ namespace VoxelsEngine {
             switch (obj) {
                 case CharacterJoinGameEvent joinEvent:
                     if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
+                        LocalState.Instance.CurrentPlayerId.Value = joinEvent.CharacterShortId;
                         _started = true;
                         SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
                         SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
+                        SessionState.TransitionTo(SessionStatus.Identified);
                     }
 
                     HandleEvent(joinEvent);
                     SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
+                    break;
+                case CharacterMoveGameEvent moveEvent:
+                    if (moveEvent.CharacterId == LocalState.Instance.CurrentPlayerId.Value) {
+                        // apply event to fix position only if the mismatch is important (cheating ?).
+                        if (UnityEngine.Vector3.Distance(moveEvent.Position, transform.position) > 1) {
+                            HandleEvent(moveEvent);
+                        }
+                    } else {
+                        HandleEvent(moveEvent);
+                    }
+
                     break;
                 case IGameEvent gameEvent:
                     HandleEvent(gameEvent);
@@ -106,6 +121,7 @@ namespace VoxelsEngine {
             SocketClient = new SocketClient();
             SocketClient.OnNetworkMessage += HandleNetMessage;
             await SocketClient.Init("192.168.1.157", port);
+            SessionState.TransitionTo(SessionStatus.Helloing);
             await Task.Delay(500);
             await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
         }

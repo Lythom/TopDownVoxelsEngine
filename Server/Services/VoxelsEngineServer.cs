@@ -34,6 +34,7 @@ namespace Server {
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
+        // TODO: refuser une connexion si utilisateur du même nom déjà connecté
         public VoxelsEngineServer(IServiceScopeFactory serviceScopeFactory, SocketServer socketServer) {
             _serviceScopeFactory = serviceScopeFactory;
             try {
@@ -107,10 +108,12 @@ namespace Server {
         }
 
         public void Send(ushort id, INetworkMessage m) {
+            if (m == null) throw new InvalidOperationException("message must not be null");
             _outbox.Enqueue(new OutputMessage(id, m));
         }
 
         public void Broadcast(INetworkMessage m) {
+            if (m == null) throw new InvalidOperationException("message must not be null");
             _outbox.Enqueue(new OutputMessage(m));
         }
 

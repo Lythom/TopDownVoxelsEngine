@@ -30,14 +30,14 @@ namespace VoxelsEngine {
         private void Awake() {
             //StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
-            StartRemotePlay().Forget();
+            // StartRemotePlay().Forget();
         }
 
         public void HandlePlayerJoin(CharacterJoinGameEvent joinEvent) {
             if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
-                AddPlayerCharacter(joinEvent.Character.Position, joinEvent.CharacterId).Forget();
+                AddPlayerCharacter(joinEvent.Character.Position, joinEvent.CharacterShortId).Forget();
             } else {
-                AddOtherCharacter(joinEvent.Character.Position, joinEvent.CharacterId);
+                AddOtherCharacter(joinEvent.Character.Position, joinEvent.CharacterShortId);
             }
         }
 
@@ -45,7 +45,7 @@ namespace VoxelsEngine {
             if (_engine != null) _engine.SocketClient.Close();
         }
 
-        private async UniTask StartRemotePlay() {
+        public async UniTask StartRemotePlay() {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             await _engine.InitRemote(ServerPort);
@@ -114,7 +114,6 @@ namespace VoxelsEngine {
         }
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {
-            LocalState.Instance.CurrentPlayerId.Value = shortId;
             _agent = Instantiate(PlayerCharacterPrefab, _engine!.transform, true);
             _agent.CharacterId = shortId;
             _agent.CameraTransform = Tracker.transform;
@@ -127,7 +126,7 @@ namespace VoxelsEngine {
                 Tracker.LateUpdate();
             }
 
-            await UniTask.Delay(2000);
+            await UniTask.Delay(1000);
         }
 
         public void AddOtherCharacter(Vector3 spawnPosition, ushort shortId) {

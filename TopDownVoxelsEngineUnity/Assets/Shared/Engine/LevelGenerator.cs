@@ -33,6 +33,8 @@ namespace Shared {
                             || levelMap.Chunks[key.ChX, key.ChZ].IsGenerated) continue;
                         // prioritize by distance to interest point
                         ToBeGeneratedQueue.Enqueue(key, Math.Abs(x) + Math.Abs(z));
+                    } else {
+                        ChunkKeyPool.Return(key);
                     }
                 }
             }

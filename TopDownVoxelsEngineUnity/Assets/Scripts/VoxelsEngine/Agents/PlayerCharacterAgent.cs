@@ -19,7 +19,7 @@ namespace VoxelsEngine {
         public float JumpChargeIntensity = 1f;
 
         public int PlacementRadius = 4;
-        
+
         // visual is slightly delayed because FPS rate might be a bit faster than update rate
         // this is to bring smoother visual
         public float VisualSnappingStrength = 0.8f;
@@ -215,6 +215,7 @@ namespace VoxelsEngine {
 
             if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
             // apply a lerp transition for smooth animation
+            // _character.Position is updated in the TickEvent
             transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength);
         }
 
@@ -224,9 +225,6 @@ namespace VoxelsEngine {
         private void FixedUpdate() {
             // optimistic update
             if (_character == null) return;
-            if (UnityEngine.Vector3.Distance(_character.Position, transform.position) > 1) {
-                transform.position = _character.Position;
-            }
         }
 
         private (Vector3Int?, Vector3Int?) GetBlocksOnPlane(Ray mouseRay, Plane plane) {

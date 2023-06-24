@@ -47,6 +47,7 @@ namespace Shared.Net {
         }
 
         private async UniTask HandleClient(TcpClient client) {
+            if (_cts == null) throw new ApplicationException("Socket server not initialized");
             var stream = client.GetStream();
             var buffer = new byte[BufferSize];
             int bytesRead = 0;

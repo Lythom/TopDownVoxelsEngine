@@ -30,7 +30,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(4);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
+            writer.Write(value.CharacterShortId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Serialize(ref writer, value.Character, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.LevelSpawn, options);
         }

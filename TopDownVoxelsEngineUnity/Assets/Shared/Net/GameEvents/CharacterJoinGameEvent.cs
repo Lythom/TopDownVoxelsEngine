@@ -9,7 +9,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public ushort CharacterId;
+        public ushort CharacterShortId;
 
         [Key(2)]
         public Character Character;
@@ -19,9 +19,9 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public CharacterJoinGameEvent(int id, ushort characterId, Character character, Vector3 levelSpawn) {
+        public CharacterJoinGameEvent(int id, ushort characterShortId, Character character, Vector3 levelSpawn) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Character = character;
             LevelSpawn = levelSpawn;
         }
@@ -33,12 +33,16 @@ namespace Shared.Net {
                 gameState.Levels[levelId] = new LevelMap(levelId, LevelSpawn);
             }
 
-            gameState.Characters.Add(CharacterId, new Character(Character.Name, Character.Position, levelId));
-            gameState.Characters[CharacterId].UpdateValue(Character);
+            gameState.Characters.Add(CharacterShortId, new Character(Character.Name, Character.Position, levelId));
+            gameState.Characters[CharacterShortId].UpdateValue(Character);
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            if (gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character already known.");
+            if (gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Character already known.");
+        }
+
+        public override string ToString() {
+            return $"CharacterJoin({CharacterShortId}, {Character.Name}, {LevelSpawn})";
         }
     }
 }
