@@ -3,18 +3,18 @@ using LoneStoneStudio.Tools;
 
 namespace Shared {
     public class SessionStateMachine {
-        public readonly Reactive<SessionStatus> Status = new(SessionStatus.Disconnected);
+        public readonly Reactive<SessionStatus> Status = new(SessionStatus.NeedAuthentication);
 
         public SessionStateMachine() {
-            Status.Value = SessionStatus.Disconnected;
+            Status.Value = SessionStatus.NeedAuthentication;
         }
 
         public void TransitionTo(SessionStatus newStatus) {
             ValidateTransition(Status.Value, newStatus);
             switch (Status.Value, newStatus) {
-                case (SessionStatus.Disconnected, SessionStatus.Helloing):
+                case (SessionStatus.NeedAuthentication, SessionStatus.GettingReady):
                     break;
-                case (_, SessionStatus.Disconnected):
+                case (_, SessionStatus.NeedAuthentication):
                     break;
                 default: break;
             }
@@ -24,13 +24,13 @@ namespace Shared {
 
         private void ValidateTransition(SessionStatus current, SessionStatus next) {
             // can be disconnected anytime
-            if (next == SessionStatus.Disconnected) return;
+            if (next == SessionStatus.NeedAuthentication) return;
 
-            if (current == SessionStatus.Disconnected && next != SessionStatus.Helloing) {
+            if (current == SessionStatus.NeedAuthentication && next != SessionStatus.GettingReady) {
                 throw new InvalidOperationException("From Disconnected, only Hello is allowed");
             }
 
-            if (current == SessionStatus.Helloing && next != SessionStatus.Identified) {
+            if (current == SessionStatus.GettingReady && next != SessionStatus.Ready) {
                 throw new InvalidOperationException("From Hello, only Identified is allowed");
             }
         }

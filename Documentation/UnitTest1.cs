@@ -1,22 +1,25 @@
 using System;
+using System.Diagnostics;
 using NUnit.Framework;
 using Tools;
 
 namespace TestProject1;
 
-public class Tests
-{
+public class Tests {
     [SetUp]
-    public void Setup()
-    {
+    public void Setup() {
     }
 
     [Test]
-    public void TestMortonCodeXY()
-    {
+    public void TestTrace() {
+        Trace.Listeners.Add(new DefaultTraceListener());
+        Trace.WriteLine("[Test] test message");
+    }
+
+    [Test]
+    public void TestMortonCodeXY() {
         Random rand = new Random();
-        for (int i = 0; i < 1000; i++)
-        {
+        for (int i = 0; i < 1000; i++) {
             byte xOriginal = (byte) rand.Next(0, 256); // valeurs aléatoires entre 0 et 255
             byte yOriginal = (byte) rand.Next(0, 256);
 
@@ -29,11 +32,9 @@ public class Tests
     }
 
     [Test]
-    public void TestMortonCodeXYZ()
-    {
+    public void TestMortonCodeXYZ() {
         Random rand = new Random();
-        for (int i = 0; i < 1000; i++)
-        {
+        for (int i = 0; i < 1000; i++) {
             byte xOriginal = (byte) rand.Next(0, 16); // valeurs aléatoires entre 0 et 15
             byte yOriginal = (byte) rand.Next(0, 16);
             byte zOriginal = (byte) rand.Next(0, 16);

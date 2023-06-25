@@ -1,9 +1,9 @@
-using System;
 using System.IO;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Shared;
 #if !DEBUG
 using System.Reflection;
 #endif
@@ -21,7 +21,7 @@ namespace Server {
             var option = MessagePackSerializerOptions.Standard
                 .WithCompression(MessagePackCompression.Lz4BlockArray);
             MessagePackSerializer.DefaultOptions = option;
-            Console.WriteLine("Server starting. Version " + Version);
+            Logr.Log("Server starting. Version " + Version, Tags.Server);
             var host = CreateHostBuilder(args).Build();
             host.Run();
         }

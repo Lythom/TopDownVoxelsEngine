@@ -19,7 +19,7 @@ namespace Shared.Net {
         public async UniTask Init(string host, int port) {
             _cts = new CancellationTokenSource();
 
-            Logr.Log("Connecting Tcp Client on server and port " + port);
+            Logr.Log("Connecting Tcp Client on server and port " + port, Tags.Client);
             _client = new TcpClient();
             var attempts = 5;
             while (!_client.Connected && attempts >= 0) {
@@ -34,7 +34,7 @@ namespace Shared.Net {
 
             if (attempts < 0) throw new ApplicationException("Not connected");
 
-            Logr.Log("Connected !");
+            Logr.Log("Connected !", Tags.Client);
 
             StartListening().Forget();
         }
@@ -75,7 +75,7 @@ namespace Shared.Net {
             await stream.WriteAsync(buffer, 0, buffer.Length, token);
             if (_cts == null || _cts.IsCancellationRequested) return;
             await stream.FlushAsync(token);
-            Logr.Log("Sent to server: " + msg);
+            Logr.Log("Sent to server: " + msg, Tags.Client);
         }
 
         public void Close() {

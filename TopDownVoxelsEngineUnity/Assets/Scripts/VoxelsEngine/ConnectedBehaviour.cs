@@ -286,7 +286,7 @@ namespace VoxelsEngine {
 
         protected async UniTask<INetworkMessage?> SendMessageAsync(INetworkMessage msg, TimeSpan timeout) {
             if (SocketClient == null) {
-                Logr.Log("Not connected to a server.");
+                Logr.Log("Not connected to a server.", Tags.Client);
                 return null;
             }
 
@@ -313,7 +313,7 @@ namespace VoxelsEngine {
 
         protected void SendBlindMessageOptimistic(GameEvent msg) {
             if (SocketClient == null) {
-                Logr.Log("Not connected to a server.");
+                Logr.Log("Not connected to a server.", Tags.Client);
                 return;
             }
 

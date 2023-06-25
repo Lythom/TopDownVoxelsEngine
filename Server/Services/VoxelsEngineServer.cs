@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +26,7 @@ namespace Server {
         private bool _isReady = false;
         public bool IsReady => _isReady;
         public GameState State => _state;
+        public int Port { get; private set; }
 
         private readonly SocketServer _socketServer;
         private readonly Queue<InputMessage> _inbox = new();
@@ -47,6 +47,7 @@ namespace Server {
         }
 
         public async UniTask StartAsync(int port) {
+            Port = port;
             using var scope = _serviceScopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
 
@@ -78,7 +79,10 @@ namespace Server {
         private async UniTask StartNetworkSendingAsync() {
             while (!_cts.Token.IsCancellationRequested) {
                 try {
-                    if (_outbox.TryDequeue(out var m)) {
+                    OutputMessage m;
+                    bool hasMessage;
+                    lock (_outbox) hasMessage = _outbox.TryDequeue(out m);
+                    if (hasMessage) {
                         if (m.IsBroadcast) {
                             await _socketServer.Broadcast(m.Message);
                         } else {
@@ -89,7 +93,6 @@ namespace Server {
                     }
                 } catch (Exception e) {
                     Logr.LogException(e);
-                    throw;
                 }
             }
         }
@@ -107,14 +110,14 @@ namespace Server {
             _inbox.Enqueue(m);
         }
 
-        public void Send(ushort id, INetworkMessage m) {
+        private void Send(ushort id, INetworkMessage m) {
             if (m == null) throw new InvalidOperationException("message must not be null");
-            _outbox.Enqueue(new OutputMessage(id, m));
+            lock (_outbox) _outbox.Enqueue(new OutputMessage(id, m));
         }
 
-        public void Broadcast(INetworkMessage m) {
+        private void Broadcast(INetworkMessage m) {
             if (m == null) throw new InvalidOperationException("message must not be null");
-            _outbox.Enqueue(new OutputMessage(m));
+            lock (_outbox) _outbox.Enqueue(new OutputMessage(m));
         }
 
         public void NotifyDisconnection(ushort shortId) {
@@ -123,14 +126,21 @@ namespace Server {
                 var userData = _userSessionData[shortId];
                 if (userData.IsLogged) {
                     var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
+                    characterLeaveGameEvent.Apply(_state, null);
                     SelfApply(new InputMessage(shortId, characterLeaveGameEvent));
                     Broadcast(characterLeaveGameEvent);
+                    Logr.Log($"User left {userData.Name} ({shortId})", Tags.Server);
                 }
 
                 _userSessionData.Remove(shortId);
+                Logr.Log($"session removed {shortId}", Tags.Server);
             }
 
             // If any unsent element for this user, cancel.
+            RemoveUserMessagesFromOutbox(shortId);
+        }
+
+        private void RemoveUserMessagesFromOutbox(ushort shortId) {
             lock (_outbox) {
                 var tmpQueue = new Queue<OutputMessage>();
                 while (_outbox.TryDequeue(out var e)) {
@@ -145,7 +155,7 @@ namespace Server {
 
         public void NotifyConnection(ushort shortId) {
             lock (_userSessionData) {
-                _userSessionData.Add(shortId, new UserSessionData(false, shortId));
+                _userSessionData.Add(shortId, new UserSessionData(shortId));
             }
         }
 
@@ -192,7 +202,7 @@ namespace Server {
             return save;
         }
 
-        public void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
+        private void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
             lock (_inbox) {
                 _inbox.Enqueue(new InputMessage {Id = clientShortId, Message = netMessage});
             }
@@ -201,8 +211,15 @@ namespace Server {
         public async UniTask HandleMessageAsync(InputMessage m) {
             var clientShortId = m.Id;
             var netMessage = m.Message;
+            lock (_userSessionData) {
+                if (!_userSessionData.ContainsKey(clientShortId)) {
+                    Logr.Log($"Client {clientShortId} is no longer ready to share messages.");
+                    return;
+                }
+            }
+
             try {
-                Logr.Log("Received message: " + netMessage);
+                if (netMessage is not CharacterMoveGameEvent) Logr.Log("Received message: " + netMessage);
 
                 if (!IsReady) {
                     Send(clientShortId, new ErrorNetworkMessage($"Server not ready. Please wait and retry."));
@@ -215,23 +232,51 @@ namespace Server {
                             throw new ApplicationException(
                                 "The state of the game was not found. Please init a game before applying events.");
                         // ReSharper disable once InconsistentlySynchronizedField
-                        evt.AssertApplicationConditions(in _state);
-                        evt.Apply(State, null);
+                        lock (_state) {
+                            evt.AssertApplicationConditions(in _state);
+                            evt.Apply(_state, null);
+                        }
+
                         Broadcast(evt);
                         break;
                     case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
+                        lock (_userSessionData) {
+                            if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
+                                Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
+                                return;
+                            } else {
+                                _userSessionData[clientShortId].Name = hello.Username;
+                                _userSessionData[clientShortId].Status = SessionStatus.GettingReady;
+                            }
+                        }
+
                         using var scope = _serviceScopeFactory.CreateScope();
                         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
                         var user = await userManager.FindByNameAsync(hello.Username);
                         try {
                             var (character, levelSpawn) = await GetOrCreateCharacterAsync(user, hello);
                             var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
-                            characterJoinGameEvent.Apply(State, null);
-                            lock (_userSessionData) {
-                                _userSessionData[clientShortId].IsLogged = true;
+                            lock (_state) {
+                                characterJoinGameEvent.AssertApplicationConditions(in _state);
+                                characterJoinGameEvent.Apply(State, null);
                             }
 
+                            // Send all other players info to the new player
+                            lock (_userSessionData) {
+                                lock (_state) {
+                                    foreach (var (key, userSessionData) in _userSessionData) {
+                                        if (userSessionData.IsLogged && key != clientShortId) {
+                                            Send(clientShortId, new CharacterJoinGameEvent(0, key, State.Characters[key], levelSpawn));
+                                        }
+                                    }
+                                }
+
+                                _userSessionData[clientShortId].Status = SessionStatus.Ready;
+                            }
+
+                            // Send all players info about the new players.
+                            // It also confirms to the new players it's entry
                             Broadcast(characterJoinGameEvent);
                         } catch (Exception e) {
                             Send(clientShortId, new ErrorNetworkMessage(e.Message));
@@ -350,8 +395,12 @@ namespace Server {
             lock (_userSessionData) {
                 foreach (var (userKey, userSessionData) in _userSessionData) {
                     // try dequeue one chunk per user per tick
-                    if (userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
-                        var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
+                    if (userSessionData.IsLogged && userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
+                        Chunk chunk;
+                        lock (_state) {
+                            chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
+                        }
+
                         Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
                     }
                 }

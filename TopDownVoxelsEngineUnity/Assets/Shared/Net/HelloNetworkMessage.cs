@@ -2,7 +2,7 @@ using MessagePack;
 
 namespace Shared.Net {
     /// <summary>
-    /// ClientToServer: (User) Tell the server the client is ready to play.
+    /// ClientToServer: (User) Tell the server the client wants to play
     /// </summary>
     [MessagePackObject]
     public class HelloNetworkMessage : INetworkMessage {

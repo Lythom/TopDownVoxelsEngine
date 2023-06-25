@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,8 +43,14 @@ namespace Server {
         public async UniTaskVoid StartFixedUpdateAsync(Queue<InputMessage> inbox) {
             SideEffectManager sideEffectManager = new SideEffectManager();
             sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
-            while (!_cancellationToken.IsCancellationRequested) {
-                await TickAsync(_cancellationToken, sideEffectManager, inbox);
+            try {
+                while (!_cancellationToken.IsCancellationRequested) {
+                    await TickAsync(_cancellationToken, sideEffectManager, inbox);
+                }
+            } catch (Exception e) {
+                Logr.LogException(e, "Error while self applying. Fatal.");
+                await _voxelsEngineServer.StopAsync();
+                await _voxelsEngineServer.StartAsync(_voxelsEngineServer.Port);
             }
 
             sideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
@@ -59,21 +66,20 @@ namespace Server {
                 return;
             }
 
-            _frameStopwatch.Restart();
-
-            _tick.MinPriority = _minimumPriority;
-            _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
-            TryGenerateChunks();
-            _voxelsEngineServer.SendScheduledChunks();
-
-            // read and apply message as part of the tick, and after the tick event
-            // why after? 'coz clients will have latency so the server simulation will be closer by being one frame late.
+            // read and apply message as part of the tick
             bool hasInput;
             InputMessage m;
             do {
                 lock (inbox) hasInput = inbox.TryDequeue(out m);
                 if (hasInput) await _voxelsEngineServer.HandleMessageAsync(m);
             } while (hasInput);
+
+            _frameStopwatch.Restart();
+
+            _tick.MinPriority = _minimumPriority;
+            lock (_voxelsEngineServer.State) _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
+            TryGenerateChunks();
+            _voxelsEngineServer.SendScheduledChunks();
 
             // Simulate work being done for a frame for test purpose
             if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);

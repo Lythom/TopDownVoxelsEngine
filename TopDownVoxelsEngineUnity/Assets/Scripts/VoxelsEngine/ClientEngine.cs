@@ -20,7 +20,7 @@ namespace VoxelsEngine {
         [ShowInInspector]
         public GameState State = new(null, null, null);
 
-        public readonly SessionStateMachine SessionState = new();
+        public SessionStatus Session = SessionStatus.Disconnected;
 
         public readonly SideEffectManager SideEffectManager = new();
 
@@ -29,7 +29,7 @@ namespace VoxelsEngine {
         private bool _started;
 
         private void HandleNetMessage(INetworkMessage obj) {
-            Logr.Log("Received " + obj);
+            Logr.Log("Received " + obj, Tags.Client);
             switch (obj) {
                 case CharacterJoinGameEvent joinEvent:
                     if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
@@ -37,19 +37,20 @@ namespace VoxelsEngine {
                         _started = true;
                         SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
                         SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
-                        SessionState.TransitionTo(SessionStatus.Identified);
+                        Session = SessionStatus.GettingReady;
                     }
 
                     HandleEvent(joinEvent);
                     SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
                     break;
                 case CharacterMoveGameEvent moveEvent:
+                    if (Session != SessionStatus.Ready) break;
                     if (moveEvent.CharacterId == LocalState.Instance.CurrentPlayerId.Value) {
                         // apply event to fix position only if the mismatch is important (cheating ?).
                         if (UnityEngine.Vector3.Distance(moveEvent.Position, transform.position) > 1) {
                             HandleEvent(moveEvent);
                         }
-                    } else {
+                    } else if (State.Characters.ContainsKey(moveEvent.CharacterId)) {
                         HandleEvent(moveEvent);
                     }
 
@@ -112,6 +113,7 @@ namespace VoxelsEngine {
         }
 
         public void HandleEvent(IGameEvent evt) {
+            evt.AssertApplicationConditions(State);
             evt.Apply(State, SideEffectManager);
         }
 
@@ -121,7 +123,7 @@ namespace VoxelsEngine {
             SocketClient = new SocketClient();
             SocketClient.OnNetworkMessage += HandleNetMessage;
             await SocketClient.Init("192.168.1.157", port);
-            SessionState.TransitionTo(SessionStatus.Helloing);
+            Session = SessionStatus.NeedAuthentication;
             await Task.Delay(500);
             await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
         }

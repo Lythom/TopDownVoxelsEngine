@@ -46,7 +46,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
+            var __CharacterShortId__ = default(ushort);
             var __Character__ = default(global::Shared.Character);
             var __LevelSpawn__ = default(global::Shared.Vector3);
 
@@ -58,7 +58,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadUInt16();
+                        __CharacterShortId__ = reader.ReadUInt16();
                         break;
                     case 2:
                         __Character__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Character>(formatterResolver).Deserialize(ref reader, options);
@@ -72,7 +72,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterJoinGameEvent(__Id__, __CharacterId__, __Character__, __LevelSpawn__);
+            var ____result = new global::Shared.Net.CharacterJoinGameEvent(__Id__, __CharacterShortId__, __Character__, __LevelSpawn__);
             reader.Depth--;
             return ____result;
         }

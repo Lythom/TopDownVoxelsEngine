@@ -38,6 +38,7 @@ namespace Shared.Net {
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
+            if (!gameState.Levels.ContainsKey(LevelId)) throw new ApplicationException("Level must exists before being able to update");
         }
     }
 }

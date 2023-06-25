@@ -47,7 +47,7 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(51)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(52)
             {
                 { typeof(global::LoneStoneStudio.Tools.Reactive<byte>), 0 },
                 { typeof(global::LoneStoneStudio.Tools.Reactive<global::Shared.BlockId>), 1 },
@@ -93,13 +93,14 @@ namespace MessagePack.Resolvers
                 { typeof(global::Shared.Net.ErrorNetworkMessage), 41 },
                 { typeof(global::Shared.Net.HelloNetworkMessage), 42 },
                 { typeof(global::Shared.Net.PlaceBlocksGameEvent), 43 },
-                { typeof(global::Shared.Net.TickGameEvent), 44 },
-                { typeof(global::Shared.NPC), 45 },
-                { typeof(global::Shared.Ray), 46 },
-                { typeof(global::Shared.Vector2), 47 },
-                { typeof(global::Shared.Vector2Int), 48 },
-                { typeof(global::Shared.Vector3), 49 },
-                { typeof(global::Shared.Vector3Int), 50 },
+                { typeof(global::Shared.Net.ReadyNetworkMessage), 44 },
+                { typeof(global::Shared.Net.TickGameEvent), 45 },
+                { typeof(global::Shared.NPC), 46 },
+                { typeof(global::Shared.Ray), 47 },
+                { typeof(global::Shared.Vector2), 48 },
+                { typeof(global::Shared.Vector2Int), 49 },
+                { typeof(global::Shared.Vector3), 50 },
+                { typeof(global::Shared.Vector3Int), 51 },
             };
         }
 
@@ -157,13 +158,14 @@ namespace MessagePack.Resolvers
                 case 41: return new MessagePack.Formatters.Shared.Net.ErrorNetworkMessageFormatter();
                 case 42: return new MessagePack.Formatters.Shared.Net.HelloNetworkMessageFormatter();
                 case 43: return new MessagePack.Formatters.Shared.Net.PlaceBlocksGameEventFormatter();
-                case 44: return new MessagePack.Formatters.Shared.Net.TickGameEventFormatter();
-                case 45: return new MessagePack.Formatters.Shared.NPCFormatter();
-                case 46: return new MessagePack.Formatters.Shared.RayFormatter();
-                case 47: return new MessagePack.Formatters.Shared.Vector2Formatter();
-                case 48: return new MessagePack.Formatters.Shared.Vector2IntFormatter();
-                case 49: return new MessagePack.Formatters.Shared.Vector3Formatter();
-                case 50: return new MessagePack.Formatters.Shared.Vector3IntFormatter();
+                case 44: return new MessagePack.Formatters.Shared.Net.ReadyNetworkMessageFormatter();
+                case 45: return new MessagePack.Formatters.Shared.Net.TickGameEventFormatter();
+                case 46: return new MessagePack.Formatters.Shared.NPCFormatter();
+                case 47: return new MessagePack.Formatters.Shared.RayFormatter();
+                case 48: return new MessagePack.Formatters.Shared.Vector2Formatter();
+                case 49: return new MessagePack.Formatters.Shared.Vector2IntFormatter();
+                case 50: return new MessagePack.Formatters.Shared.Vector3Formatter();
+                case 51: return new MessagePack.Formatters.Shared.Vector3IntFormatter();
                 default: return null;
             }
         }

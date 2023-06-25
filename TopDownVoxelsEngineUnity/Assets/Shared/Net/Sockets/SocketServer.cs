@@ -28,14 +28,14 @@ namespace Shared.Net {
                 for (int i = ushort.MaxValue; i >= 0; i--) _shortIdPool.Push((ushort) i);
             }
 
-            Logr.Log("Starting Tcp Listener on port " + port);
+            Logr.Log("Starting Tcp Listener on port " + port, Tags.Server);
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
             AcceptClient().Forget();
         }
 
         private async UniTask AcceptClient() {
-            Logr.Log("Ready to accept connections");
+            Logr.Log("Ready to accept connections", Tags.Server);
             while (_cts != null && !_cts.Token.IsCancellationRequested) {
                 try {
                     var client = await _listener.AcceptTcpClientAsync();
@@ -57,31 +57,37 @@ namespace Shared.Net {
             _clients[shortId] = client;
             OnOpen?.Invoke(shortId);
 
-            Logr.Log("New client ! " + shortId);
+            Logr.Log("New client ! " + shortId, Tags.Server);
 
             try {
-                while ((bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
-                    messageLength += bytesRead; // update message length
+                while (!_cts.Token.IsCancellationRequested && client.Connected) {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                    if ((bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, cts.Token)) > 0) {
+                        messageLength += bytesRead; // update message length
 
-                    if (_cts == null || _cts.Token.IsCancellationRequested || !client.Connected) break;
-                    if (!stream.DataAvailable) {
-                        // if no more data, process the message
-                        var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                        OnNetworkMessage?.Invoke(shortId, request);
-                        messageLength = 0; // reset message length for next message
+                        if (_cts == null || _cts.Token.IsCancellationRequested || !client.Connected) break;
+                        if (!stream.DataAvailable) {
+                            // if no more data, process the message
+                            var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
+                            OnNetworkMessage?.Invoke(shortId, request);
+                            messageLength = 0; // reset message length for next message
+                        }
+                    } else {
+                        break;
                     }
                 }
             } catch (Exception e) {
                 Logr.LogException(e);
             }
 
+            Logr.Log("Client disconnected " + shortId, Tags.Server);
             _clients.Remove(shortId);
             OnClose?.Invoke(shortId);
             _shortIdPool.Push(shortId);
         }
 
         public async UniTask Send(ushort target, INetworkMessage msg) {
-            Logr.Log("Sent " + msg);
+            Logr.Log("Sent " + msg, Tags.Server);
             var client = GetClient(target);
             if (client != null && client.Connected) {
                 var token = _cts?.Token ?? CancellationToken.None;
@@ -98,12 +104,12 @@ namespace Shared.Net {
         }
 
         public virtual async UniTask Broadcast(INetworkMessage msg) {
-            Logr.Log("Broadcasted " + msg);
+            if (msg is not CharacterMoveGameEvent) Logr.Log("Broadcasted " + msg, Tags.Server);
             var buffer = MessagePackSerializer.Serialize(msg);
             var token = _cts?.Token ?? CancellationToken.None;
 
-            foreach (var (_, client) in _clients) {
-                if (client.Connected) {
+            foreach (var (shortId, client) in _clients) {
+                if (client.Connected && (msg is not CharacterMoveGameEvent cmge || cmge.CharacterId != shortId)) {
                     var stream = client.GetStream();
                     await stream.WriteAsync(buffer, 0, buffer.Length, token);
                     await stream.FlushAsync(token);

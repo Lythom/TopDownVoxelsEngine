@@ -1,0 +1,34 @@
+0.000000	2023/06/25 20:29:30.759	0	DebugView++.exe	File Identification Header, DebugView++ Format Version 1
+88.503945	2023/06/25 20:22:27.944	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+95.550804	2023/06/25 20:22:34.991	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+102.595486	2023/06/25 20:22:42.036	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+109.644307	2023/06/25 20:22:49.084	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+116.673717	2023/06/25 20:22:56.113	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+123.730544	2023/06/25 20:23:03.170	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+128.733764	2023/06/25 20:23:08.173	17820	Unity.exe	System.ApplicationException: Not connected
+128.735614	2023/06/25 20:23:08.175	17820	Unity.exe	ApplicationException: Not connected
+392.033175	2023/06/25 20:27:31.473	17820	Unity.exe	[general] Connecting Tcp Client on server and port 9006
+392.033533	2023/06/25 20:27:31.474	17820	Unity.exe	[general] Connecting Tcp Client on server and port 9006
+394.088453	2023/06/25 20:27:33.528	17820	Unity.exe	[general] Error while connection to the server
+394.088679	2023/06/25 20:27:33.529	17820	Unity.exe	[general] Error while connection to the server
+394.090440	2023/06/25 20:27:33.530	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+401.143524	2023/06/25 20:27:40.583	17820	Unity.exe	[general] Error while connection to the server
+401.143726	2023/06/25 20:27:40.583	17820	Unity.exe	[general] Error while connection to the server
+401.144482	2023/06/25 20:27:40.584	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+408.188314	2023/06/25 20:27:47.628	17820	Unity.exe	[general] Error while connection to the server
+408.188523	2023/06/25 20:27:47.629	17820	Unity.exe	[general] Error while connection to the server
+408.189222	2023/06/25 20:27:47.629	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+415.220479	2023/06/25 20:27:54.660	17820	Unity.exe	[general] Error while connection to the server
+415.220680	2023/06/25 20:27:54.660	17820	Unity.exe	[general] Error while connection to the server
+415.221373	2023/06/25 20:27:54.661	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+422.274927	2023/06/25 20:28:01.715	17820	Unity.exe	[general] Error while connection to the server
+422.275124	2023/06/25 20:28:01.715	17820	Unity.exe	[general] Error while connection to the server
+422.275872	2023/06/25 20:28:01.716	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+429.306311	2023/06/25 20:28:08.746	17820	Unity.exe	[general] Error while connection to the server
+429.306515	2023/06/25 20:28:08.746	17820	Unity.exe	[general] Error while connection to the server
+429.307244	2023/06/25 20:28:08.747	17820	Unity.exe	SocketException: Aucune connexion n’a pu être établie car l’ordinateur cible l’a expressément refusée.
+434.309398	2023/06/25 20:28:13.749	17820	Unity.exe	[general] Not connected
+434.309398	2023/06/25 20:28:13.749	17820	Unity.exe	System.ApplicationException: Not connected
+434.309815	2023/06/25 20:28:13.749	17820	Unity.exe	[general] Not connected
+434.309815	2023/06/25 20:28:13.749	17820	Unity.exe	System.ApplicationException: Not connected
+434.311629	2023/06/25 20:28:13.751	17820	Unity.exe	ApplicationException: Not connected
