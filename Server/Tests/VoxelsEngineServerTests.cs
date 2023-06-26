@@ -164,7 +164,7 @@ namespace Server.Tests {
             // Check the player character is unregistered
             Assert.IsFalse(_server.State.Characters.Any(c => c.Value.Name == helloMessage.Username));
             // Check we correctly broadcasted CharacterLeaveGameEvent after leaving
-            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterLeaveGameEvent>(e => e.CharacterId == _testShortId)), Times.Once);
+            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterLeaveGameEvent>(e => e.CharacterShortId == _testShortId)), Times.Once);
         }
 
         [Test]

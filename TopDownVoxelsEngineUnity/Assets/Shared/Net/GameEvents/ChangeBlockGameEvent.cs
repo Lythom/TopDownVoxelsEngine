@@ -9,26 +9,26 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public ushort CharacterId;
+        public ushort CharacterShortId;
 
         [Key(2)]
         public BlockId Block;
 
         public override int GetId() => Id;
 
-        public ChangeBlockGameEvent(int id, ushort characterId, BlockId block) {
+        public ChangeBlockGameEvent(int id, ushort characterShortId, BlockId block) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Block = block;
         }
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            gameState.Characters[CharacterId].SelectedBlock.Value = Block;
+            gameState.Characters[CharacterShortId].SelectedBlock.Value = Block;
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character must exists");
+            if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Character must exists");
         }
     }
 }

@@ -19,6 +19,9 @@ namespace Shared {
         public readonly float Gravity = 1.4f;
 
         [IgnoreMember]
+        public object LockObject = new();
+
+        [IgnoreMember]
         public readonly Selectors Selectors;
 
         // internal or non serialized properties
@@ -40,16 +43,18 @@ namespace Shared {
         }
 
         public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {
-            if (_isApplyingEvent)
-                throw new ApplicationException(
-                    $"An event is already being applied and event applications cannot be nested. Refactor the event being currently applied so that it can directly modify the state.");
-            _isApplyingEvent = true;
-            try {
-                // Logr.Log($"[{_id}] Applying evt {apply.Method.DeclaringType}");
-                apply(this, sideEffectManager);
-                OnEventApplied(sideEffectManager);
-            } finally {
-                _isApplyingEvent = false;
+            lock (LockObject) {
+                if (_isApplyingEvent)
+                    throw new ApplicationException(
+                        $"An event is already being applied and event applications cannot be nested. Refactor the event being currently applied so that it can directly modify the state.");
+                _isApplyingEvent = true;
+                try {
+                    // Logr.Log($"[{_id}] Applying evt {apply.Method.DeclaringType}");
+                    apply(this, sideEffectManager);
+                    OnEventApplied(sideEffectManager);
+                } finally {
+                    _isApplyingEvent = false;
+                }
             }
         }
 

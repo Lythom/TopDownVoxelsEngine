@@ -9,7 +9,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public ushort CharacterId;
+        public ushort CharacterShortId;
 
         [Key(2)]
         public Vector3 Position;
@@ -22,9 +22,9 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public CharacterMoveGameEvent(int id, ushort characterId, Vector3 position, Vector3 velocity, byte angle) {
+        public CharacterMoveGameEvent(int id, ushort characterShortId, Vector3 position, Vector3 velocity, byte angle) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Position = position;
             Velocity = velocity;
             Angle = angle;
@@ -32,13 +32,13 @@ namespace Shared.Net {
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            gameState.Characters[CharacterId].Position = Position;
-            gameState.Characters[CharacterId].Velocity = Velocity;
-            gameState.Characters[CharacterId].Angle = Angle;
+            gameState.Characters[CharacterShortId].Position = Position;
+            gameState.Characters[CharacterShortId].Velocity = Velocity;
+            gameState.Characters[CharacterShortId].Angle = Angle;
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Character must exists");
+            if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Character must exists");
         }
     }
 }

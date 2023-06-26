@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +40,7 @@ namespace Server {
             _cancellationTokenSource.Cancel(false);
         }
 
-        public async UniTaskVoid StartFixedUpdateAsync(Queue<InputMessage> inbox) {
+        public async UniTaskVoid StartFixedUpdateAsync(ConcurrentQueue<InputMessage> inbox) {
             SideEffectManager sideEffectManager = new SideEffectManager();
             sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
             try {
@@ -49,8 +49,6 @@ namespace Server {
                 }
             } catch (Exception e) {
                 Logr.LogException(e, "Error while self applying. Fatal.");
-                await _voxelsEngineServer.StopAsync();
-                await _voxelsEngineServer.StartAsync(_voxelsEngineServer.Port);
             }
 
             sideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
@@ -60,7 +58,7 @@ namespace Server {
             _minimumPriority = level;
         }
 
-        public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager, Queue<InputMessage> inbox) {
+        public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager, ConcurrentQueue<InputMessage> inbox) {
             if (!_voxelsEngineServer.IsReady) {
                 await Task.Delay(2000, cancellationToken);
                 return;
@@ -70,15 +68,15 @@ namespace Server {
             bool hasInput;
             InputMessage m;
             do {
-                lock (inbox) hasInput = inbox.TryDequeue(out m);
+                hasInput = inbox.TryDequeue(out m);
                 if (hasInput) await _voxelsEngineServer.HandleMessageAsync(m);
             } while (hasInput);
 
             _frameStopwatch.Restart();
 
             _tick.MinPriority = _minimumPriority;
-            lock (_voxelsEngineServer.State) _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
-            TryGenerateChunks();
+            _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
+            _voxelsEngineServer.TryGenerateChunks(_minimumPriority);
             _voxelsEngineServer.SendScheduledChunks();
 
             // Simulate work being done for a frame for test purpose
@@ -121,18 +119,6 @@ namespace Server {
                 // and register how late we are
                 _catchUpTime -= remaining;
             }
-        }
-
-        private void TryGenerateChunks() {
-            foreach (var (key, c) in _voxelsEngineServer.State.Characters) {
-                var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
-                if (c.Level.Value != null && _voxelsEngineServer.State.Levels.ContainsKey(c.Level.Value)) {
-                    _voxelsEngineServer.State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, 4, _voxelsEngineServer.State.Levels);
-                    _voxelsEngineServer.ScheduleChunkUpload(key, c.Level.Value, chx, chz);
-                }
-            }
-
-            _voxelsEngineServer.State.LevelGenerator.GenerateFromQueue(_minimumPriority, _voxelsEngineServer.State.Levels);
         }
     }
 }

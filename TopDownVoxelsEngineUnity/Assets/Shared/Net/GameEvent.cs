@@ -5,7 +5,7 @@ namespace Shared.Net {
         public abstract int GetId();
 
         public void Apply(GameState gameState, SideEffectManager? sideEffectManager) {
-            lock (gameState) gameState.ApplyEvent(DoApply, sideEffectManager);
+            gameState.ApplyEvent(DoApply, sideEffectManager);
         }
 
         protected internal abstract void DoApply(GameState gameState, SideEffectManager? sideEffectManager);

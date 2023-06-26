@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -19,8 +20,8 @@ namespace Shared.Net {
         public Action<Exception>? OnReconnectionFailed { get; set; }
 
         private readonly Stack<ushort> _shortIdPool = new();
-        private readonly Dictionary<ushort, TcpClient> _clients = new();
-        public TcpClient? GetClient(ushort shortId) => _clients.ContainsKey(shortId) ? _clients[shortId] : null;
+        private readonly ConcurrentDictionary<ushort, TcpClient> _clients = new();
+        public TcpClient? GetClient(ushort shortId) => _clients.TryGetValue(shortId, out var client) ? client : null;
 
         public void Init(int port) {
             _cts = new CancellationTokenSource();
@@ -31,22 +32,24 @@ namespace Shared.Net {
             Logr.Log("Starting Tcp Listener on port " + port, Tags.Server);
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
-            AcceptClient().Forget();
+            AcceptClientAsync().Forget();
         }
 
-        private async UniTask AcceptClient() {
+        private async UniTask AcceptClientAsync() {
             Logr.Log("Ready to accept connections", Tags.Server);
             while (_cts != null && !_cts.Token.IsCancellationRequested) {
                 try {
                     var client = await _listener.AcceptTcpClientAsync();
-                    HandleClient(client).Forget();
+                    HandleClientAsync(client).Forget();
                 } catch (Exception e) {
                     Logr.LogException(e);
                 }
             }
+
+            Logr.Log("Not listening anymore", Tags.Server);
         }
 
-        private async UniTask HandleClient(TcpClient client) {
+        private async UniTask HandleClientAsync(TcpClient client) {
             if (_cts == null) throw new ApplicationException("Socket server not initialized");
             var stream = client.GetStream();
             var buffer = new byte[BufferSize];
@@ -55,6 +58,7 @@ namespace Shared.Net {
 
             ushort shortId = _shortIdPool.Pop();
             _clients[shortId] = client;
+
             OnOpen?.Invoke(shortId);
 
             Logr.Log("New client ! " + shortId, Tags.Server);
@@ -81,7 +85,7 @@ namespace Shared.Net {
             }
 
             Logr.Log("Client disconnected " + shortId, Tags.Server);
-            _clients.Remove(shortId);
+            _clients.TryRemove(shortId, out _);
             OnClose?.Invoke(shortId);
             _shortIdPool.Push(shortId);
         }
@@ -109,7 +113,7 @@ namespace Shared.Net {
             var token = _cts?.Token ?? CancellationToken.None;
 
             foreach (var (shortId, client) in _clients) {
-                if (client.Connected && (msg is not CharacterMoveGameEvent cmge || cmge.CharacterId != shortId)) {
+                if (client.Connected) {
                     var stream = client.GetStream();
                     await stream.WriteAsync(buffer, 0, buffer.Length, token);
                     await stream.FlushAsync(token);

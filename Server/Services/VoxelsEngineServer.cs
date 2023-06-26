@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace Server {
         private readonly GameState _state = new();
         private readonly GameState _stateBackup = new();
 
-        private readonly Dictionary<ushort, UserSessionData> _userSessionData = new();
+        private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
 
         // Running
         private bool _isReady = false;
@@ -29,8 +30,8 @@ namespace Server {
         public int Port { get; private set; }
 
         private readonly SocketServer _socketServer;
-        private readonly Queue<InputMessage> _inbox = new();
-        private readonly Queue<OutputMessage> _outbox = new();
+        private readonly ConcurrentQueue<InputMessage> _inbox = new();
+        private readonly ConcurrentQueue<OutputMessage> _outbox = new();
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
@@ -81,7 +82,7 @@ namespace Server {
                 try {
                     OutputMessage m;
                     bool hasMessage;
-                    lock (_outbox) hasMessage = _outbox.TryDequeue(out m);
+                    hasMessage = _outbox.TryDequeue(out m);
                     if (hasMessage) {
                         if (m.IsBroadcast) {
                             await _socketServer.Broadcast(m.Message);
@@ -97,7 +98,6 @@ namespace Server {
             }
         }
 
-
         public UniTask StopAsync() {
             _isReady = false;
             _serverClock.Stop();
@@ -112,51 +112,75 @@ namespace Server {
 
         private void Send(ushort id, INetworkMessage m) {
             if (m == null) throw new InvalidOperationException("message must not be null");
-            lock (_outbox) _outbox.Enqueue(new OutputMessage(id, m));
+            _outbox.Enqueue(new OutputMessage(id, m));
         }
 
-        private void Broadcast(INetworkMessage m) {
+        private void SmartBroadcast(INetworkMessage m) {
             if (m == null) throw new InvalidOperationException("message must not be null");
-            lock (_outbox) _outbox.Enqueue(new OutputMessage(m));
+            switch (m) {
+                case ChangeBlockGameEvent changeBlockGameEvent:
+                    BroadastBut(changeBlockGameEvent.CharacterShortId, m);
+                    break;
+                case CharacterJoinGameEvent characterJoinGameEvent:
+                    BroadastBut(characterJoinGameEvent.CharacterShortId, m);
+                    Send(characterJoinGameEvent.CharacterShortId, m);
+                    break;
+                case CharacterLeaveGameEvent characterLeaveGameEvent:
+                    BroadastBut(characterLeaveGameEvent.CharacterShortId, m);
+                    break;
+                case CharacterMoveGameEvent characterMoveGameEvent:
+                    BroadastBut(characterMoveGameEvent.CharacterShortId, m);
+                    break;
+                case PlaceBlocksGameEvent placeBlocksGameEvent:
+                    // TODO: ensure player received corresponding chunk
+                    break;
+                case TickGameEvent tickGameEvent:
+                    // never send
+                    break;
+                default:
+                    _outbox.Enqueue(new OutputMessage(m));
+                    break;
+            }
+        }
+
+        private void BroadastBut(ushort ignoredShortId, INetworkMessage m) {
+            if (_userSessionData.TryGetValue(ignoredShortId, out var userSessionData)
+                && userSessionData.IsLogged) {
+                foreach (var (key, value) in _userSessionData) {
+                    if (key != ignoredShortId) {
+                        _outbox.Enqueue(new OutputMessage(key, m));
+                    }
+                }
+            }
         }
 
         public void NotifyDisconnection(ushort shortId) {
-            lock (_userSessionData) {
-                if (!_userSessionData.ContainsKey(shortId)) return;
-                var userData = _userSessionData[shortId];
-                if (userData.IsLogged) {
-                    var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
-                    characterLeaveGameEvent.Apply(_state, null);
-                    SelfApply(new InputMessage(shortId, characterLeaveGameEvent));
-                    Broadcast(characterLeaveGameEvent);
-                    Logr.Log($"User left {userData.Name} ({shortId})", Tags.Server);
-                }
+            if (!_userSessionData.ContainsKey(shortId)) return;
+            if (_userSessionData.TryRemove(shortId, out var userData) && userData.IsLogged) {
+                var characterLeaveGameEvent = new CharacterLeaveGameEvent(0, shortId);
+                // characterLeaveGameEvent.Apply(_state, null);
+                SelfApply(new InputMessage(shortId, characterLeaveGameEvent));
+                SmartBroadcast(characterLeaveGameEvent);
+                Logr.Log($"User left {userData.Name} ({shortId}), session removed", Tags.Server);
 
-                _userSessionData.Remove(shortId);
-                Logr.Log($"session removed {shortId}", Tags.Server);
+                // If any unsent element for this user, cancel.
+                RemoveUserMessagesFromOutbox(shortId);
             }
-
-            // If any unsent element for this user, cancel.
-            RemoveUserMessagesFromOutbox(shortId);
         }
 
         private void RemoveUserMessagesFromOutbox(ushort shortId) {
-            lock (_outbox) {
-                var tmpQueue = new Queue<OutputMessage>();
-                while (_outbox.TryDequeue(out var e)) {
-                    if (e.Id != shortId) tmpQueue.Enqueue(e);
-                }
+            var tmpQueue = new Queue<OutputMessage>();
+            while (_outbox.TryDequeue(out var e)) {
+                if (e.Id != shortId) tmpQueue.Enqueue(e);
+            }
 
-                while (tmpQueue.TryDequeue(out var e)) {
-                    _outbox.Enqueue(e);
-                }
+            while (tmpQueue.TryDequeue(out var e)) {
+                _outbox.Enqueue(e);
             }
         }
 
         public void NotifyConnection(ushort shortId) {
-            lock (_userSessionData) {
-                _userSessionData.Add(shortId, new UserSessionData(shortId));
-            }
+            _userSessionData.TryAdd(shortId, new UserSessionData(shortId));
         }
 
         private void InitState(DbGame currentDbSave) {
@@ -203,19 +227,15 @@ namespace Server {
         }
 
         private void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
-            lock (_inbox) {
-                _inbox.Enqueue(new InputMessage {Id = clientShortId, Message = netMessage});
-            }
+            _inbox.Enqueue(new InputMessage {Id = clientShortId, Message = netMessage});
         }
 
         public async UniTask HandleMessageAsync(InputMessage m) {
             var clientShortId = m.Id;
             var netMessage = m.Message;
-            lock (_userSessionData) {
-                if (!_userSessionData.ContainsKey(clientShortId)) {
-                    Logr.Log($"Client {clientShortId} is no longer ready to share messages.");
-                    return;
-                }
+            if (!_userSessionData.ContainsKey(clientShortId)) {
+                Logr.Log($"Client {clientShortId} is no longer ready to share messages.");
+                return;
             }
 
             try {
@@ -232,23 +252,19 @@ namespace Server {
                             throw new ApplicationException(
                                 "The state of the game was not found. Please init a game before applying events.");
                         // ReSharper disable once InconsistentlySynchronizedField
-                        lock (_state) {
-                            evt.AssertApplicationConditions(in _state);
-                            evt.Apply(_state, null);
-                        }
+                        evt.AssertApplicationConditions(in _state);
+                        evt.Apply(_state, null);
 
-                        Broadcast(evt);
+                        SmartBroadcast(evt);
                         break;
                     case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
-                        lock (_userSessionData) {
-                            if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
-                                Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
-                                return;
-                            } else {
-                                _userSessionData[clientShortId].Name = hello.Username;
-                                _userSessionData[clientShortId].Status = SessionStatus.GettingReady;
-                            }
+                        if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
+                            Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
+                            return;
+                        } else {
+                            _userSessionData[clientShortId].Name = hello.Username;
+                            _userSessionData[clientShortId].Status = SessionStatus.GettingReady;
                         }
 
                         using var scope = _serviceScopeFactory.CreateScope();
@@ -257,27 +273,13 @@ namespace Server {
                         try {
                             var (character, levelSpawn) = await GetOrCreateCharacterAsync(user, hello);
                             var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
-                            lock (_state) {
-                                characterJoinGameEvent.AssertApplicationConditions(in _state);
-                                characterJoinGameEvent.Apply(State, null);
-                            }
-
-                            // Send all other players info to the new player
-                            lock (_userSessionData) {
-                                lock (_state) {
-                                    foreach (var (key, userSessionData) in _userSessionData) {
-                                        if (userSessionData.IsLogged && key != clientShortId) {
-                                            Send(clientShortId, new CharacterJoinGameEvent(0, key, State.Characters[key], levelSpawn));
-                                        }
-                                    }
-                                }
-
-                                _userSessionData[clientShortId].Status = SessionStatus.Ready;
-                            }
+                            characterJoinGameEvent.AssertApplicationConditions(in _state);
+                            characterJoinGameEvent.Apply(State, null);
 
                             // Send all players info about the new players.
-                            // It also confirms to the new players it's entry
-                            Broadcast(characterJoinGameEvent);
+                            // It also confirms last to the new players it's entry
+                            SmartBroadcast(characterJoinGameEvent);
+                            _userSessionData[clientShortId].Status = SessionStatus.Ready;
                         } catch (Exception e) {
                             Send(clientShortId, new ErrorNetworkMessage(e.Message));
                             Console.WriteLine(e.ToString());
@@ -289,7 +291,7 @@ namespace Server {
                 }
 
                 // backup the state before applying
-                lock (_state) {
+                lock (_state.LockObject) {
                     _stateBackup.UpdateValue(_state);
                 }
             } catch (Exception e) {
@@ -297,7 +299,7 @@ namespace Server {
 
                 // treat the event as a transaction, cancel any partially applied event
                 if (_state != null) {
-                    lock (_state) {
+                    lock (_state.LockObject) {
                         _state.UpdateValue(_stateBackup);
                     }
                 }
@@ -368,12 +370,9 @@ namespace Server {
 
         public void ScheduleChunkUpload(ushort playerKey, string levelId, int chX, int chZ) {
             var range = 3;
-            UserSessionData? userSessionData;
-            lock (_userSessionData) {
-                userSessionData = _userSessionData
-                    .Select(u => u.Value)
-                    .FirstOrDefault(u => u.ShortId == playerKey);
-            }
+            var userSessionData = _userSessionData
+                .Select(u => u.Value)
+                .FirstOrDefault(u => u.ShortId == playerKey);
 
             if (userSessionData == null) return;
             for (int x = -range; x <= range; x++) {
@@ -391,18 +390,26 @@ namespace Server {
             }
         }
 
-        public void SendScheduledChunks() {
-            lock (_userSessionData) {
-                foreach (var (userKey, userSessionData) in _userSessionData) {
-                    // try dequeue one chunk per user per tick
-                    if (userSessionData.IsLogged && userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
-                        Chunk chunk;
-                        lock (_state) {
-                            chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
-                        }
+        public void TryGenerateChunks(PriorityLevel priority) {
+            foreach (var (key, c) in State.Characters) {
+                var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
+                if (c.Level.Value != null && State.Levels.ContainsKey(c.Level.Value)) {
+                    State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, 4, State.Levels);
+                    ScheduleChunkUpload(key, c.Level.Value, chx, chz);
+                }
+            }
 
-                        Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
-                    }
+            State.LevelGenerator.GenerateFromQueue(priority, State.Levels);
+        }
+
+        // TODO: On envoie des "block placed" après avoir envoyé le ChunkUpdateGameEvent
+
+        public void SendScheduledChunks() {
+            foreach (var (userKey, userSessionData) in _userSessionData) {
+                // try dequeue one chunk per user per tick
+                if (userSessionData.IsLogged && userSessionData.UploadQueue.TryDequeue(out var cKey, out _)) {
+                    var chunk = _state.Levels[cKey.LevelId].Chunks[cKey.ChX, cKey.ChZ];
+                    Send(userKey, new ChunkUpdateGameEvent(0, cKey.LevelId, chunk, cKey.ChX, cKey.ChZ));
                 }
             }
         }
