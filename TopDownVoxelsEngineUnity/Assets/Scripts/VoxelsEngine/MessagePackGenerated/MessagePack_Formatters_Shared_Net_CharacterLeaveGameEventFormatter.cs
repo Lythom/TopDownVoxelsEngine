@@ -29,7 +29,7 @@ namespace MessagePack.Formatters.Shared.Net
 
             writer.WriteArrayHeader(2);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
+            writer.Write(value.CharacterShortId);
         }
 
         public global::Shared.Net.CharacterLeaveGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -42,7 +42,7 @@ namespace MessagePack.Formatters.Shared.Net
             options.Security.DepthStep(ref reader);
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
+            var __CharacterShortId__ = default(ushort);
 
             for (int i = 0; i < length; i++)
             {
@@ -52,7 +52,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadUInt16();
+                        __CharacterShortId__ = reader.ReadUInt16();
                         break;
                     default:
                         reader.Skip();
@@ -60,7 +60,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterLeaveGameEvent(__Id__, __CharacterId__);
+            var ____result = new global::Shared.Net.CharacterLeaveGameEvent(__Id__, __CharacterShortId__);
             reader.Depth--;
             return ____result;
         }

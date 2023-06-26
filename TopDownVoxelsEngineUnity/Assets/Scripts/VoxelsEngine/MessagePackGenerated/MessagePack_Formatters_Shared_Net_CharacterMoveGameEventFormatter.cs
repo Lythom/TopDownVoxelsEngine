@@ -30,7 +30,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(5);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
+            writer.Write(value.CharacterShortId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
             writer.Write(value.Angle);
@@ -47,7 +47,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
+            var CharacterShortIdId__ = default(ushort);
             var __Position__ = default(global::Shared.Vector3);
             var __Velocity__ = default(global::Shared.Vector3);
             var __Angle__ = default(byte);
@@ -60,7 +60,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadUInt16();
+                        CharacterShortIdId__ = reader.ReadUInt16();
                         break;
                     case 2:
                         __Position__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
@@ -77,7 +77,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, __CharacterId__, __Position__, __Velocity__, __Angle__);
+            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, CharacterShortIdId__, __Position__, __Velocity__, __Angle__);
             reader.Depth--;
             return ____result;
         }

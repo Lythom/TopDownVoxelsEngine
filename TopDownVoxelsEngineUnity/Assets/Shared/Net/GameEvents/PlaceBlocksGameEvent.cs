@@ -10,7 +10,7 @@ namespace Shared.Net {
         public int Id;
 
         [Key(1)]
-        public ushort CharacterId;
+        public ushort CharacterShortId;
 
         /// <summary>
         /// Use StoreValues / RetrieveValues to get the 5 positions stored here
@@ -34,9 +34,9 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        public PlaceBlocksGameEvent(int id, ushort characterId, short x, short y, short z, BlockId block) {
+        public PlaceBlocksGameEvent(int id, ushort characterShortId, short x, short y, short z, BlockId block) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             X = x;
             Y = y;
             Z = z;
@@ -71,17 +71,17 @@ namespace Shared.Net {
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
-            var level = gameState.Characters[CharacterId].Level.Value;
+            var level = gameState.Characters[CharacterShortId].Level.Value;
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
             chunk.Cells[cx, cy, cz].Block = Block;
-            sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(CharacterId, chX, chZ));
+            sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(CharacterShortId, chX, chZ));
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
-            if (!gameState.Characters.ContainsKey(CharacterId)) throw new ApplicationException("Unknown level");
-            var level = gameState.Characters[CharacterId].Level;
+            if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Unknown level");
+            var level = gameState.Characters[CharacterShortId].Level;
             if (level.Value == null || !gameState.Levels.ContainsKey(level.Value)) throw new ApplicationException("Unknown level");
             var chunk = gameState.Levels[level.Value].Chunks[chX, chZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Can't set blocks in non ready chunks");

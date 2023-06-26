@@ -30,7 +30,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(3);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
+            writer.Write(value.CharacterShortId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Serialize(ref writer, value.Block, options);
         }
 
@@ -45,7 +45,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
+            var __CharacterShortId__ = default(ushort);
             var __Block__ = default(global::Shared.BlockId);
 
             for (int i = 0; i < length; i++)
@@ -56,7 +56,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadUInt16();
+                        __CharacterShortId__ = reader.ReadUInt16();
                         break;
                     case 2:
                         __Block__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
@@ -67,7 +67,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.ChangeBlockGameEvent(__Id__, __CharacterId__, __Block__);
+            var ____result = new global::Shared.Net.ChangeBlockGameEvent(__Id__, __CharacterShortId__, __Block__);
             reader.Depth--;
             return ____result;
         }

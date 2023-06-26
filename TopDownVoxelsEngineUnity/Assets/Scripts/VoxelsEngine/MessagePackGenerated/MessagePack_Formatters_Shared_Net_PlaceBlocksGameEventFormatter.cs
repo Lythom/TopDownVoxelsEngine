@@ -30,7 +30,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(6);
             writer.Write(value.Id);
-            writer.Write(value.CharacterId);
+            writer.Write(value.CharacterShortId);
             writer.Write(value.X);
             writer.Write(value.Y);
             writer.Write(value.Z);
@@ -48,7 +48,7 @@ namespace MessagePack.Formatters.Shared.Net
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __Id__ = default(int);
-            var __CharacterId__ = default(ushort);
+            var __CharacterShortId__ = default(ushort);
             var __X__ = default(short);
             var __Y__ = default(short);
             var __Z__ = default(short);
@@ -62,7 +62,7 @@ namespace MessagePack.Formatters.Shared.Net
                         __Id__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __CharacterId__ = reader.ReadUInt16();
+                        __CharacterShortId__ = reader.ReadUInt16();
                         break;
                     case 2:
                         __X__ = reader.ReadInt16();
@@ -82,7 +82,7 @@ namespace MessagePack.Formatters.Shared.Net
                 }
             }
 
-            var ____result = new global::Shared.Net.PlaceBlocksGameEvent(__Id__, __CharacterId__, __X__, __Y__, __Z__, __Block__);
+            var ____result = new global::Shared.Net.PlaceBlocksGameEvent(__Id__, __CharacterShortId__, __X__, __Y__, __Z__, __Block__);
             reader.Depth--;
             return ____result;
         }

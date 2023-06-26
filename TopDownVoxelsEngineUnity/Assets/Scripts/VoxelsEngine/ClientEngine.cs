@@ -45,12 +45,12 @@ namespace VoxelsEngine {
                     break;
                 case CharacterMoveGameEvent moveEvent:
                     if (Session != SessionStatus.Ready) break;
-                    if (moveEvent.CharacterId == LocalState.Instance.CurrentPlayerId.Value) {
+                    if (moveEvent.CharacterShortId == LocalState.Instance.CurrentPlayerId.Value) {
                         // apply event to fix position only if the mismatch is important (cheating ?).
                         if (UnityEngine.Vector3.Distance(moveEvent.Position, transform.position) > 1) {
                             HandleEvent(moveEvent);
                         }
-                    } else if (State.Characters.ContainsKey(moveEvent.CharacterId)) {
+                    } else if (State.Characters.ContainsKey(moveEvent.CharacterShortId)) {
                         HandleEvent(moveEvent);
                     }
 

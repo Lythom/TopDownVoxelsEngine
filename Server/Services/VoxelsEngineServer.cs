@@ -35,7 +35,6 @@ namespace Server {
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
-        // TODO: refuser une connexion si utilisateur du même nom déjà connecté
         public VoxelsEngineServer(IServiceScopeFactory serviceScopeFactory, SocketServer socketServer) {
             _serviceScopeFactory = serviceScopeFactory;
             try {
@@ -119,23 +118,34 @@ namespace Server {
             if (m == null) throw new InvalidOperationException("message must not be null");
             switch (m) {
                 case ChangeBlockGameEvent changeBlockGameEvent:
-                    BroadastBut(changeBlockGameEvent.CharacterShortId, m);
+                    BroadcastBut(changeBlockGameEvent.CharacterShortId, m);
                     break;
                 case CharacterJoinGameEvent characterJoinGameEvent:
-                    BroadastBut(characterJoinGameEvent.CharacterShortId, m);
+                    BroadcastBut(characterJoinGameEvent.CharacterShortId, m);
                     Send(characterJoinGameEvent.CharacterShortId, m);
                     break;
                 case CharacterLeaveGameEvent characterLeaveGameEvent:
-                    BroadastBut(characterLeaveGameEvent.CharacterShortId, m);
+                    BroadcastBut(characterLeaveGameEvent.CharacterShortId, m);
                     break;
                 case CharacterMoveGameEvent characterMoveGameEvent:
-                    BroadastBut(characterMoveGameEvent.CharacterShortId, m);
+                    BroadcastBut(characterMoveGameEvent.CharacterShortId, m);
                     break;
                 case PlaceBlocksGameEvent placeBlocksGameEvent:
-                    // TODO: ensure player received corresponding chunk
+                    BroadcastBut(e => {
+                        if (!State.Characters.TryGetValue(e.CharacterShortId, out var c)) return false;
+                        var levelId = c.Level.Value;
+                        if (levelId == null) return false;
+                        if (!_userSessionData.TryGetValue(e.CharacterShortId, out var userSessionData)) return false;
+                        var (chX, chZ) = LevelTools.GetChunkPosition(e.X, e.Z);
+                        var chunkKey = ChunkKeyPool.Get(levelId, chX, chZ);
+                        var shouldSend = userSessionData.UploadedChunks.Contains(chunkKey);
+                        ChunkKeyPool.Return(chunkKey);
+                        return shouldSend;
+                    }, placeBlocksGameEvent);
                     break;
-                case TickGameEvent tickGameEvent:
-                    // never send
+                case TickGameEvent:
+                case ChunkUpdateGameEvent:
+                    // never send tick event
                     break;
                 default:
                     _outbox.Enqueue(new OutputMessage(m));
@@ -143,7 +153,15 @@ namespace Server {
             }
         }
 
-        private void BroadastBut(ushort ignoredShortId, INetworkMessage m) {
+        private void BroadcastBut<T>(Func<T, bool> shouldEnqueue, T m) where T : INetworkMessage {
+            foreach (var (key, value) in _userSessionData) {
+                if (shouldEnqueue(m)) {
+                    _outbox.Enqueue(new OutputMessage(key, m));
+                }
+            }
+        }
+
+        private void BroadcastBut(ushort ignoredShortId, INetworkMessage m) {
             if (_userSessionData.TryGetValue(ignoredShortId, out var userSessionData)
                 && userSessionData.IsLogged) {
                 foreach (var (key, value) in _userSessionData) {
@@ -401,8 +419,6 @@ namespace Server {
 
             State.LevelGenerator.GenerateFromQueue(priority, State.Levels);
         }
-
-        // TODO: On envoie des "block placed" après avoir envoyé le ChunkUpdateGameEvent
 
         public void SendScheduledChunks() {
             foreach (var (userKey, userSessionData) in _userSessionData) {
