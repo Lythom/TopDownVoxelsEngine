@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -81,12 +82,12 @@ namespace Shared.Net {
                     }
                 }
             } catch (Exception e) {
-                Logr.LogException(e);
+                if (e is not OperationCanceledException && e is not IOException) Logr.LogException(e);
             }
 
             Logr.Log("Client disconnected " + shortId, Tags.Server);
-            _clients.TryRemove(shortId, out _);
             OnClose?.Invoke(shortId);
+            _clients.TryRemove(shortId, out _);
             _shortIdPool.Push(shortId);
         }
 
