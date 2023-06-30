@@ -2,20 +2,20 @@
 
 namespace Server {
     public struct OutputMessage {
-        public ushort Id;
+        public ushort RecipientId;
         public INetworkMessage Message;
         public bool IsBroadcast;
 
         /// Send to single target
-        public OutputMessage(ushort id, INetworkMessage message) {
-            Id = id;
+        public OutputMessage(ushort recipientId, INetworkMessage message) {
+            RecipientId = recipientId;
             Message = message;
             IsBroadcast = false;
         }
         
         /// Broadcast
         public OutputMessage(INetworkMessage message) {
-            Id = 0;
+            RecipientId = 0;
             Message = message;
             IsBroadcast = true;
         }

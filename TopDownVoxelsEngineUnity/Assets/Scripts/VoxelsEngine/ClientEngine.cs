@@ -6,6 +6,8 @@ using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VoxelsEngine.UI;
+using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
     /// <summary>
@@ -20,34 +22,36 @@ namespace VoxelsEngine {
         [ShowInInspector]
         public GameState State = new(null, null, null);
 
-        public SessionStatus Session = SessionStatus.Disconnected;
-
         public readonly SideEffectManager SideEffectManager = new();
 
         private readonly TickGameEvent _tick = new();
         private PriorityLevel _minLevel = PriorityLevel.All;
-        private bool _started;
+        private bool Started => LocalState.Instance.Session.Value == SessionStatus.Ready;
+        private bool _receivedAtLeastOneChunkUpdate = false;
 
-        private void HandleNetMessage(INetworkMessage obj) {
-            Logr.Log("Received " + obj, Tags.Client);
-            switch (obj) {
+        private void HandleNetMessage(INetworkMessage msg) {
+            if (msg is not CharacterMoveGameEvent) Logr.Log("Received " + msg, Tags.Client);
+            switch (msg) {
                 case CharacterJoinGameEvent joinEvent:
                     if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
+                        if (LocalState.Instance.Session.Value != SessionStatus.NeedAuthentication) {
+                            throw new ApplicationException($"Error in the flow: the player is either already authenticated or not ready no be. Current status = {LocalState.Instance.Session.Value}. Expected: {SessionStatus.NeedAuthentication}");
+                        }
+
                         LocalState.Instance.CurrentPlayerId.Value = joinEvent.CharacterShortId;
-                        _started = true;
                         SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
                         SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
-                        Session = SessionStatus.GettingReady;
+                        LocalState.Instance.Session.Value = _receivedAtLeastOneChunkUpdate ? SessionStatus.Ready : SessionStatus.GettingReady;
                     }
 
                     HandleEvent(joinEvent);
                     SideEffectManager.For<CharacterJoinGameEvent>().Trigger(joinEvent);
                     break;
                 case CharacterMoveGameEvent moveEvent:
-                    if (Session != SessionStatus.Ready) break;
+                    if (LocalState.Instance.Session.Value != SessionStatus.Ready) break;
                     if (moveEvent.CharacterShortId == LocalState.Instance.CurrentPlayerId.Value) {
                         // apply event to fix position only if the mismatch is important (cheating ?).
-                        if (UnityEngine.Vector3.Distance(moveEvent.Position, transform.position) > 1) {
+                        if (Vector3.Distance(moveEvent.Position, transform.position) > 1) {
                             HandleEvent(moveEvent);
                         }
                     } else if (State.Characters.ContainsKey(moveEvent.CharacterShortId)) {
@@ -55,25 +59,34 @@ namespace VoxelsEngine {
                     }
 
                     break;
+                case ChunkUpdateGameEvent cuge:
+                    if (!_receivedAtLeastOneChunkUpdate) {
+                        LocalState.Instance.Session.Value = LocalState.Instance.CurrentPlayerId.Value != ushort.MaxValue ? SessionStatus.Ready : SessionStatus.GettingReady;
+                        _receivedAtLeastOneChunkUpdate = true;
+                    }
+
+                    HandleEvent(cuge);
+                    break;
                 case IGameEvent gameEvent:
                     HandleEvent(gameEvent);
                     break;
                 case ErrorNetworkMessage err:
                     Debug.LogError("[Server Error] " + err.Message);
+                    SocketClient.Close();
                     break;
             }
         }
 
         public void StartLocal() {
-            _started = true;
             SocketClient.OnNetworkMessage -= HandleNetMessage;
             SocketClient.OnNetworkMessage += HandleNetMessage;
             SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
             SideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
+            LocalState.Instance.Session.Value = SessionStatus.Ready;
         }
 
         public void Stop() {
-            _started = false;
+            LocalState.Instance.Session.Value = SessionStatus.Disconnected;
             SocketClient.OnNetworkMessage -= HandleNetMessage;
             SideEffectManager.For<PriorityLevel>().StopListening(UpdatePriorityLevel);
         }
@@ -83,7 +96,7 @@ namespace VoxelsEngine {
         }
 
         private void FixedUpdate() {
-            if (!_started) return;
+            if (!Started) return;
             _tick.Id++;
             _tick.MinPriority = _minLevel;
             _tick.Apply(State, SideEffectManager);
@@ -117,15 +130,28 @@ namespace VoxelsEngine {
             evt.Apply(State, SideEffectManager);
         }
 
-        // TODO: auto reconnexion
-
         public async Task InitRemote(int port) {
-            SocketClient = new SocketClient();
-            SocketClient.OnNetworkMessage += HandleNetMessage;
-            await SocketClient.Init("192.168.1.157", port);
-            Session = SessionStatus.NeedAuthentication;
-            await Task.Delay(500);
-            await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
+            try {
+                SocketClient = new SocketClient();
+                SocketClient.OnNetworkMessage += HandleNetMessage;
+                SocketClient.OnConnexionLost += HandleConnexionLost;
+                await SocketClient.Init("192.168.1.157", port);
+                LocalState.Instance.Session.Value = SessionStatus.NeedAuthentication;
+                await Task.Delay(500);
+                await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
+            } catch (Exception e) {
+                Logr.LogException(e);
+                HandleConnexionLost();
+                throw;
+            }
+        }
+
+        private void HandleConnexionLost() {
+            LocalState.Instance.Session.Value = SessionStatus.Disconnected;
+            if (this == null || !Application.isPlaying) return;
+            transform.DestroyChildren();
+            Destroy(this);
+            if (ConnectionModal.Instance != null) ConnectionModal.Instance.SmartActive(true);
         }
 
         private void OnDestroy() {

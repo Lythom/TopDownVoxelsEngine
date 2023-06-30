@@ -7,9 +7,10 @@ namespace VoxelsEngine {
     public class CharacterAgent : ConnectedBehaviour {
         // TODO: sync CharacterAgents and characters (use sync prefab list ?)
 
-        public ushort CharacterId = 0;
+        public Reactive<ushort> CharacterId = new(0);
         private Character? _character;
         private Vector3 _nextPosition;
+        public float VisualSnappingStrength = 0.28f;
 
         private void Awake() {
             var position = transform.position;
@@ -19,7 +20,8 @@ namespace VoxelsEngine {
         protected override void OnSetup(GameState state) {
             var playerStateSelector = ReactiveHelpers.CreateSelector(
                 state.Characters,
-                characters => characters.Dictionary.TryGetValue(CharacterId, out var value) ? value : null,
+                CharacterId,
+                (characters, shortId) => characters.Dictionary.TryGetValue(shortId, out var value) ? value : null,
                 null,
                 ResetToken
             );
@@ -42,20 +44,10 @@ namespace VoxelsEngine {
             if (levelId == null || !ClientEngine.State.Levels.ContainsKey(levelId)) return;
             if (!ClientEngine.State.Levels.TryGetValue(levelId, out var level)) return;
 
-            transform.position = _character.Position += _character.Velocity * Time.deltaTime;
-        }
-
-        /// <summary>
-        /// In fixed update, update the display
-        /// </summary>
-        private void FixedUpdate() {
-            // optimistic update
-            if (_character == null) return;
-            // Récupérer la rotation actuelle du GameObject
+            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
             UnityEngine.Vector3 currentRotation = transform.eulerAngles;
-            currentRotation.y = Character.UncompressAngle(_character.Angle);
+            currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
             transform.eulerAngles = currentRotation;
-            transform.position = _character.Position;
         }
     }
 }

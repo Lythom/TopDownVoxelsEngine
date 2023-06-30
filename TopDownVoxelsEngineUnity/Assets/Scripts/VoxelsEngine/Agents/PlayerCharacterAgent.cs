@@ -22,7 +22,7 @@ namespace VoxelsEngine {
 
         // visual is slightly delayed because FPS rate might be a bit faster than update rate
         // this is to bring smoother visual
-        public float VisualSnappingStrength = 0.8f;
+        public float VisualSnappingStrength = 0.3f;
 
 
         [RequiredInScene]
@@ -216,7 +216,11 @@ namespace VoxelsEngine {
             if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
             // apply a lerp transition for smooth animation
             // _character.Position is updated in the TickEvent
-            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength);
+            if (_character.Position.Y < -20) {
+                _character.Position.Y = 20f;
+            }
+
+            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
         }
 
         /// <summary>

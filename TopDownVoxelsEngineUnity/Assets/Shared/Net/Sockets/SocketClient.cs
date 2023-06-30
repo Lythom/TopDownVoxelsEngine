@@ -14,7 +14,7 @@ namespace Shared.Net {
 
 
         public Action<INetworkMessage>? OnNetworkMessage { get; set; }
-        public Action<Exception>? OnReconnectionFailed { get; set; }
+        public Action? OnConnexionLost { get; set; }
 
         public async UniTask Init(string host, int port) {
             _cts = new CancellationTokenSource();
@@ -62,24 +62,39 @@ namespace Shared.Net {
                 Logr.LogException(e);
                 throw;
             } finally {
+                OnConnexionLost?.Invoke();
                 _client.GetStream().Close();
                 _client.Close();
             }
         }
 
         public async UniTask Send(INetworkMessage msg) {
-            if (_cts == null || _cts.IsCancellationRequested) return;
-            var stream = _client.GetStream();
-            var buffer = MessagePackSerializer.Serialize(msg);
-            var token = _cts?.Token ?? CancellationToken.None;
-            await stream.WriteAsync(buffer, 0, buffer.Length, token);
-            if (_cts == null || _cts.IsCancellationRequested) return;
-            await stream.FlushAsync(token);
-            Logr.Log("Sent to server: " + msg, Tags.Client);
+            try {
+                if (_cts == null || _cts.IsCancellationRequested) return;
+                var stream = _client.GetStream();
+                var buffer = MessagePackSerializer.Serialize(msg);
+                var token = _cts?.Token ?? CancellationToken.None;
+                await stream.WriteAsync(buffer, 0, buffer.Length, token);
+                if (_cts == null || _cts.IsCancellationRequested) return;
+                await stream.FlushAsync(token);
+                if (msg is not CharacterMoveGameEvent) Logr.Log("Sent to server: " + msg, Tags.Client);
+            } catch (Exception e) {
+                Logr.LogException(e);
+                throw;
+            }
         }
 
         public void Close() {
             _cts?.Cancel(false);
+            try {
+                _client.GetStream().Close();
+            } catch (Exception _) {
+            }
+
+            try {
+                if (_client.Connected) _client.Close();
+            } catch (Exception _) {
+            }
         }
     }
 }

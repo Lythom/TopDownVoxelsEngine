@@ -7,6 +7,6 @@ namespace Shared.Net {
         public UniTask Send(INetworkMessage msg);
         public void Close();
         public Action<INetworkMessage>? OnNetworkMessage { get; set; }
-        public Action<Exception>? OnReconnectionFailed { get; set; }
+        public Action? OnConnexionLost { get; set; }
     }
 }

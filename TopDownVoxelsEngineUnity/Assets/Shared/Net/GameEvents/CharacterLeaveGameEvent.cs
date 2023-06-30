@@ -24,7 +24,7 @@ namespace Shared.Net {
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Character already unknown.");
+            // if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Character already unknown.");
         }
     }
 }

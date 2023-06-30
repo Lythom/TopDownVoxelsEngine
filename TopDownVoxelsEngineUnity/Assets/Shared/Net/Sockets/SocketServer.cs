@@ -92,7 +92,6 @@ namespace Shared.Net {
         }
 
         public async UniTask Send(ushort target, INetworkMessage msg) {
-            Logr.Log("Sent " + msg, Tags.Server);
             var client = GetClient(target);
             if (client != null && client.Connected) {
                 var token = _cts?.Token ?? CancellationToken.None;
@@ -101,6 +100,9 @@ namespace Shared.Net {
                 var stream = client.GetStream();
                 await stream.WriteAsync(buffer, 0, buffer.Length, token);
                 await stream.FlushAsync(token);
+                if (msg is not CharacterMoveGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
+            } else {
+                Logr.Log($"!! Failed to send  {msg} to {target} because disconnected", Tags.Debug);
             }
         }
 
@@ -109,7 +111,7 @@ namespace Shared.Net {
         }
 
         public virtual async UniTask Broadcast(INetworkMessage msg) {
-            if (msg is not CharacterMoveGameEvent) Logr.Log("Broadcasted " + msg, Tags.Server);
+            if (msg is not CharacterMoveGameEvent) Logr.Log($"Broadcasted {msg}", Tags.Server);
             var buffer = MessagePackSerializer.Serialize(msg);
             var token = _cts?.Token ?? CancellationToken.None;
 

@@ -43,5 +43,15 @@ namespace Shared {
             Console.WriteLine(eMessage);
 #endif
         }
+
+        public static void LogError(string? message = null, string tag = "general") {
+            var eMessage = $"[{tag}] {message}";
+#if UNITY_2020_3_OR_NEWER
+            UnityEngine.Debug.Log(eMessage);
+#else
+            Serilog.Log.Error(eMessage);
+            Console.WriteLine(eMessage);
+#endif
+        }
     }
 }

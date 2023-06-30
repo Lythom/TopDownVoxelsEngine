@@ -42,6 +42,10 @@ namespace Shared.Net {
             Z = z;
             Block = block;
         }
+
+        public override string ToString() {
+            return $"PlaceBlocksGameEvent({Id},{CharacterShortId}, {X}, {Y}, {Z}, {Block.ToString()})";
+        }
         //
         // public void SetFiveBlocks(Span<uint> values) {
         //     if (values.Length > 5) throw new ApplicationException("Can't store more than 5 values per packet.");

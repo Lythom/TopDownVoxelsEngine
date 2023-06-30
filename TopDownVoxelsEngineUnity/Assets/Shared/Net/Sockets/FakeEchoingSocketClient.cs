@@ -15,6 +15,6 @@ namespace Shared.Net {
         }
 
         public Action<INetworkMessage>? OnNetworkMessage { get; set; }
-        public Action<Exception>? OnReconnectionFailed { get; set; }
+        public Action? OnConnexionLost { get; set; }
     }
 }

@@ -131,7 +131,7 @@ namespace VoxelsEngine {
 
         public void AddOtherCharacter(Vector3 spawnPosition, ushort shortId) {
             var agent = Instantiate(CharacterPrefab, _engine!.transform, true);
-            agent.CharacterId = shortId;
+            agent.CharacterId.Value = shortId;
             agent.transform.position = spawnPosition;
         }
     }

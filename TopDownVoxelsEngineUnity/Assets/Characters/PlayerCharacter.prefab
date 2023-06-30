@@ -49,14 +49,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CharacterId: 0
   Speed: 6
-  Velocity:
-    X: 0
-    Y: 0
-    Z: 0
   JumpForce: 0.25
   JumpChargeIntensity: 0.11
-  Gravity: 0.2
   PlacementRadius: 5
+  VisualSnappingStrength: 0.28
   CameraTransform: {fileID: 0}
 --- !u!33 &3647220086276733180
 MeshFilter:

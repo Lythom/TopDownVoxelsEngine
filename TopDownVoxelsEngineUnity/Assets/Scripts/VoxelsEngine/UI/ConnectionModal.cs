@@ -8,6 +8,8 @@ using UnityEngine.UI;
 
 namespace VoxelsEngine.UI {
     public class ConnectionModal : MonoBehaviour {
+        public static ConnectionModal Instance = null!;
+
         [Required]
         public ClientMain Main = null!;
 
@@ -18,6 +20,7 @@ namespace VoxelsEngine.UI {
         public TMP_InputField NameInputField = null!;
 
         private void Awake() {
+            Instance = this;
             PlayButton.onClick.RemoveAllListeners();
             // ReSharper disable once AsyncVoidLambda - Try catch OK
             PlayButton.onClick.AddListener(async () => {
