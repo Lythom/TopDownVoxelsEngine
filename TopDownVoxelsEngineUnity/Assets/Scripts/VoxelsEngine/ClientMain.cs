@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using LoneStoneStudio.Tools;
 using MessagePack;
 using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
+using VoxelsEngine.UI;
 using Vector3 = Shared.Vector3;
 
 namespace VoxelsEngine {
@@ -28,7 +30,7 @@ namespace VoxelsEngine {
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
         private void Awake() {
-            //StartLocalPlay().Forget();
+            StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
             // StartRemotePlay().Forget();
         }
@@ -105,8 +107,11 @@ namespace VoxelsEngine {
                 _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
 
                 await AddPlayerCharacter(spawnPosition, 0);
+                LocalState.Instance.CurrentPlayerId.Value = 0;
+                LocalState.Instance.CurrentPlayerName= "Local";
 
                 _engine.StartLocal();
+                ConnectionModal.Instance.SmartActive(false);
             } catch (Exception e) {
                 Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
                 return;

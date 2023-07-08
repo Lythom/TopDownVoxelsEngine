@@ -46,17 +46,12 @@ namespace VoxelsEngine {
                 _level = state.Levels[levelId];
             });
 
-            SubscribeSideEffect<ChunkDirtySEffect>(cse => DirtySet.Add(Chunk.GetFlatIndex(cse.ChX, cse.ChZ)));
+            SubscribeSideEffect<ChunkDirtySEffect>(cse => SetDirty(cse.ChX, cse.ChZ));
         }
 
         public void SetDirty(int chX, int chZ) {
-            if (_character == null) return;
-            var (pchX, pchZ) = LevelTools.GetChunkPosition(_character.Position);
-            if (Math.Abs(pchX - chX) <= MaxRenderDistance
-                && Math.Abs(pchX - chX) <= MaxRenderDistance
-               ) {
-                DirtySet.Add(Chunk.GetFlatIndex(chX, chZ));
-            }
+            if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
+            DirtySet.Add(Chunk.GetFlatIndex(chX, chZ));
         }
 
         public void Update() {

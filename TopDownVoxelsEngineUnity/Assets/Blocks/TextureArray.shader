@@ -7,6 +7,7 @@ Shader "Custom/TextureArray"
         _FrameTex ("Frame Albedo (RGB)", 2DArray) = "white" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
+        _Ramp ("Ramp", 2D) = "white" {}
     }
     SubShader
     {
@@ -18,13 +19,29 @@ Shader "Custom/TextureArray"
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard fullforwardshadows vertex:vert
+        #pragma surface surf Lambert fullforwardshadows vertex:vert
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
 
         UNITY_DECLARE_TEX2DARRAY(_MainTex);
         UNITY_DECLARE_TEX2DARRAY(_FrameTex);
+
+        half _Glossiness;
+        half _Metallic;
+        fixed4 _Color;
+        sampler2D _Ramp;
+
+        half4 LightingRamp(SurfaceOutput s, half3 lightDir, half atten)
+        {
+            half NdotL = dot(s.Normal, lightDir);
+            half diff = NdotL * 0.5 + 0.5;
+            half3 ramp = tex2D(_Ramp, float2(diff, 0)).rgb;
+            half4 c;
+            c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten;
+            c.a = s.Alpha;
+            return c;
+        }
 
         struct Input
         {
@@ -36,10 +53,6 @@ Shader "Custom/TextureArray"
             float3 worldPos;
             float3 worldNormals;
         };
-
-        half _Glossiness;
-        half _Metallic;
-        fixed4 _Color;
 
         fixed4 triplanarAlbedo(Input IN, float scaleFactor)
         {
@@ -64,7 +77,7 @@ Shader "Custom/TextureArray"
             return blendX * mainAlbedoX + blendY * mainAlbedoY + blendZ * mainAlbedoZ;
         }
 
-        void surf(Input IN, inout SurfaceOutputStandard o)
+        void surf(Input IN, inout SurfaceOutput o)
         {
             float scaleFactor = 1.0 / 2.5;
             fixed4 mainAlbedo = triplanarAlbedo(IN, scaleFactor);
@@ -80,15 +93,16 @@ Shader "Custom/TextureArray"
                 fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, frameNormalIndex));
                 // Use frame in priority, and mainAlbedo if frame alpha is smaller
                 mainAlbedo = lerp(mainAlbedo, frameAlbedo, frameAlbedo.a);
+                // mainAlbedo = half4(1,1,1,1);
                 normals = lerp(normals, frameNormals, frameAlbedo.a);
             }
-            o.Albedo = mainAlbedo * _Color;
+            o.Albedo = mainAlbedo;
             // Metallic and smoothness come from slider variables
-            o.Metallic = _Metallic;
-            o.Smoothness = _Glossiness;
-            o.Alpha = mainAlbedo.a;
-            const float3 normal = UnpackNormal(normals);
-            o.Normal = normal;
+            // o.Metallic = _Metallic;
+            // o.Smoothness = _Glossiness;
+            //o.Alpha = mainAlbedo.a;
+            o.Normal = normals - half4(0.5, 0.5, 0, 0);
+            // o.Normal = float3(0, 0, 1);
         }
 
         void vert(inout appdata_full v, out Input o)

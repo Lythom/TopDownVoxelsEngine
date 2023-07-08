@@ -79,7 +79,7 @@ namespace Shared.Net {
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
             chunk.Cells[cx, cy, cz].Block = Block;
-            sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(CharacterShortId, chX, chZ));
+            ChunkDirtySEffect.Trigger(sideEffectManager, chX, chZ, cx, cz);
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
