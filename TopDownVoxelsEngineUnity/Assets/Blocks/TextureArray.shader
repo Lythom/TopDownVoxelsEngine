@@ -4,9 +4,9 @@ Shader "Custom/TextureArray"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2DArray) = "white" {}
+        _MainNormals ("Normals", 2DArray) = "white" {}
         _FrameTex ("Frame Albedo (RGB)", 2DArray) = "white" {}
-        _Glossiness ("Smoothness", Range(0,1)) = 0.5
-        _Metallic ("Metallic", Range(0,1)) = 0.0
+        _FrameNormals ("Frame Normals", 2DArray) = "white" {}
         _Ramp ("Ramp", 2D) = "white" {}
     }
     SubShader
@@ -26,22 +26,24 @@ Shader "Custom/TextureArray"
 
         UNITY_DECLARE_TEX2DARRAY(_MainTex);
         UNITY_DECLARE_TEX2DARRAY(_FrameTex);
+        UNITY_DECLARE_TEX2DARRAY(_MainNormals);
+        UNITY_DECLARE_TEX2DARRAY(_FrameNormals);
 
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;
         sampler2D _Ramp;
 
-        half4 LightingRamp(SurfaceOutput s, half3 lightDir, half atten)
-        {
-            half NdotL = dot(s.Normal, lightDir);
-            half diff = NdotL * 0.5 + 0.5;
-            half3 ramp = tex2D(_Ramp, float2(diff, 0)).rgb;
-            half4 c;
-            c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten;
-            c.a = s.Alpha;
-            return c;
-        }
+        // half4 LightingRamp(SurfaceOutput s, half3 lightDir, half atten)
+        // {
+        //     half NdotL = dot(s.Normal, lightDir);
+        //     half diff = NdotL * 0.5 + 0.5;
+        //     half3 ramp = tex2D(_Ramp, float2(diff, 0)).rgb;
+        //     half4 c;
+        //     c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten;
+        //     c.a = s.Alpha;
+        //     return c;
+        // }
 
         struct Input
         {
@@ -54,55 +56,50 @@ Shader "Custom/TextureArray"
             float3 worldNormals;
         };
 
-        fixed4 triplanarAlbedo(Input IN, float scaleFactor)
+        float2 triplanarUV(Input IN)
         {
-            // Triplanar sampling
-            fixed4 mainAlbedoX = UNITY_SAMPLE_TEX2DARRAY(
-                _MainTex, float3(IN.worldPos.zy * scaleFactor, IN.mainTextureIndex));
-            fixed4 mainAlbedoY = UNITY_SAMPLE_TEX2DARRAY(
-                _MainTex, float3(IN.worldPos.xz * scaleFactor, IN.mainTextureIndex));
-            fixed4 mainAlbedoZ = UNITY_SAMPLE_TEX2DARRAY(
-                _MainTex, float3(IN.worldPos.xy * scaleFactor, IN.mainTextureIndex));
-
-            float blendX = abs(IN.worldNormals.x);
-            float blendY = abs(IN.worldNormals.y);
-            float blendZ = abs(IN.worldNormals.z);
-
-            // Normalize blend weights
-            float totalBlend = blendX + blendY + blendZ;
-            blendX /= totalBlend;
-            blendY /= totalBlend;
-            blendZ /= totalBlend;
-
-            return blendX * mainAlbedoX + blendY * mainAlbedoY + blendZ * mainAlbedoZ;
+            return abs(IN.worldNormals.x) * IN.worldPos.zy
+                + abs(IN.worldNormals.y) * IN.worldPos.xz
+                + abs(IN.worldNormals.z) * IN.worldPos.xy;
         }
 
         void surf(Input IN, inout SurfaceOutput o)
         {
-            float scaleFactor = 1.0 / 2.5;
-            fixed4 mainAlbedo = triplanarAlbedo(IN, scaleFactor);
+            float scaleFactor = 0.3;
+            float2 tuv = triplanarUV(IN) * scaleFactor;
+            fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv, IN.mainTextureIndex));
             // First texture of the FrameTexture is the autotile normal map.
-            fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, IN.tileIndex));
+            fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_MainNormals, float3(tuv, IN.mainTextureIndex));
+            half3 normalsUnpacked = UnpackNormal(normals);
             if (IN.frameTextureIndex >= 0)
             {
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
                 float frameAlbedoIndex = IN.frameTextureIndex * 55 + IN.tileIndex;
-                float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
                 fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, frameAlbedoIndex));
-                fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(IN.textCoords, frameNormalIndex));
                 // Use frame in priority, and mainAlbedo if frame alpha is smaller
                 mainAlbedo = lerp(mainAlbedo, frameAlbedo, frameAlbedo.a);
-                // mainAlbedo = half4(1,1,1,1);
-                normals = lerp(normals, frameNormals, frameAlbedo.a);
+            }
+            if (IN.frameNormalIndex >= 0)
+            {
+                // 55 frames per collection of autotile, skip to offset to the start of the designated collection
+                // then pick the right tile in that collection
+                float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
+                fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameNormals, float3(IN.textCoords, frameNormalIndex));
+                const half3 frameNormalsUnpacked = UnpackNormal(frameNormals);
+            
+                // Calcule la nouvelle normale
+                half3 newNormal;
+                newNormal.xy = normalsUnpacked.xy + frameNormalsUnpacked.xy;
+                newNormal.z = normalsUnpacked.z * frameNormalsUnpacked.z;
+                normalsUnpacked = newNormal;
             }
             o.Albedo = mainAlbedo;
-            // Metallic and smoothness come from slider variables
-            // o.Metallic = _Metallic;
-            // o.Smoothness = _Glossiness;
-            //o.Alpha = mainAlbedo.a;
-            o.Normal = normals - half4(0.5, 0.5, 0, 0);
+            // o.Alpha = mainAlbedo.a;
+            //o.Normal = (normals - half4(0.5, 0.5, 0, 0));
+            o.Normal = normalsUnpacked;
             // o.Normal = float3(0, 0, 1);
+            // o.Normal = UnpackNormal(normals);
         }
 
         void vert(inout appdata_full v, out Input o)

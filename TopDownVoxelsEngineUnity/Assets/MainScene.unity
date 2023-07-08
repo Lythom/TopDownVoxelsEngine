@@ -191,31 +191,31 @@ MonoBehaviour:
     FrameTextureIndex: -1
     FrameNormalIndex: 0
     MainTextureIndex: 1
-    MainNormalIndex: 0
+    MainNormalIndex: 1
     ItemPreview: {fileID: 21300000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
   - Id: 3
     FrameTextureIndex: -1
     FrameNormalIndex: 0
     MainTextureIndex: 2
-    MainNormalIndex: 0
+    MainNormalIndex: 2
     ItemPreview: {fileID: 21300000, guid: 517e489fd968a254a9da4b024cdca27f, type: 3}
   - Id: 4
     FrameTextureIndex: -1
     FrameNormalIndex: 0
     MainTextureIndex: 3
-    MainNormalIndex: 0
+    MainNormalIndex: 3
     ItemPreview: {fileID: 21300000, guid: 98bdd6592fb4b1444b3e0a75a047c082, type: 3}
   - Id: 5
     FrameTextureIndex: 1
     FrameNormalIndex: 0
     MainTextureIndex: 4
-    MainNormalIndex: 0
+    MainNormalIndex: 4
     ItemPreview: {fileID: 21300000, guid: 9ac4899ad9d1d964e8cdeffb6b253224, type: 3}
   - Id: 6
     FrameTextureIndex: 3
-    FrameNormalIndex: 2
+    FrameNormalIndex: 1
     MainTextureIndex: 7
-    MainNormalIndex: 0
+    MainNormalIndex: 7
     ItemPreview: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!4 &149498319
 Transform:
@@ -582,7 +582,7 @@ Light:
     m_CustomResolution: -1
     m_Strength: 1
     m_Bias: 0.05
-    m_NormalBias: 0.4
+    m_NormalBias: 0.05
     m_NearPlane: 0.2
     m_CullingMatrixOverride:
       e00: 1
