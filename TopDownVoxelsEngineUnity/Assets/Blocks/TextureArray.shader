@@ -59,9 +59,13 @@ Shader "Custom/TextureArray"
 
         float2 triplanarUV(Input IN)
         {
-            return abs(IN.worldNormals.x) * IN.worldPos.zy
-                + abs(IN.worldNormals.y) * IN.worldPos.xz
-                + abs(IN.worldNormals.z) * IN.worldPos.xy;
+            return
+                // "* float2(sign(IN.worldNormals.x), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
+                abs(IN.worldNormals.x) * IN.worldPos.zy * float2(sign(IN.worldNormals.x), 1)
+                // Can't get uvParallax to work if normal is absoluted for some weird reason
+                + IN.worldNormals.y * IN.worldPos.xz * float2(sign(IN.worldNormals.y), 1)
+                // "* float2(-sign(IN.worldNormals.z), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
+                + abs(IN.worldNormals.z) * IN.worldPos.xy * float2(-sign(IN.worldNormals.z), 1);
         }
 
         float2 ParallaxMapping(float2 texCoord, fixed3 viewDir, float textureIndex)
@@ -75,7 +79,7 @@ Shader "Custom/TextureArray"
             float rayHeight = 0;
             float currentHeight = 0;
             // What's the direction of the ray?
-            float3 rayDir = normalize(viewDir) * _ParallaxStrength;
+            float3 rayDir = viewDir * _ParallaxStrength;
             float3 rayStep = rayDir * stepSize;
 
             for (int i = 0; i < maxSteps; ++i)
@@ -136,7 +140,7 @@ Shader "Custom/TextureArray"
                 newNormal.z = normalsUnpacked.z * frameNormalsUnpacked.z;
                 normalsUnpacked = newNormal;
             }
-            fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv, mainTextureIndex));
+            fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv + uvOffset, mainTextureIndex));
 
             if (frameTextureIndex >= 0)
             {
@@ -155,18 +159,20 @@ Shader "Custom/TextureArray"
             // o.Normal = UnpackNormal(normals);
         }
 
+        float3 worldToTangentSpace(float3 vec, float3 worldNormal, float3 worldTangent, float3 worldBitangent)
+        {
+            return float3(
+                dot(vec, worldTangent),
+                dot(vec, worldNormal),
+                dot(vec, worldBitangent)
+            );
+        }
+
         void vert(inout appdata_full v, out Input o)
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
             float3 worldVertexPos = mul(unity_ObjectToWorld, v.vertex).xyz;
             float3 worldViewDir = worldVertexPos - _WorldSpaceCameraPos;
-
-            o.textCoords = v.texcoord.xy;
-            o.textureIndex.x = v.texcoord.z;
-            o.textureIndex.y = v.texcoord.w;
-            o.textureIndex.z = v.texcoord2.x;
-            o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;
-            o.worldNormals = mul((float3x3)UNITY_MATRIX_M, v.normal).xyz;
 
             //To convert from world space to tangent space we need the following
             //https://docs.unity3d.com/Manual/SL-VertexFragmentShaderExamples.html
@@ -174,12 +180,19 @@ Shader "Custom/TextureArray"
             float3 worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
             float3 worldBitangent = cross(worldNormal, worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
 
-            //Use dot products instead of building the matrix
-            o.tangentViewDir = float3(
-                dot(worldViewDir, worldTangent),
-                dot(worldViewDir, worldNormal),
-                dot(worldViewDir, worldBitangent)
-            );
+            float3 viewDir = worldToTangentSpace(normalize(worldViewDir), worldNormal, worldTangent, worldBitangent);
+
+            // from https://github.com/basementstudio/basement-laboratory/blob/main/src/experiments/43.depth-shader.js#L56C7-L57C53
+            float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
+            float facingCoeficient = -dot(viewDir, normal);
+            o.tangentViewDir = viewDir / facingCoeficient;
+
+            o.textCoords = v.texcoord.xy;
+            o.textureIndex.x = v.texcoord.z;
+            o.textureIndex.y = v.texcoord.w;
+            o.textureIndex.z = v.texcoord2.x;
+            o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;
+            o.worldNormals = worldNormal;
         }
         ENDCG
     }
