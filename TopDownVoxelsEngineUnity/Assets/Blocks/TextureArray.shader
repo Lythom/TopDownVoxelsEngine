@@ -118,7 +118,7 @@ Shader "Custom/TextureArray"
 
             float2 texCoord = IN.textCoords;
             float2 uvOffset = 0;
-            if (frameTextureIndex >= 0)
+            if (frameTextureIndex > -1)
             {
                 float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
                 uvOffset = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex);
@@ -142,7 +142,7 @@ Shader "Custom/TextureArray"
             }
             fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv + uvOffset, mainTextureIndex));
 
-            if (frameTextureIndex >= 0)
+            if (frameTextureIndex > 0)
             {
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
