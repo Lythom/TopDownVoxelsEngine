@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Shared {
     public static class LevelBuilder {
@@ -42,7 +43,7 @@ namespace Shared {
         }
 
         public static int GetChunkSeed(int chX, int chZ, string levelId) {
-            return 1337 + chX + 100000 * chZ + levelId.GetHashCode() * 13;
+            return 1337 + chX + 100000 * chZ + levelId.Select(a => (int)a).Sum() * 13;
         }
     }
 }

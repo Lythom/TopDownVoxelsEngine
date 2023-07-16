@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,10 +12,9 @@ namespace Shared.Net {
         private CancellationTokenSource? _cts;
         private TcpClient _client = null!;
         private const int BufferSize = 1_000_000; // ~1Mo
-
-
         public Action<INetworkMessage>? OnNetworkMessage { get; set; }
         public Action? OnConnexionLost { get; set; }
+        private readonly ConcurrentQueue<INetworkMessage> _outbox = new();
 
         public async UniTask Init(string host, int port) {
             _cts = new CancellationTokenSource();
@@ -37,47 +37,86 @@ namespace Shared.Net {
             Logr.Log("Connected !", Tags.Client);
 
             StartListening().Forget();
+            StartOutboxSendingAsync().Forget();
+        }
+
+        private async UniTask StartOutboxSendingAsync() {
+            while (_cts != null
+                   && !_cts.Token.IsCancellationRequested
+                   && _client.Connected) {
+                bool hasMessage = false;
+                hasMessage = _outbox.TryDequeue(out var m);
+                try {
+                    if (hasMessage) {
+                        await DoSend(m);
+                        await _client.GetStream().FlushAsync(_cts.Token);
+                    } else {
+                        await UniTask.Yield();
+                    }
+                } catch (Exception) {
+                    if (hasMessage) Logr.LogError($"A message {m.GetType().Name} was not sent to server.");
+                }
+            }
         }
 
         private async UniTask StartListening() {
             var stream = _client.GetStream();
+            byte[] lengthBuffer = new byte[4];
             byte[] buffer = new byte[BufferSize];
             int bytesRead;
-            int messageLength = 0;
+            int readBytesFromMessage = 0;
 
             // Read the message in chunks
             try {
                 while (_cts != null
                        && !_cts.Token.IsCancellationRequested
-                       && _client.Connected
-                       && (bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, _cts.Token)) > 0) {
-                    messageLength += bytesRead; // update message length
+                       && _client.Connected) {
+                    bytesRead = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length, _cts.Token);
+                    if (bytesRead != lengthBuffer.Length) throw new Exception("Failed to read message length");
+
+                    var messageLength = BitConverter.ToInt32(lengthBuffer, 0);
+
+                    readBytesFromMessage = 0;
+                    while (readBytesFromMessage < messageLength) {
+                        if (_cts.IsCancellationRequested) break;
+                        bytesRead = await stream.ReadAsync(buffer, readBytesFromMessage, messageLength - readBytesFromMessage, _cts.Token);
+                        readBytesFromMessage += bytesRead;
+                    }
+
                     if (_cts.IsCancellationRequested) break;
-                    if (stream.DataAvailable) continue; // while there is more data, keep reading in the buffer
+
                     var msg = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
                     OnNetworkMessage?.Invoke(msg);
-                    messageLength = 0; // reset message length for next message
                 }
             } catch (Exception e) {
                 Logr.LogException(e);
                 throw;
             } finally {
                 OnConnexionLost?.Invoke();
-                _client.GetStream().Close();
-                _client.Close();
+                if (_client.Connected) _client.GetStream().Close();
+                if (_client.Connected) _client.Close();
             }
         }
 
-        public async UniTask Send(INetworkMessage msg) {
+        public void Send(INetworkMessage msg) {
+            _outbox.Enqueue(msg);
+        }
+
+        private async UniTask DoSend(INetworkMessage msg) {
+            if (_cts == null || _cts.IsCancellationRequested) return;
+            var stream = _client.GetStream();
+            var token = _cts?.Token ?? CancellationToken.None;
+
+            int bufferLength;
             try {
-                if (_cts == null || _cts.IsCancellationRequested) return;
-                var stream = _client.GetStream();
+                if (!stream.CanWrite) return;
                 var buffer = MessagePackSerializer.Serialize(msg);
-                var token = _cts?.Token ?? CancellationToken.None;
-                await stream.WriteAsync(buffer, 0, buffer.Length, token);
+                bufferLength = buffer.Length;
+                var lengthBuffer = BitConverter.GetBytes(bufferLength);
+                await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token);
+                await stream.WriteAsync(buffer, 0, bufferLength, token);
+                if (msg is not CharacterMoveGameEvent) Logr.Log($"Sent to server ({bufferLength}): {msg}", Tags.Client);
                 if (_cts == null || _cts.IsCancellationRequested) return;
-                await stream.FlushAsync(token);
-                if (msg is not CharacterMoveGameEvent) Logr.Log("Sent to server: " + msg, Tags.Client);
             } catch (Exception e) {
                 Logr.LogException(e);
                 throw;
@@ -86,15 +125,7 @@ namespace Shared.Net {
 
         public void Close() {
             _cts?.Cancel(false);
-            try {
-                _client.GetStream().Close();
-            } catch (Exception _) {
-            }
-
-            try {
-                if (_client.Connected) _client.Close();
-            } catch (Exception _) {
-            }
+            if (_client.Connected) _client.Close();
         }
     }
 }

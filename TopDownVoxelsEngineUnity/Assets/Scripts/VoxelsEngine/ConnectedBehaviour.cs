@@ -302,7 +302,7 @@ namespace VoxelsEngine {
             }
 
             SocketClient.OnNetworkMessage += HandleAnswer;
-            await SocketClient.Send(msg);
+            SocketClient.Send(msg);
             await UniTask.WhenAny(
                 answerReceived.Task,
                 UniTask.Delay(timeout, DelayType.Realtime, cancellationToken: ResetToken).SuppressCancellationThrow()
@@ -318,7 +318,7 @@ namespace VoxelsEngine {
             }
 
             ClientEngine.HandleEvent(msg);
-            SocketClient.Send(msg).Forget();
+            SocketClient.Send(msg);
         }
 
         /// <summary>

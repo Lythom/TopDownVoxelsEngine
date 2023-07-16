@@ -263,7 +263,7 @@ namespace Server {
         }
 
         private void HandleMessage(ushort clientShortId, INetworkMessage netMessage) {
-            if (netMessage is PlaceBlocksGameEvent) Logr.Log("Handled and enqueued " + netMessage);
+            // if (netMessage is PlaceBlocksGameEvent) Logr.Log("Handled and enqueued " + netMessage);
             _inbox.Enqueue(new InputMessage {Id = clientShortId, Message = netMessage});
         }
 
@@ -276,7 +276,7 @@ namespace Server {
             }
 
             try {
-                if (netMessage is not CharacterMoveGameEvent) Logr.Log("Received message: " + netMessage);
+                // if (netMessage is not CharacterMoveGameEvent) Logr.Log("Received message: " + netMessage);
 
                 if (!IsReady) {
                     Send(clientShortId, new ErrorNetworkMessage($"Server not ready. Please wait and retry."));

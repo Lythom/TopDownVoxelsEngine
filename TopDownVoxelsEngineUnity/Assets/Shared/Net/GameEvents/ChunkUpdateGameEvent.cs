@@ -1,6 +1,7 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
+using Shared.SideEffects;
 
 namespace Shared.Net {
     [MessagePackObject]
@@ -26,6 +27,10 @@ namespace Shared.Net {
             ChunkPosition = chunkPosition;
         }
 
+        public override string ToString() {
+            return $"ChunkUpdateGameEvent({LevelId},{ChunkPosition})";
+        }
+
         public ChunkUpdateGameEvent(int id, string levelId, Chunk chunk, int chX, int chZ)
             : this(id, levelId, chunk, Chunk.GetFlatIndex(chX, chZ)) {
         }
@@ -35,6 +40,7 @@ namespace Shared.Net {
             var (chX, chZ) = Chunk.GetCoordsFromIndex(ChunkPosition);
             gameState.Levels[LevelId].Chunks[chX, chZ] = Chunk;
             sideEffectManager?.For<ChunkUpdateGameEvent>().Trigger(this);
+            sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(LevelId, chX, chZ));
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {

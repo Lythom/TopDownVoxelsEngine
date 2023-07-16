@@ -53,9 +53,8 @@ namespace Shared.Net {
         private async UniTask HandleClientAsync(TcpClient client) {
             if (_cts == null) throw new ApplicationException("Socket server not initialized");
             var stream = client.GetStream();
+            byte[] lengthBuffer = new byte[4];
             var buffer = new byte[BufferSize];
-            int bytesRead = 0;
-            int messageLength = 0;
 
             ushort shortId = _shortIdPool.Pop();
             _clients[shortId] = client;
@@ -67,25 +66,30 @@ namespace Shared.Net {
             try {
                 while (!_cts.Token.IsCancellationRequested && client.Connected) {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                    if ((bytesRead = await stream.ReadAsync(buffer, messageLength, BufferSize - messageLength, cts.Token)) > 0) {
-                        messageLength += bytesRead; // update message length
+                    var bytesRead = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length, _cts.Token);
+                    if (bytesRead == 0) break;
+                    if (bytesRead != lengthBuffer.Length) throw new Exception("Failed to read message length");
 
-                        if (_cts == null || _cts.Token.IsCancellationRequested || !client.Connected) break;
-                        if (!stream.DataAvailable) {
-                            // if no more data, process the message
-                            var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                            OnNetworkMessage?.Invoke(shortId, request);
-                            messageLength = 0; // reset message length for next message
-                        }
-                    } else {
-                        break;
+                    var messageLength = BitConverter.ToInt32(lengthBuffer, 0);
+
+                    var readBytesFromMessage = 0;
+                    while (readBytesFromMessage < messageLength) {
+                        if (_cts.IsCancellationRequested) break;
+                        bytesRead = await stream.ReadAsync(buffer, readBytesFromMessage, messageLength - readBytesFromMessage, _cts.Token);
+                        readBytesFromMessage += bytesRead;
                     }
+
+                    if (_cts.IsCancellationRequested) break;
+
+                    var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
+                    OnNetworkMessage?.Invoke(shortId, request);
                 }
             } catch (Exception e) {
                 if (e is not OperationCanceledException && e is not IOException) Logr.LogException(e);
             }
 
             Logr.Log("Client disconnected " + shortId, Tags.Server);
+            if (client.Connected) client.Close();
             OnClose?.Invoke(shortId);
             _clients.TryRemove(shortId, out _);
             _shortIdPool.Push(shortId);
@@ -94,13 +98,16 @@ namespace Shared.Net {
         public async UniTask Send(ushort target, INetworkMessage msg) {
             var client = GetClient(target);
             if (client != null && client.Connected) {
+                // if (msg is not CharacterMoveGameEvent) Logr.Log($"→ {target} Start sending… {msg}", Tags.Server);
                 var token = _cts?.Token ?? CancellationToken.None;
                 var buffer = MessagePackSerializer.Serialize(msg);
+                var lengthBuffer = BitConverter.GetBytes(buffer.Length);
 
                 var stream = client.GetStream();
+                await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token); // first write the message length
                 await stream.WriteAsync(buffer, 0, buffer.Length, token);
                 await stream.FlushAsync(token);
-                if (msg is not CharacterMoveGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
+                if (msg is not CharacterMoveGameEvent && msg is not PlaceBlocksGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
             } else {
                 Logr.Log($"!! Failed to send  {msg} to {target} because disconnected", Tags.Debug);
             }
@@ -113,11 +120,13 @@ namespace Shared.Net {
         public virtual async UniTask Broadcast(INetworkMessage msg) {
             if (msg is not CharacterMoveGameEvent) Logr.Log($"Broadcasted {msg}", Tags.Server);
             var buffer = MessagePackSerializer.Serialize(msg);
+            var lengthBuffer = BitConverter.GetBytes(buffer.Length);
             var token = _cts?.Token ?? CancellationToken.None;
 
             foreach (var (shortId, client) in _clients) {
                 if (client.Connected) {
                     var stream = client.GetStream();
+                    await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token); // first write the message length
                     await stream.WriteAsync(buffer, 0, buffer.Length, token);
                     await stream.FlushAsync(token);
                 }

@@ -30,8 +30,6 @@ namespace VoxelsEngine {
         }
 
         public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey) {
-            if (_mesh == null) _mesh = GetComponent<MeshFilter>().mesh;
-            if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
             var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -40,7 +38,7 @@ namespace VoxelsEngine {
             _uvsCount = 0;
             _uvs2Count = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
-                var cell = chunk.Cells![x, y, z];
+                var cell = chunk.Cells[x, y, z];
                 if (cell.Block != BlockId.Air) {
                     var blockDef = Configurator.Instance.BlocksRenderingLibrary[(int) cell.Block];
                     MakeCube(x, y, z, chunkKey, blockDef, chunk, level);

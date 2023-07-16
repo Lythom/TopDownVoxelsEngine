@@ -121,7 +121,7 @@ namespace VoxelsEngine {
                         c.Velocity,
                         c.Angle
                     )
-                ).Forget();
+                );
             }
         }
 
@@ -138,7 +138,7 @@ namespace VoxelsEngine {
                 await SocketClient.Init("192.168.1.157", port);
                 LocalState.Instance.Session.Value = SessionStatus.NeedAuthentication;
                 await Task.Delay(500);
-                await SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
+                SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
             } catch (Exception e) {
                 Logr.LogException(e);
                 HandleConnexionLost();
