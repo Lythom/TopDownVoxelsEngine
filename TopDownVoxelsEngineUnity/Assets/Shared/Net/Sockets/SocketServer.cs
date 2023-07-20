@@ -50,7 +50,7 @@ namespace Shared.Net {
             Logr.Log("Not listening anymore", Tags.Server);
         }
 
-        private async UniTask HandleClientAsync(TcpClient client) {
+        public async UniTask HandleClientAsync(TcpClient client) {
             if (_cts == null) throw new ApplicationException("Socket server not initialized");
             var stream = client.GetStream();
             byte[] lengthBuffer = new byte[4];
@@ -95,7 +95,7 @@ namespace Shared.Net {
             _shortIdPool.Push(shortId);
         }
 
-        public async UniTask Send(ushort target, INetworkMessage msg) {
+        public virtual async UniTask Send(ushort target, INetworkMessage msg) {
             var client = GetClient(target);
             if (client != null && client.Connected) {
                 // if (msg is not CharacterMoveGameEvent) Logr.Log($"→ {target} Start sending… {msg}", Tags.Server);

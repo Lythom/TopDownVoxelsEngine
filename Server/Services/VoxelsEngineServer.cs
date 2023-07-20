@@ -313,13 +313,6 @@ namespace Server {
                             characterJoinGameEvent.AssertApplicationConditions(in _state);
                             characterJoinGameEvent.Apply(State, null);
 
-                            // send the new player infos about the already existing players
-                            foreach (var characterShortId in State.Characters.Keys) {
-                                if (characterShortId != clientShortId) {
-                                    Send(clientShortId, new CharacterJoinGameEvent(0, characterShortId, State.Characters[characterShortId], Vector3.zero));
-                                }
-                            }
-
                             // Send all players info about the new players.
                             // It also confirms last to the new players it's entry
                             SmartBroadcast(characterJoinGameEvent);

@@ -30,7 +30,7 @@ namespace VoxelsEngine {
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
         private void Awake() {
-            // StartLocalPlay().Forget();
+            StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
             // StartRemotePlay().Forget();
         }

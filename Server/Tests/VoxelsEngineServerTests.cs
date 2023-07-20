@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Reflection;
@@ -27,7 +28,9 @@ namespace Server.Tests {
         private VoxelsEngineServer _server;
 
         private string TestUsername = "TestUsername";
+        private string TestUsername2 = "TestUsername2";
         private ushort _testShortId = 1337;
+        private ushort _testShortId2 = 1338;
 
         [SetUp]
         public void SetUp() {
@@ -69,16 +72,30 @@ namespace Server.Tests {
                 new DbCharacter {
                     Name = TestUsername,
                     SerializedData = MessagePackSerializer.Serialize(new Character(TestUsername, Vector3.zero, "Lobby")),
+                    Level = levels[0],
+                }
+            };
+            var characters2 = new List<DbCharacter> {
+                new DbCharacter {
+                    Name = TestUsername2,
+                    SerializedData = MessagePackSerializer.Serialize(new Character(TestUsername2, Vector3.zero, "Lobby")),
+                    Level = levels[0],
                 }
             };
             var identityUser = new IdentityUser(TestUsername);
+            var identityUser2 = new IdentityUser(TestUsername2);
             var players = new List<DbPlayer> {
                 new DbPlayer {
                     Characters = characters,
                     IdentityUser = identityUser
+                },
+                new DbPlayer {
+                    Characters = characters2,
+                    IdentityUser = identityUser2
                 }
             };
-            _userStoreMock.Setup(s => s.FindByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(identityUser);
+            _userStoreMock.Setup(s => s.FindByNameAsync(TestUsername, It.IsAny<CancellationToken>())).ReturnsAsync(identityUser);
+            _userStoreMock.Setup(s => s.FindByNameAsync(TestUsername2, It.IsAny<CancellationToken>())).ReturnsAsync(identityUser2);
 
             _contextMock.Setup(g => g.Games).ReturnsDbSet(games);
             _contextMock.Setup(g => g.Levels).ReturnsDbSet(levels);
@@ -100,7 +117,6 @@ namespace Server.Tests {
         [Test]
         public async Task StartAsync_WhenCalled_SetsIsReadyToTrue() {
             // Arrange
-            var cancellationToken = CancellationToken.None;
 
             // Act
             await _server.StartAsync(9004);
@@ -112,7 +128,6 @@ namespace Server.Tests {
         [Test]
         public async Task StopAsync_WhenCalled_SetsIsReadyToFalse() {
             // Arrange
-            var cancellationToken = CancellationToken.None;
 
             // Act
             await _server.StopAsync();
@@ -124,38 +139,35 @@ namespace Server.Tests {
         [Test]
         public async Task HandleMessageAsync_WhenPassedHelloNetworkMessage_AddsCharacterToConnectedCharacters() {
             // Arrange
-            var cancellationToken = CancellationToken.None;
             await _server.StartAsync(9005);
 
-            var webSocket = new Mock<WebSocket>();
             _server.NotifyConnection(_testShortId);
 
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
 
             // Act
             await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
-
             // Assert
-
             // Check the player character is registered as connected
             Assert.IsTrue(_server.State.Characters.ContainsKey(_testShortId));
             Assert.AreEqual(TestUsername, _server.State.Characters[_testShortId].Name);
             // Check we correctly broadcasted CharacterJoinGameEvent after joining
-            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterJoinGameEvent>(e => e.Character.Name == TestUsername)), Times.Once);
+            _socketServerMock.Verify(q => q.Send(It.IsAny<ushort>(), It.Is<CharacterJoinGameEvent>(e => e.Character.Name == TestUsername)), Times.Once);
         }
 
 
         [Test]
         public async Task NotifyDisconnection_WhenCalled_RemovesCharacterFromStateAndBroadcastsCharacterLeaveGameEvent() {
             // Arrange
-            var webSocket = new Mock<WebSocket>();
-
-            var cancellationToken = CancellationToken.None;
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            var helloMessage2 = new HelloNetworkMessage {Username = TestUsername2};
             await _server.StartAsync(9000);
 
             _server.NotifyConnection(_testShortId);
+            _server.NotifyConnection(_testShortId2);
+
             await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId2, Message = helloMessage2});
 
             // Act
             _server.NotifyDisconnection(_testShortId);
@@ -163,18 +175,15 @@ namespace Server.Tests {
             // Assert
             // Check the player character is unregistered
             Assert.IsFalse(_server.State.Characters.Any(c => c.Value.Name == helloMessage.Username));
-            // Check we correctly broadcasted CharacterLeaveGameEvent after leaving
-            _socketServerMock.Verify(q => q.Broadcast(It.Is<CharacterLeaveGameEvent>(e => e.CharacterShortId == _testShortId)), Times.Once);
+            // Check we correctly broadcasted CharacterLeaveGameEvent after leaving to remaining user
+            _socketServerMock.Verify(q => q.Send(It.IsAny<ushort>(), It.Is<CharacterLeaveGameEvent>(e => e.CharacterShortId == _testShortId)), Times.Once);
         }
 
         [Test]
         public async Task ScheduleChunkUpload_WhenCalled_AddsCorrectChunksToUserUploadQueue() {
             // Arrange
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
-            var userSessionData = userSessionDataField?.GetValue(_server) as Dictionary<ushort, UserSessionData>;
-
-            var cancellationToken = CancellationToken.None;
-            var webSocket = new Mock<WebSocket>();
+            var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
             await _server.StartAsync(9001);
 
@@ -219,10 +228,7 @@ namespace Server.Tests {
         public async Task ScheduleChunkUpload_WhenCalled_AddsCorrectChunksToUserUploadQueueSpawn() {
             // Arrange
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
-            var userSessionData = userSessionDataField?.GetValue(_server) as Dictionary<ushort, UserSessionData>;
-
-            var cancellationToken = CancellationToken.None;
-            var webSocket = new Mock<WebSocket>();
+            var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
             await _server.StartAsync(9002);
 
@@ -267,10 +273,7 @@ namespace Server.Tests {
         public async Task ScheduleChunkUpload_WhenCalled_AddsCorrectChunksToUserUploadQueueMaxBounds() {
             // Arrange
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
-            var userSessionData = userSessionDataField?.GetValue(_server) as Dictionary<ushort, UserSessionData>;
-
-            var cancellationToken = CancellationToken.None;
-            var webSocket = new Mock<WebSocket>();
+            var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
             await _server.StartAsync(9003);
 
