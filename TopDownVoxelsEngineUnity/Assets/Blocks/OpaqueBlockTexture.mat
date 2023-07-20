@@ -35,6 +35,10 @@ Material:
         m_Texture: {fileID: 18700000, guid: 7533607c1f494b243b4f0ccb7cfeb480, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _MainHeights:
+        m_Texture: {fileID: 18700000, guid: 47131f419b934d24f9d9621b718e8ea5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainNormals:
         m_Texture: {fileID: 18700000, guid: 2bec151d98c8fdb4dbb44167519eb4dc, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -60,7 +64,7 @@ Material:
     - _Glossiness: 0.362
     - _Metallic: 0
     - _Parallax: 0.077
-    - _ParallaxStrength: 0.12
+    - _ParallaxStrength: 0.08
     - _TextureIndex: 0
     - _Tiling: 1
     m_Colors:

@@ -5,6 +5,7 @@ Shader "Custom/TextureArray"
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2DArray) = "white" {}
         _MainNormals ("Normals", 2DArray) = "white" {}
+        _MainHeights ("Heights", 2DArray) = "white" {}
         _FrameTex ("Frame Albedo (RGB)", 2DArray) = "white" {}
         _FrameNormals ("Frame Normals", 2DArray) = "white" {}
         _FrameHeights ("Frame Heights", 2DArray) = "white" {}
@@ -28,6 +29,7 @@ Shader "Custom/TextureArray"
         UNITY_DECLARE_TEX2DARRAY(_MainTex);
         UNITY_DECLARE_TEX2DARRAY(_FrameTex);
         UNITY_DECLARE_TEX2DARRAY(_MainNormals);
+        UNITY_DECLARE_TEX2DARRAY(_MainHeights);
         UNITY_DECLARE_TEX2DARRAY(_FrameNormals);
         UNITY_DECLARE_TEX2DARRAY(_FrameHeights);
 
@@ -59,50 +61,69 @@ Shader "Custom/TextureArray"
 
         float2 triplanarUV(Input IN)
         {
-            return
+            float2 uv =
                 // "* float2(sign(IN.worldNormals.x), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
                 abs(IN.worldNormals.x) * IN.worldPos.zy * float2(sign(IN.worldNormals.x), 1)
                 // Can't get uvParallax to work if normal is absoluted for some weird reason
                 + IN.worldNormals.y * IN.worldPos.xz * float2(sign(IN.worldNormals.y), 1)
                 // "* float2(-sign(IN.worldNormals.z), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
                 + abs(IN.worldNormals.z) * IN.worldPos.xy * float2(-sign(IN.worldNormals.z), 1);
+            return float2(uv.x, uv.y);
         }
 
-        float2 ParallaxMapping(float2 texCoord, fixed3 viewDir, float textureIndex)
+        // x = height
+        // y = isFrameVisible
+        float2 GetHeight(float3 rayPosFrame, float frameTextureIndex, float3 rayPosMain, float mainTextureIndex)
+        {
+            float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_FrameHeights, float3(rayPosFrame.xz, frameTextureIndex)).r;
+            float baseHeight = UNITY_SAMPLE_TEX2DARRAY(_MainHeights, float3(rayPosMain.xz, mainTextureIndex)).r;
+            float h = max(frameHeight, baseHeight);
+            float isFrameVisible = frameHeight >= h;
+            return float2((h - 1) * _ParallaxStrength, isFrameVisible);
+            // return float2((baseHeight - 1) * _ParallaxStrength, isFrameVisible);
+        }
+
+        // x,y = uv
+        // z = isFrameVisible
+        float3 ParallaxMapping(float2 frameTexCoord, fixed3 viewDir, float frameTextureIndex, float2 mainTexCoord,
+            float mainTextureIndex)
         {
             float maxSteps = 32;
 
             float stepSize = 1.0 / maxSteps;
             // Where is the ray starting? y is up and we always start at the surface
-            float3 rayPos = float3(texCoord.x, 0, texCoord.y);
+            float3 rayPosFrame = float3(frameTexCoord.x, 0, frameTexCoord.y);
+            float3 rayPosMain = float3(mainTexCoord.x, 0, mainTexCoord.y);
             // surface is 0 and we go inside to the negatives
             float rayHeight = 0;
             float currentHeight = 0;
             // What's the direction of the ray?
             float3 rayDir = viewDir * _ParallaxStrength;
             float3 rayStep = rayDir * stepSize;
-
+            float isFrameVisible = 0;
             for (int i = 0; i < maxSteps; ++i)
             {
                 // red is [0;1], height is [-_ParallaxStrength;0]
                 const float prevHeight = currentHeight;
-                currentHeight = (UNITY_SAMPLE_TEX2DARRAY(_FrameHeights, float3(rayPos.xz, textureIndex)).r - 1) *
-                    _ParallaxStrength;
+                float2 result = GetHeight(rayPosFrame, frameTextureIndex, rayPosMain, mainTextureIndex);
+                currentHeight = result.x;
+                isFrameVisible = result.y;
                 // have we cross the texture height yet?
                 if (rayHeight <= currentHeight)
                 {
                     const float delta1 = currentHeight - rayHeight;
                     const float delta2 = (rayHeight + stepSize * _ParallaxStrength) - prevHeight;
                     const float ratio = delta1 / (delta1 + delta2);
-                    rayPos = (ratio) * (rayPos - rayStep) + (1.0 - ratio) * rayPos;
+                    rayPosFrame = (ratio) * (rayPosFrame - rayStep) + (1.0 - ratio) * rayPosFrame;
                     break;
                 }
-                rayPos = rayPos + rayStep;
+                rayPosFrame = rayPosFrame + rayStep;
+                rayPosMain = rayPosMain + rayStep;
                 rayHeight -= stepSize * _ParallaxStrength;
             }
 
 
-            return rayPos.xz - texCoord;
+            return float3(rayPosFrame.xz - frameTexCoord, isFrameVisible);
         }
 
         void surf(Input IN, inout SurfaceOutput o)
@@ -112,18 +133,22 @@ Shader "Custom/TextureArray"
             float tileIndex = IN.textureIndex.z;
             float scaleFactor = 0.3;
             float2 tuv = triplanarUV(IN) * scaleFactor;
-            // First texture of the FrameTexture is the autotile normal map.
-            fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_MainNormals, float3(tuv, mainTextureIndex));
-            half3 normalsUnpacked = UnpackNormal(normals);
+
+            half3 frameNormalsUnpacked = 0;
 
             float2 texCoord = IN.textCoords;
             float2 uvOffset = 0;
+            float isFrameVisible = 0;
             if (frameTextureIndex > -1)
             {
                 float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
-                uvOffset = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex);
+                float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex, tuv,
+                    mainTextureIndex);
+                uvOffset = mapping.xy;
+                isFrameVisible = mapping.z;
                 // First, calculate new UV using parralax occlusion mapping
 
+                //o.Albedo = isFrameVisible;
                 // o.Albedo = float3(texCoord, 0);
                 // o.Albedo = normalize(IN.tangentViewDir) + 0.5;
                 // return;
@@ -131,16 +156,15 @@ Shader "Custom/TextureArray"
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
                 fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameNormals,
-                                                              float3(texCoord + uvOffset, frameNormalIndex));
-                const half3 frameNormalsUnpacked = UnpackNormal(frameNormals);
-
-                // Calcule la nouvelle normale
-                half3 newNormal;
-                newNormal.xy = normalsUnpacked.xy + frameNormalsUnpacked.xy;
-                newNormal.z = normalsUnpacked.z * frameNormalsUnpacked.z;
-                normalsUnpacked = newNormal;
+                    float3(texCoord + uvOffset, frameNormalIndex));
+                frameNormalsUnpacked = UnpackNormal(frameNormals);
             }
             fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv + uvOffset, mainTextureIndex));
+            fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_MainNormals, float3(tuv + uvOffset, mainTextureIndex));
+
+            // Calcule la nouvelle normale
+            half3 normalsUnpacked = UnpackNormal(normals) * (1 - isFrameVisible) + frameNormalsUnpacked *
+                isFrameVisible;
 
             if (frameTextureIndex > 0)
             {
@@ -149,7 +173,7 @@ Shader "Custom/TextureArray"
                 float frameAlbedoIndex = frameTextureIndex * 55 + tileIndex;
                 fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(texCoord + uvOffset, frameAlbedoIndex));
                 // Use frame in priority, and mainAlbedo if frame alpha is smaller
-                mainAlbedo = lerp(mainAlbedo, frameAlbedo, frameAlbedo.a);
+                mainAlbedo = lerp(mainAlbedo, frameAlbedo, isFrameVisible);
             }
             o.Albedo = mainAlbedo;
             // o.Alpha = mainAlbedo.a;
@@ -170,7 +194,7 @@ Shader "Custom/TextureArray"
 
         void vert(inout appdata_full v, out Input o)
         {
-            UNITY_INITIALIZE_OUTPUT(Input, o);
+                UNITY_INITIALIZE_OUTPUT(Input, o);
             float3 worldVertexPos = mul(unity_ObjectToWorld, v.vertex).xyz;
             float3 worldViewDir = worldVertexPos - _WorldSpaceCameraPos;
 
