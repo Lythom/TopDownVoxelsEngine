@@ -108,7 +108,7 @@ namespace VoxelsEngine {
 
                 await AddPlayerCharacter(spawnPosition, 0);
                 LocalState.Instance.CurrentPlayerId.Value = 0;
-                LocalState.Instance.CurrentPlayerName= "Local";
+                LocalState.Instance.CurrentPlayerName = "Local";
 
                 _engine.StartLocal();
                 ConnectionModal.Instance.SmartActive(false);

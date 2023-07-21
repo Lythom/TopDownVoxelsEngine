@@ -142,16 +142,11 @@ Shader "Custom/TextureArray"
             if (frameTextureIndex > -1)
             {
                 float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
+                // First, calculate new UV using parralax occlusion mapping
                 float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex, tuv,
                     mainTextureIndex);
                 uvOffset = mapping.xy;
                 isFrameVisible = mapping.z;
-                // First, calculate new UV using parralax occlusion mapping
-
-                //o.Albedo = isFrameVisible;
-                // o.Albedo = float3(texCoord, 0);
-                // o.Albedo = normalize(IN.tangentViewDir) + 0.5;
-                // return;
 
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
