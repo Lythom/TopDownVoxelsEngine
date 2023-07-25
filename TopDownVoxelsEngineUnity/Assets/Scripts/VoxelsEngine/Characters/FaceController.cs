@@ -1,7 +1,6 @@
 ﻿using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace LoneStoneStudio.CityInvaders {
     [ExecuteInEditMode]
     public class FaceController : MonoBehaviour {
         public enum FACES {
@@ -38,4 +37,3 @@ namespace LoneStoneStudio.CityInvaders {
             _displayedFace = CurrentFace;
         }
     }
-}

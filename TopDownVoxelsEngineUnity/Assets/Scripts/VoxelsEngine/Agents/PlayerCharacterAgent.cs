@@ -43,7 +43,7 @@ namespace VoxelsEngine {
         private Vector3 _nextPosition;
         private string? _levelId;
 
-        private void Awake() {
+        private void Start() {
             _controls = new Controls();
             _spawnedTime = Time.time;
             if (Camera.main == null) throw new ApplicationException("No camera found");
@@ -214,13 +214,14 @@ namespace VoxelsEngine {
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
 
             if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
+
             // apply a lerp transition for smooth animation
+            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
+
             // _character.Position is updated in the TickEvent
             if (_character.Position.Y < -20) {
                 _character.Position.Y = 20f;
             }
-
-            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
         }
 
         /// <summary>

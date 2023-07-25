@@ -65,7 +65,7 @@ Shader "POMTest"
 		//Animate the uv coordinates so the landscape is moving
 		float2 animateUV(float2 texturePos)
 		{
-			texturePos.x += _Time[0] * 5;
+			texturePos.x += _Time[0] * 0;
 
 			return texturePos;
 		}
