@@ -599,7 +599,7 @@ MonoBehaviour:
   FaceController: {fileID: 1385919625}
   Animator: {fileID: 1385919626}
   CameraTransform: {fileID: 1614983123}
-  VisualSnappingStrength: 0.3
+  VisualSnappingStrength: 2
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
@@ -612,8 +612,9 @@ MonoBehaviour:
   ZoomSensitivity: 5
   CameraZoomTiltStrength: 0
   Speed: 7
-  JumpForce: 0.25
-  JumpChargeIntensity: 0.11
+  JumpForce: 11
+  JumpChargeIntensity: 0.3
+  Gravity: 0.4
 --- !u!1 &859455542
 GameObject:
   m_ObjectHideFlags: 0
