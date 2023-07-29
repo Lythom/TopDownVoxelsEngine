@@ -88,7 +88,7 @@ Shader "Custom/TextureArray"
         float3 ParallaxMapping(float2 frameTexCoord, fixed3 viewDir, float frameTextureIndex, float2 mainTexCoord,
             float mainTextureIndex)
         {
-            float maxSteps = 32;
+            float maxSteps = 48;
 
             float stepSize = 1.0 / maxSteps;
             // Where is the ray starting? y is up and we always start at the surface
@@ -204,7 +204,8 @@ Shader "Custom/TextureArray"
             // from https://github.com/basementstudio/basement-laboratory/blob/main/src/experiments/43.depth-shader.js#L56C7-L57C53
             float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
             float facingCoeficient = -dot(viewDir, normal);
-            o.tangentViewDir = viewDir / facingCoeficient * 0.7;
+            // TODO: improve that +0.2 that is to limit the infinity effect when reaching near parallel angle (near 0)
+            o.tangentViewDir = viewDir / (facingCoeficient + 0.2);
 
             o.textCoords = v.texcoord.xy;
             o.textureIndex.x = v.texcoord.z;

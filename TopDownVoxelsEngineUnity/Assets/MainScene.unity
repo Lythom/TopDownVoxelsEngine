@@ -403,7 +403,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 339, y: 84}
+  m_AnchoredPosition: {x: 339, y: 0}
   m_SizeDelta: {x: 397.1501, y: 48.3218}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &461455573
@@ -1591,6 +1591,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 072d190453eb4099a80f8d01ee10b639, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ForceLocalPlay: 1
   Tracker: {fileID: 963194229}
   PlayerCharacterPrefab: {fileID: 4710948378290216650, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
@@ -1736,7 +1737,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 77.70001, y: 84}
+  m_AnchoredPosition: {x: 78, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1381778200
