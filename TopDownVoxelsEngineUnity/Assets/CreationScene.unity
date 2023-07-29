@@ -596,10 +596,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccb5bb13038148f428796de16cf5ad23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  CharacterId: 0
   FaceController: {fileID: 1385919625}
   Animator: {fileID: 1385919626}
   CameraTransform: {fileID: 1614983123}
   VisualSnappingStrength: 2
+  WallCollisionProximity: 0.6
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
@@ -611,6 +613,7 @@ MonoBehaviour:
   MaxRatioZAngle: 0.5
   ZoomSensitivity: 5
   CameraZoomTiltStrength: 0
+  PlacementRadius: 6
   Speed: 7
   JumpForce: 11
   JumpChargeIntensity: 0.3
@@ -1573,6 +1576,10 @@ PrefabInstance:
       value: 2.134667
       objectReference: {fileID: 0}
     - target: {fileID: 6266624361702913249, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
+      propertyPath: m_UpdateWhenOffscreen
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6266624361702913249, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 98b523865b738574a974da335c2d9ab1, type: 2}
@@ -2276,25 +2283,6 @@ Transform:
   m_Father: {fileID: 1385919622}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: -90}
---- !u!114 &3328081744199504067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7236683831304852536}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c27b8755004d118b527e7495292a24, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  CharacterId: 0
-  Speed: 6
-  JumpForce: 0.25
-  JumpChargeIntensity: 0.11
-  PlacementRadius: 5
-  VisualSnappingStrength: 0.28
-  CameraTransform: {fileID: 1614983123}
 --- !u!136 &4467551216483048289
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2384,7 +2372,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7810835484706169977}
-  - component: {fileID: 3328081744199504067}
   - component: {fileID: 4467551216483048289}
   - component: {fileID: 764686459}
   m_Layer: 0
