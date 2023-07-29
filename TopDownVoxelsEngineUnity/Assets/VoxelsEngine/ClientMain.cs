@@ -69,7 +69,7 @@ namespace VoxelsEngine {
                 // spawn in the middle
                 var spawnPosition = new Vector3(
                     LevelMap.LevelChunkSize * Chunk.Size / 2f + 4,
-                    4.5f,
+                    8.5f,
                     LevelMap.LevelChunkSize * Chunk.Size / 2f + 4
                 );
                 var (spawnPositionChX, spawnPositionChZ) = LevelTools.GetChunkPosition(spawnPosition);
@@ -120,9 +120,7 @@ namespace VoxelsEngine {
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {
             _agent = Instantiate(PlayerCharacterPrefab, _engine!.transform, true);
-            _agent.CharacterId = shortId;
-            _agent.CameraTransform = Tracker.transform;
-            _agent.transform.position = spawnPosition;
+            _agent.Init(Tracker.GetComponent<Camera>(), spawnPosition);
             Tracker.Target = _agent.gameObject;
 
             // give a few tracker update ticks to place the camera correctly ahaead

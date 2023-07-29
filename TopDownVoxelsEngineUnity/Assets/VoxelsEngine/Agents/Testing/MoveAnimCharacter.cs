@@ -145,7 +145,7 @@ namespace VoxelsEngine {
         private void UpdateAnimation(Vector3 movement, Vector3 position) {
             Animator.SetFloat(Velocity, movement.x * movement.x + movement.z * movement.z);
             Animator.SetFloat(Altitude, position.y);
-            FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.FACES.Angry : FaceController.FACES.Smile_Blink;
+            FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
         private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay) {

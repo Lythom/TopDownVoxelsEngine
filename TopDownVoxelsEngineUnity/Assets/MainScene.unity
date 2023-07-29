@@ -1187,7 +1187,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8408be2c17534813aca51c0a5445b3af, type: 3}
   m_Name: 
@@ -1592,7 +1592,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Tracker: {fileID: 963194229}
-  PlayerCharacterPrefab: {fileID: 3328081743888343227, guid: 86b73b6086c8c3c49ac0f97527315f0b, type: 3}
+  PlayerCharacterPrefab: {fileID: 4710948378290216650, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
   ServerPort: 9006
 --- !u!1 &1307387711

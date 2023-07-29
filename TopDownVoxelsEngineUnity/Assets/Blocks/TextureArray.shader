@@ -78,7 +78,7 @@ Shader "Custom/TextureArray"
             float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_FrameHeights, float3(rayPosFrame.xz, frameTextureIndex)).r;
             float baseHeight = UNITY_SAMPLE_TEX2DARRAY(_MainHeights, float3(rayPosMain.xz, mainTextureIndex)).r;
             float h = max(frameHeight, baseHeight);
-            float isFrameVisible = frameHeight >= h;
+            float isFrameVisible = frameHeight >= baseHeight;
             return float2((h - 1) * _ParallaxStrength, isFrameVisible);
             // return float2((baseHeight - 1) * _ParallaxStrength, isFrameVisible);
         }
@@ -204,7 +204,7 @@ Shader "Custom/TextureArray"
             // from https://github.com/basementstudio/basement-laboratory/blob/main/src/experiments/43.depth-shader.js#L56C7-L57C53
             float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
             float facingCoeficient = -dot(viewDir, normal);
-            o.tangentViewDir = viewDir / facingCoeficient;
+            o.tangentViewDir = viewDir / facingCoeficient * 0.7;
 
             o.textCoords = v.texcoord.xy;
             o.textureIndex.x = v.texcoord.z;

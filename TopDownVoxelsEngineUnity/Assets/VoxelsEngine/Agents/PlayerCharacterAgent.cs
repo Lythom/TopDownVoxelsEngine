@@ -1,63 +1,113 @@
 ﻿using System;
+using LoneStoneStudio.Tools;
 using Popcron;
 using Shared;
 using Shared.Net;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using VoxelsEngine.Tools;
 using VoxelsEngine.VoxelsEngine.Tools;
+using Ray = UnityEngine.Ray;
 using Vector2 = UnityEngine.Vector2;
-using Vector3 = Shared.Vector3;
+using Vector3 = UnityEngine.Vector3;
 using Vector3Int = Shared.Vector3Int;
 
 namespace VoxelsEngine {
     public class PlayerCharacterAgent : ConnectedBehaviour {
         public ushort CharacterId = 0;
-        public float Speed = 5.0f;
 
-        public float JumpForce = 0.2f;
-        public float JumpChargeIntensity = 1f;
+        [ShowInInspector]
+        public float DeltaTime => Time.deltaTime;
 
-        public int PlacementRadius = 4;
+        [Required]
+        public FaceController FaceController = null!;
 
-        // visual is slightly delayed because FPS rate might be a bit faster than update rate
-        // this is to bring smoother visual
-        public float VisualSnappingStrength = 0.3f;
-
+        [Required]
+        public Animator Animator = null!;
 
         [RequiredInScene]
         public Transform CameraTransform = null!;
 
-        private Controls _controls = null!;
-        private readonly Cooldown _placeCooldown = new(0.02f);
-        private readonly Cooldown _jumpCooldown = new(0.5f);
-        private float _jumpChargeStart;
-        private float _spawnedTime;
-        private Camera _cam = null!;
+        [Title("Game feel configuration")]
+        public float VisualSnappingStrength = 0.3f;
 
-        private Plane _wkPlane;
-        private Plane? _draggingPlane = null;
-        private bool _isPlacing = false;
+        public float WallCollisionProximity = 0.6f;
+
+        [Title("Zoom Configuration")]
+        public float CameraHeightOffset = 2.5f;
+
+        public float RotationSensivityX = 1.4f;
+        public float RotationSensivityZ = 0.5f;
+
+        // Define a new variable for the zoom level
+        public float ZoomLevel = 10f;
+        public float MinZoomLevel = 2f;
+        public float MaxZoomLevel = 10f;
+        public float MinZAngle = -4f;
+        public float MaxBaseZAngle = 3f;
+        public float MaxRatioZAngle = 1f;
+        public float ZoomSensitivity = 10f;
+        public float CameraZoomTiltStrength = 0.5f;
+        public Vector3 CameraLookOffset = new(0, 2.5f, 0);
+
+        [Title("Controls Configuration")]
+        public int PlacementRadius = 6;
+
+        public float Speed = 5.0f;
+
+        private Controls _controls = null!;
+        private Camera _cam = null!;
+        private float _jumpChargeStart;
+
+        public float JumpForce = 0.2f;
+        public float JumpChargeIntensity = 1f;
+        public float Gravity = 0.4f;
+
+        private readonly Cooldown _jumpCooldown = new(0.05f);
+        private Vector3 _position;
+        private Quaternion _rotation;
+        private Vector3 _originalOffset;
+        private float _currentAngleX;
+        private float _currentAngleZ;
+        private bool _isRotating;
+        private static readonly int Velocity = Animator.StringToHash("Velocity");
+        private static readonly int Altitude = Animator.StringToHash("Altitude");
+        private Vector3 _vel;
+
         private Character? _character;
 
         private Vector3 _nextPosition;
         private string? _levelId;
+        private bool _isPlacing;
+        private Plane? _draggingPlane;
+        private bool _initialized;
 
-        private void Start() {
+        void Awake() {
             _controls = new Controls();
-            _spawnedTime = Time.time;
-            if (Camera.main == null) throw new ApplicationException("No camera found");
-            _cam = Camera.main;
-            var position = transform.position;
-            transform.position = new Vector3(position.x, 10, position.z);
         }
 
         protected override void OnEnable() {
             base.OnEnable();
             _controls.Enable();
+            _vel = Vector3.zero;
+        }
+
+        public void Init(Camera cam, Vector3 position) {
+            transform.position = position;
+            CameraTransform = cam.transform;
+            _cam = cam;
+            _position = position;
+            _originalOffset = CameraTransform.position - position;
+            _initialized = true;
         }
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
+            Subscribe(state.Selectors.LocalPlayerStateSelector, p => {
+                _character = p;
+                if (p == null) return;
+                _position = p.Position;
+                _rotation = Quaternion.Euler(0, Character.UncompressAngle(p.Angle), 0);
+            });
             Subscribe(state.Selectors.LocalPlayerLevelIdSelector, lId => _levelId = lId);
         }
 
@@ -65,84 +115,65 @@ namespace VoxelsEngine {
             _controls.Disable();
         }
 
-        /// <summary>
-        /// In update, read the controls.
-        /// Currently the client is in charge of calculating the speed, so there is no limitation to speeding or teleporting cheats.
-        /// </summary>
-        private void Update() {
+        void Update() {
+            if (!_initialized) return;
             if (_character == null) return;
             if (_levelId == null || !ClientEngine.State.Levels.ContainsKey(_levelId)) return;
             if (!ClientEngine.State.Levels.TryGetValue(_levelId, out var level)) return;
 
-            Vector3 pos = _character.Position;
+            var selectedTool = _character.SelectedTool.Value;
+            var selectedBlock = _character.SelectedBlock.Value;
 
-            // Get the input on the x and z axis
-            Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();
+            UpdateTools(selectedTool, selectedBlock);
+            var groundPosition = LevelTools.WorldToCell(_position + Vector3.down * 0.001f);
+            var groundCell = level.TryGetExistingCell(groundPosition);
+            var isInAir = groundCell.IsAir();
+            var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
+            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay);
+            UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
+            UpdateCamera();
+            Vector3 movement;
+            (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f);
+            UpdateAnimation(movement, isInAir);
+            transform.position = Vector3.Lerp(transform.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
 
-            // Create a new vector of the direction we want to move in. 
-            // We assume Y movement (upwards) is 0 as we are moving only on X and Z axis
-            Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
-            UnityEngine.Vector3 movement = CameraTransform.rotation * move;
-            movement.y = 0;
-            movement = movement.normalized * (Speed * Time.fixedDeltaTime);
+            // Wild override of state for client side prediction
+            // Child, don't do that at home…
+            _character.Velocity = _vel;
+            _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
 
-            // If we have some input
-            if (move != Vector3.zero) {
-                // Create a quaternion (rotation) based on looking down the vector from the player to the camera.
-                Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
-
-                // Smoothly interpolate between current rotation and target rotation
-                transform.rotation = targetRotation; //Quaternion.Slerp(transform.rotation, targetRotation, 5.0f * Time.deltaTime);
-            }
-
-            // Apply the movement to the player's rigidbody using the camera's rotation
-            Vector3 velocity = _character.Velocity;
-            velocity.X = movement.x;
-            velocity.Z = movement.z;
-
-            // check collisions
-            if (Mathf.Abs(movement.x) > 0) {
-                var forwardXPosFeet = (pos + new Vector3(Mathf.Sign(movement.x) * 0.6f, -0.8f, 0)).WorldToCell();
-                var forwardXPosHead = (pos + new Vector3(Mathf.Sign(movement.x) * 0.6f, 0.8f, 0)).WorldToCell();
-                var cellFeet = level.TryGetExistingCell(forwardXPosFeet);
-                var cellHead = level.TryGetExistingCell(forwardXPosHead);
-                if (!cellFeet.IsAir() || !cellHead.IsAir()) {
-                    velocity.X = 0;
-                }
-            }
-
-            if (Mathf.Abs(movement.z) > 0) {
-                var forwardZPosFeet = (pos + new Vector3(0, -0.8f, Mathf.Sign(movement.z) * 0.6f)).WorldToCell();
-                var forwardZPosHead = (pos + new Vector3(0, 0.8f, Mathf.Sign(movement.z) * 0.6f)).WorldToCell();
-                var cellFeet = level.TryGetExistingCell(forwardZPosFeet);
-                var cellHead = level.TryGetExistingCell(forwardZPosHead);
-                if (!cellFeet.IsAir() || !cellHead.IsAir()) {
-                    velocity.Z = 0;
-                }
-            }
-
-            var groundPosition = (pos + Vector3.down).WorldToCell();
             BCubeDrawer.Cube(
                 groundPosition,
                 Quaternion.identity,
                 Vector3.one,
                 Color.gray
             );
-            var groundCell = level.TryGetExistingCell(groundPosition);
+        }
 
+        private void UpdateAnimation(Vector3 movement, bool isInAir) {
+            Animator.SetFloat(Velocity, movement.x * movement.x + movement.z * movement.z);
+            Animator.SetFloat(Altitude, isInAir ? 1 : -0.01f);
+            FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
+        }
+
+        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay) {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
-            var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             if (_isPlacing && _draggingPlane.HasValue) {
                 (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
             } else {
                 Plane? plane;
-                (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, pos, PlacementRadius);
+                (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
                 if (plane.HasValue) _draggingPlane = plane.Value;
             }
 
+            return (collidingBlockPos, facingCursorPos);
+        }
+
+        private void UpdateAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, ToolId selectedTool, BlockId selectedBlock) {
             if (facingCursorPos != null && collidingBlockPos != null) {
-                var target = _character.SelectedTool.Value switch {
+                var target = selectedTool switch {
                     ToolId.PlaceBlock => facingCursorPos.Value,
                     ToolId.PlaceFurniture => facingCursorPos.Value,
                     _ => collidingBlockPos.Value
@@ -154,17 +185,17 @@ namespace VoxelsEngine {
                 );
 
                 if (_controls.Gameplay.Place.IsPressed()) {
-                    var blockToSet = _character.SelectedTool.Value switch {
-                        ToolId.PlaceBlock => _character.SelectedBlock.Value,
-                        ToolId.ExchangeBlock => _character.SelectedBlock.Value,
+                    var blockToSet = selectedTool switch {
+                        ToolId.PlaceBlock => selectedBlock,
+                        ToolId.ExchangeBlock => selectedBlock,
                         _ => BlockId.Air
                     };
-                    switch (_character.SelectedTool.Value) {
+                    switch (selectedTool) {
                         case ToolId.PlaceBlock:
                         case ToolId.ExchangeBlock:
                         case ToolId.RemoveBlock:
                             _isPlacing = true;
-                            var succeeded = _placeCooldown.TryPerform() && level.CanSet(target, blockToSet);
+                            var succeeded = level.CanSet(target, blockToSet);
                             if (succeeded) {
                                 var (x, y, z) = target;
                                 SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
@@ -178,57 +209,120 @@ namespace VoxelsEngine {
                     _isPlacing = false;
                 }
             }
+        }
 
-            if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !groundCell.IsAir()) {
-                _jumpChargeStart = Time.time;
-                velocity.Y = JumpForce;
-            } else if (_controls.Gameplay.Jump.IsPressed()) {
-                var jumpCharge = Time.time - _jumpChargeStart;
-                velocity.Y += JumpChargeIntensity * Time.fixedDeltaTime * (1 - Mathf.Clamp01(jumpCharge * jumpCharge));
-            }
-
+        private void UpdateTools(ToolId selectedTool, BlockId selectedBlock) {
             Vector2 scrollDelta = _controls.Gameplay.SelectTool.ReadValue<Vector2>();
             if (scrollDelta.y > 0) {
-                ToolId nextToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value + 1, Enum.GetNames(typeof(ToolId)).Length);
+                ToolId nextToolId = (ToolId) M.Mod((int) selectedTool + 1, Enum.GetNames(typeof(ToolId)).Length);
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, nextToolId));
             } else if (scrollDelta.y < 0) {
-                ToolId prevToolId = (ToolId) M.Mod((int) _character.SelectedTool.Value - 1, Enum.GetNames(typeof(ToolId)).Length);
+                ToolId prevToolId = (ToolId) M.Mod((int) selectedTool - 1, Enum.GetNames(typeof(ToolId)).Length);
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolId));
             }
 
             if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
-                BlockId nextBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value + 1, Enum.GetNames(typeof(BlockId)).Length);
+                BlockId nextBlockId = (BlockId) M.Mod((int) selectedBlock + 1, Enum.GetNames(typeof(BlockId)).Length);
                 if (nextBlockId == BlockId.Air) nextBlockId++;
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, nextBlockId));
             } else if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
                 var length = Enum.GetNames(typeof(BlockId)).Length;
-                BlockId prevBlockId = (BlockId) M.Mod((int) _character.SelectedBlock.Value - 1, length);
+                BlockId prevBlockId = (BlockId) M.Mod((int) selectedBlock - 1, length);
                 if (prevBlockId == BlockId.Air) prevBlockId = (BlockId) (length - 1);
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, prevBlockId));
-            }
-
-
-            // Wild override of local state for client side prediction
-            _character.Velocity = velocity;
-            _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
-
-            if (velocity.X != 0 || velocity.Z != 0) transform.rotation = Quaternion.LookRotation(new UnityEngine.Vector3(velocity.X, 0, velocity.Z), UnityEngine.Vector3.up);
-
-            // apply a lerp transition for smooth animation
-            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
-
-            // _character.Position is updated in the TickEvent
-            if (_character.Position.Y < -20) {
-                _character.Position.Y = 20f;
             }
         }
 
         /// <summary>
-        /// In fixed update, update the display
+        /// 
         /// </summary>
-        private void FixedUpdate() {
-            // optimistic update
-            if (_character == null) return;
+        /// <param name="level"></param>
+        /// <param name="vel"></param>
+        /// <param name="isInAir"></param>
+        /// <returns>Velocity and Horizontal direction in which the character moves.</returns>
+        private (Vector3, Vector3) UpdateMove(LevelMap level, Vector3 vel, bool isInAir, float groundY) {
+            Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();
+            Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
+            Vector3 moveDirection = (CameraTransform.rotation * move).WithY(0).normalized;
+
+            // If we have some input
+            if (moveDirection != Vector3.zero) {
+                // Create a quaternion (rotation) based on looking down the vector from the player to the camera.
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+
+                // Smoothly interpolate between current rotation and target rotation
+                _rotation = targetRotation; //Quaternion.Slerp(transform.rotation, targetRotation, 5.0f * Time.deltaTime);
+            }
+
+            // Update Velocity
+            vel.x = moveDirection.x * Speed;
+            vel.z = moveDirection.z * Speed;
+            if (isInAir) {
+                vel.y -= Gravity * Time.deltaTime;
+            } else {
+                vel.y = 0;
+                _position.y = groundY;
+            }
+
+            if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !isInAir) {
+                _jumpChargeStart = Time.time;
+                vel.y = JumpForce;
+            } else if (_controls.Gameplay.Jump.IsPressed()) {
+                var jumpCharge = (Time.time - _jumpChargeStart) * 2;
+                vel.y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge));
+            }
+
+            if (Mathf.Abs(vel.x) > 0) {
+                var forwardXPosFeet = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 0.5f, 0);
+                var forwardXPosStomach = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 1.5f, 0);
+                var forwardXPosHead = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 2.5f, 0);
+                var cellFeet = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosFeet));
+                var cellStomach = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosStomach));
+                var cellHead = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosHead));
+                if (!cellFeet.IsAir() || !cellStomach.IsAir() || !cellHead.IsAir()) {
+                    vel.x = 0;
+                }
+            }
+
+            if (Mathf.Abs(vel.z) > 0) {
+                var forwardZPosFeet = _position + new Vector3(0, 0.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
+                var forwardZPosStomach = _position + new Vector3(0, 1.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
+                var forwardZPosHead = _position + new Vector3(0, 2.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
+                var cellFeet = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosFeet));
+                var cellStomach = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosStomach));
+                var cellHead = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosHead));
+                if (!cellFeet.IsAir() || !cellStomach.IsAir() || !cellHead.IsAir()) {
+                    vel.z = 0;
+                }
+            }
+
+
+            _position += vel * Time.deltaTime;
+
+            if (_position.y < -20) {
+                _position.y = 20f;
+            }
+
+            return (vel, moveDirection);
+        }
+
+        private void UpdateCamera() {
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            ZoomLevel -= scroll * ZoomSensitivity;
+            // You might want to limit the zoom level to some minimum and maximum values
+            ZoomLevel = Mathf.Clamp(ZoomLevel, MinZoomLevel, MaxZoomLevel);
+            if (Input.GetMouseButton(1)) {
+                float mouseDeltaX = Input.GetAxis("Mouse X");
+                float mouseDeltaY = Input.GetAxis("Mouse Y");
+                _currentAngleX += mouseDeltaX * RotationSensivityX;
+                _currentAngleZ = Mathf.Clamp(_currentAngleZ - (mouseDeltaY + scroll * 2) * RotationSensivityZ, -MinZAngle, MaxBaseZAngle + ZoomLevel * MaxRatioZAngle);
+            }
+
+            // Here we adjust _originalOffset.z based on ZoomLevel
+            _originalOffset = Quaternion.Euler(0, _currentAngleX, 0) * new Vector3(0, CameraHeightOffset + _currentAngleZ * 2, -ZoomLevel - _currentAngleZ * CameraZoomTiltStrength).normalized * ZoomLevel;
+
+            CameraTransform.position = transform.position + _originalOffset;
+            CameraTransform.LookAt(transform.position + CameraLookOffset);
         }
     }
 }

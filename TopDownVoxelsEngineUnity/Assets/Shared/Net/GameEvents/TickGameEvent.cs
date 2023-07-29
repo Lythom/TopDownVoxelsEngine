@@ -19,9 +19,9 @@ namespace Shared.Net {
         protected internal override void DoApply(GameState state, SideEffectManager? sideEffectManager) {
             if (!state.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             // Generate missing chunks
-            foreach (var (key, c) in state.Characters) {
-                MoveCharacter(c, state);
-            }
+            // foreach (var (key, c) in state.Characters) {
+            //     MoveCharacter(c, state);
+            // }
 
             //state.LevelGenerator.EnqueueChunksAround(c.Level.Value, chx, chz, 3, state.Levels);
             //state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
