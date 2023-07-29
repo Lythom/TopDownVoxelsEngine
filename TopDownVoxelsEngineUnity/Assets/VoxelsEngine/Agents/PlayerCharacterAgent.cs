@@ -92,7 +92,8 @@ namespace VoxelsEngine {
             _vel = Vector3.zero;
         }
 
-        public void Init(Camera cam, Vector3 position) {
+        public void Init(ushort shortId, Camera cam, Vector3 position) {
+            CharacterId = shortId;
             transform.position = position;
             CameraTransform = cam.transform;
             _cam = cam;
@@ -125,9 +126,15 @@ namespace VoxelsEngine {
             var selectedBlock = _character.SelectedBlock.Value;
 
             UpdateTools(selectedTool, selectedBlock);
-            var groundPosition = LevelTools.WorldToCell(_position + Vector3.down * 0.001f);
+            var groundPosition = new Shared.Vector3(_position.x + 0.38f, _position.y - 0.001f, _position.z + 0.38f).WorldToCell();
             var groundCell = level.TryGetExistingCell(groundPosition);
-            var isInAir = groundCell.IsAir();
+            var groundPosition2 = new Shared.Vector3(_position.x - 0.38f, _position.y - 0.001f, _position.z + 0.38f).WorldToCell();
+            var groundCell2 = level.TryGetExistingCell(groundPosition2);
+            var groundPosition3 = new Shared.Vector3(_position.x + 0.38f, _position.y - 0.001f, _position.z - 0.38f).WorldToCell();
+            var groundCell3 = level.TryGetExistingCell(groundPosition3);
+            var groundPosition4 = new Shared.Vector3(_position.x - 0.38f, _position.y - 0.001f, _position.z - 0.38f).WorldToCell();
+            var groundCell4 = level.TryGetExistingCell(groundPosition4);
+            var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay);
             UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
@@ -142,13 +149,12 @@ namespace VoxelsEngine {
             // Child, don't do that at home…
             _character.Velocity = _vel;
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
+            _character.Position = _position;
 
-            BCubeDrawer.Cube(
-                groundPosition,
-                Quaternion.identity,
-                Vector3.one,
-                Color.gray
-            );
+            BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
+            BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
+            BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
+            BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
         }
 
         private void UpdateAnimation(Vector3 movement, bool isInAir) {

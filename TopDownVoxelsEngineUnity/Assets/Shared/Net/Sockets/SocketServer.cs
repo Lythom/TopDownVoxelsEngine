@@ -107,7 +107,7 @@ namespace Shared.Net {
                 await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token); // first write the message length
                 await stream.WriteAsync(buffer, 0, buffer.Length, token);
                 await stream.FlushAsync(token);
-                if (msg is not CharacterMoveGameEvent && msg is not PlaceBlocksGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
+                // if (msg is not CharacterMoveGameEvent && msg is not PlaceBlocksGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
             } else {
                 Logr.Log($"!! Failed to send  {msg} to {target} because disconnected", Tags.Debug);
             }
@@ -118,7 +118,7 @@ namespace Shared.Net {
         }
 
         public virtual async UniTask Broadcast(INetworkMessage msg) {
-            if (msg is not CharacterMoveGameEvent) Logr.Log($"Broadcasted {msg}", Tags.Server);
+            // if (msg is not CharacterMoveGameEvent) Logr.Log($"Broadcasted {msg}", Tags.Server);
             var buffer = MessagePackSerializer.Serialize(msg);
             var lengthBuffer = BitConverter.GetBytes(buffer.Length);
             var token = _cts?.Token ?? CancellationToken.None;

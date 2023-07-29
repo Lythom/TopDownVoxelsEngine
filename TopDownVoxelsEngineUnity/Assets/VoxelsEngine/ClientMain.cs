@@ -14,6 +14,8 @@ using Vector3 = Shared.Vector3;
 namespace VoxelsEngine {
     // Drive workflows and game logique at high level
     public class ClientMain : MonoBehaviour {
+        public bool ForceLocalPlay = false;
+
         [Required, SceneObjectsOnly]
         public CameraTracker Tracker = null!;
 
@@ -30,7 +32,7 @@ namespace VoxelsEngine {
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
         private void Awake() {
-            StartLocalPlay().Forget();
+            if (ForceLocalPlay) StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
             // StartRemotePlay().Forget();
         }
@@ -120,7 +122,7 @@ namespace VoxelsEngine {
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {
             _agent = Instantiate(PlayerCharacterPrefab, _engine!.transform, true);
-            _agent.Init(Tracker.GetComponent<Camera>(), spawnPosition);
+            _agent.Init(shortId, Tracker.GetComponent<Camera>(), spawnPosition);
             Tracker.Target = _agent.gameObject;
 
             // give a few tracker update ticks to place the camera correctly ahaead

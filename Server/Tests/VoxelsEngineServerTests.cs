@@ -157,6 +157,33 @@ namespace Server.Tests {
 
 
         [Test]
+        public async Task NotifyConnection_CheckJoinBroadcast() {
+            // Arrange
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            var helloMessage2 = new HelloNetworkMessage {Username = TestUsername2};
+            await _server.StartAsync(9000);
+
+            _server.NotifyConnection(_testShortId);
+            _server.NotifyConnection(_testShortId2);
+
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId2, Message = helloMessage2});
+
+            // Assert
+            // Check the player character is registered on server
+            Assert.IsTrue(_server.State.Characters.Any(c => c.Value.Name == TestUsername2));
+
+            // Check we correctly broadcasted CharacterJoinGameEvent
+            _socketServerMock.Verify(q => q.Send(_testShortId, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId2)), Times.Once);
+            _socketServerMock.Verify(q => q.Send(_testShortId2, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId2)), Times.Once);
+            
+            // check we send to the new user the current user list
+            _socketServerMock.Verify(q => q.Send(_testShortId2, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId)), Times.Once);
+        }
+
+        [Test]
         public async Task NotifyDisconnection_WhenCalled_RemovesCharacterFromStateAndBroadcastsCharacterLeaveGameEvent() {
             // Arrange
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};

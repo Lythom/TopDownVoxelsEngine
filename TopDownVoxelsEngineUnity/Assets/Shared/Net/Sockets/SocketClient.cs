@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,7 +100,20 @@ namespace Shared.Net {
             }
         }
 
+        Queue<INetworkMessage> _workQueue = new();
+
         public void Send(INetworkMessage msg) {
+            // filter previous CharacterMoveGameEvent (now obsolete)
+            if (msg is CharacterMoveGameEvent) {
+                while (_outbox.TryDequeue(out var m)) {
+                    if (m is not CharacterMoveGameEvent) _workQueue.Enqueue(m);
+                }
+
+                while (_workQueue.TryDequeue(out var m)) {
+                    _outbox.Enqueue(m);
+                }
+            }
+
             _outbox.Enqueue(msg);
         }
 

@@ -182,11 +182,11 @@ namespace Server {
         }
 
         private void BroadcastBut(ushort ignoredShortId, INetworkMessage m) {
-            if (m is not CharacterMoveGameEvent) Logr.Log($"BroadcastBut({ignoredShortId}, {m.GetType().Name})", Tags.Debug);
+            // if (m is not CharacterMoveGameEvent) Logr.Log($"BroadcastBut({ignoredShortId}, {m.GetType().Name})", Tags.Debug);
 
             foreach (var (key, value) in _userSessionData) {
                 if (key != ignoredShortId && _userSessionData.TryGetValue(key, out var recipient) && recipient.IsLogged) {
-                    if (m is not CharacterMoveGameEvent) Logr.Log($"↓ Enqueued for {key}", Tags.Debug);
+                    // if (m is not CharacterMoveGameEvent) Logr.Log($"↓ Enqueued for {key}", Tags.Debug);
                     _outbox.Enqueue(new OutputMessage(key, m));
                 }
             }
@@ -312,6 +312,14 @@ namespace Server {
                             var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
                             characterJoinGameEvent.AssertApplicationConditions(in _state);
                             characterJoinGameEvent.Apply(State, null);
+
+                            // send the new player infos about the already existing players
+                            foreach (var characterShortId in State.Characters.Keys) {
+                                if (characterShortId != clientShortId) {
+                                    // except for himself
+                                    Send(clientShortId, new CharacterJoinGameEvent(0, characterShortId, State.Characters[characterShortId], Vector3.zero));
+                                }
+                            }
 
                             // Send all players info about the new players.
                             // It also confirms last to the new players it's entry

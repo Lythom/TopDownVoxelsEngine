@@ -9,7 +9,8 @@ namespace VoxelsEngine {
 
         public Reactive<ushort> CharacterId = new(0);
         private Character? _character;
-        private Vector3 _nextPosition;
+        private Vector3 _lastPosition;
+        private Vector3 _calculatedPosition;
         public float VisualSnappingStrength = 0.28f;
 
         private void Awake() {
@@ -44,7 +45,15 @@ namespace VoxelsEngine {
             if (levelId == null || !ClientEngine.State.Levels.ContainsKey(levelId)) return;
             if (!ClientEngine.State.Levels.TryGetValue(levelId, out var level)) return;
 
-            transform.position = UnityEngine.Vector3.Lerp(transform.position, _character.Position, VisualSnappingStrength * 50 * Time.deltaTime);
+            // update or calculate display position
+            if (_lastPosition != _character.Position) {
+                _calculatedPosition = _character.Position;
+            } else {
+                _calculatedPosition += _character.Velocity * Time.deltaTime;
+            }
+
+            // interpolate rendering
+            transform.position = UnityEngine.Vector3.Lerp(transform.position, _calculatedPosition, VisualSnappingStrength * 50 * Time.deltaTime);
             UnityEngine.Vector3 currentRotation = transform.eulerAngles;
             currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
             transform.eulerAngles = currentRotation;
