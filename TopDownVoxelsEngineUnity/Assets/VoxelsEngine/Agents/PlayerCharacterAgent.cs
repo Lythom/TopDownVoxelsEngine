@@ -135,12 +135,13 @@ namespace VoxelsEngine {
             var groundPosition4 = new Shared.Vector3(_position.x - 0.38f, _position.y - 0.001f, _position.z - 0.38f).WorldToCell();
             var groundCell4 = level.TryGetExistingCell(groundPosition4);
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
+            var isInGrass = groundCell.IsGrass() && groundCell2.IsGrass() && groundCell3.IsGrass() && groundCell4.IsGrass();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay);
             UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
             UpdateCamera();
             Vector3 movement;
-            (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f);
+            (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f - (isInGrass ? 0.05f: 0));
             UpdateAnimation(movement, isInAir);
             transform.position = Vector3.Lerp(transform.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
@@ -265,7 +266,7 @@ namespace VoxelsEngine {
             vel.z = moveDirection.z * Speed;
             if (isInAir) {
                 vel.y -= Gravity * Time.deltaTime;
-            } else {
+            } else if (!isInAir && vel.y < 0) {
                 vel.y = 0;
                 _position.y = groundY;
             }

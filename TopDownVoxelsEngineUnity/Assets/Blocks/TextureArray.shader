@@ -39,17 +39,6 @@ Shader "Custom/TextureArray"
         sampler2D _Ramp;
         float _ParallaxStrength;
 
-        // half4 LightingRamp(SurfaceOutput s, half3 lightDir, half atten)
-        // {
-        //     half NdotL = dot(s.Normal, lightDir);
-        //     half diff = NdotL * 0.5 + 0.5;
-        //     half3 ramp = tex2D(_Ramp, float2(diff, 0)).rgb;
-        //     half4 c;
-        //     c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten;
-        //     c.a = s.Alpha;
-        //     return c;
-        // }
-
         struct Input
         {
             float2 textCoords;
@@ -57,6 +46,7 @@ Shader "Custom/TextureArray"
             float3 worldPos;
             float3 worldNormals;
             float3 tangentViewDir;
+            float3 vertexOffset;
         };
 
         float2 triplanarUV(Input IN)
@@ -129,31 +119,24 @@ Shader "Custom/TextureArray"
         void surf(Input IN, inout SurfaceOutput o)
         {
             float mainTextureIndex = IN.textureIndex.x;
-            float frameTextureIndex = IN.textureIndex.y;
+            float frameTextureIndex = max(0, IN.textureIndex.y);
             float tileIndex = IN.textureIndex.z;
             float scaleFactor = 0.3;
             float2 tuv = triplanarUV(IN) * scaleFactor;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        float2 texCoord = IN.textCoords;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
+            // First, calculate new UV using parralax occlusion mapping
+            float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex, tuv,
+                mainTextureIndex);
+            float2 uvOffset = mapping.xy;
+            float isFrameVisible = saturate(1 - frameTextureIndex) + mapping.z;
 
-            half3 frameNormalsUnpacked = 0;
-
-            float2 texCoord = IN.textCoords;
-            float2 uvOffset = 0;
-            float isFrameVisible = 0;
-            if (frameTextureIndex > -1)
-            {
-                float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
-                // First, calculate new UV using parralax occlusion mapping
-                float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex, tuv,
-                    mainTextureIndex);
-                uvOffset = mapping.xy;
-                isFrameVisible = mapping.z;
-
-                // 55 frames per collection of autotile, skip to offset to the start of the designated collection
-                // then pick the right tile in that collection
-                fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameNormals,
-                    float3(texCoord + uvOffset, frameNormalIndex));
-                frameNormalsUnpacked = UnpackNormal(frameNormals);
-            }
+            // 55 frames per collection of autotile, skip to offset to the start of the designated collection
+            // then pick the right tile in that collection
+            fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameNormals,
+                float3(texCoord + uvOffset, frameNormalIndex));
+            half3 frameNormalsUnpacked = UnpackNormal(frameNormals);
+            
             fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv + uvOffset, mainTextureIndex));
             fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_MainNormals, float3(tuv + uvOffset, mainTextureIndex));
 
@@ -205,7 +188,8 @@ Shader "Custom/TextureArray"
             float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
             float facingCoeficient = -dot(viewDir, normal);
             // TODO: improve that +0.2 that is to limit the infinity effect when reaching near parallel angle (near 0)
-            o.tangentViewDir = viewDir / (facingCoeficient + 0.2);
+            o.tangentViewDir = viewDir / (facingCoeficient + lerp(0.3, 0, saturate(facingCoeficient)));
+            // o.tangentViewDir = viewDir;
 
             o.textCoords = v.texcoord.xy;
             o.textureIndex.x = v.texcoord.z;
