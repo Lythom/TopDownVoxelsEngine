@@ -176,47 +176,57 @@ MonoBehaviour:
     RequiredEquipment: 0
   BlocksRenderingLibrary:
   - Id: 0
+    Sides: []
     FrameTextureIndex: -1
     FrameNormalIndex: -1
     MainTextureIndex: -1
     MainNormalIndex: -1
     ItemPreview: {fileID: 0}
   - Id: 1
+    Sides:
+    - Directions: 63
+      MainAlbedoTexture: dirt
+      MainNormalsTexture: dirt_normals
+      MainHeightsTexture: level254_heights
+      FrameAlbedoTexture: soft_edges_normals
+      FrameNormalsTexture: soft_edges_normals
+      FrameHeightsTexture: 
+      ItemPreview: {fileID: 0}
     FrameTextureIndex: 0
     FrameNormalIndex: 0
     MainTextureIndex: 0
     MainNormalIndex: 0
     ItemPreview: {fileID: 21300000, guid: b20b9bff53fd4e049b1fdd7771c62f7f, type: 3}
   - Id: 2
+    Sides:
+    - Directions: 63
+      MainAlbedoTexture: grass
+      MainNormalsTexture: dirt_normals
+      MainHeightsTexture: grass_heights
+      FrameAlbedoTexture: 
+      FrameNormalsTexture: 
+      FrameHeightsTexture: 
+      ItemPreview: {fileID: 0}
     FrameTextureIndex: 0
     FrameNormalIndex: 0
     MainTextureIndex: 1
     MainNormalIndex: 1
     ItemPreview: {fileID: 21300000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
-  - Id: 3
-    FrameTextureIndex: 0
-    FrameNormalIndex: 0
-    MainTextureIndex: 2
-    MainNormalIndex: 2
-    ItemPreview: {fileID: 21300000, guid: 517e489fd968a254a9da4b024cdca27f, type: 3}
-  - Id: 4
-    FrameTextureIndex: 0
-    FrameNormalIndex: 0
-    MainTextureIndex: 3
-    MainNormalIndex: 3
-    ItemPreview: {fileID: 21300000, guid: 98bdd6592fb4b1444b3e0a75a047c082, type: 3}
   - Id: 5
+    Sides:
+    - Directions: 63
+      MainAlbedoTexture: handcrafted_planks
+      MainNormalsTexture: handcrafted_planks_normals
+      MainHeightsTexture: handcrafted_planks_heights
+      FrameAlbedoTexture: 
+      FrameNormalsTexture: 
+      FrameHeightsTexture: 
+      ItemPreview: {fileID: 0}
     FrameTextureIndex: 3
     FrameNormalIndex: 3
     MainTextureIndex: 4
     MainNormalIndex: 4
     ItemPreview: {fileID: 21300000, guid: 9ac4899ad9d1d964e8cdeffb6b253224, type: 3}
-  - Id: 6
-    FrameTextureIndex: 2
-    FrameNormalIndex: 2
-    MainTextureIndex: 7
-    MainNormalIndex: 7
-    ItemPreview: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0

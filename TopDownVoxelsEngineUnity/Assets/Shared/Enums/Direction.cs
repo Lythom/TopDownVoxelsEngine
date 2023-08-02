@@ -1,13 +1,28 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Shared {
-    public enum Direction {
+    [Serializable]
+    public enum Direction : byte {
         North,
         South,
         West,
         East,
         Up,
         Down
+    }
+
+    [Serializable]
+    [Flags]
+    public enum DirectionFlags : byte {
+        None = 0b00000000,
+        All = 0b00111111,
+        North = 1 << 0,
+        South = 1 << 1,
+        West = 1 << 2,
+        East = 1 << 3,
+        Up = 1 << 4,
+        Down = 1 << 5,
     }
 
     public static class DirectionTools {
