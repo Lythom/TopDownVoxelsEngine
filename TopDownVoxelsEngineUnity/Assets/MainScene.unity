@@ -185,13 +185,12 @@ MonoBehaviour:
   - Id: 1
     Sides:
     - Directions: 63
-      MainAlbedoTexture: dirt
-      MainNormalsTexture: dirt_normals
-      MainHeightsTexture: level254_heights
-      FrameAlbedoTexture: soft_edges_normals
-      FrameNormalsTexture: soft_edges_normals
-      FrameHeightsTexture: 
-      ItemPreview: {fileID: 0}
+      MainAlbedoTexture: Textures/Main/Ground_albedo_384
+      MainNormalsTexture: Textures/Main/Ground_normals
+      MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      FrameAlbedoTexture: Textures/Frame/Ground_albedo
+      FrameNormalsTexture: Textures/Frame/Ground_normals
+      FrameHeightsTexture: Textures/Frame/Ground_heights
     FrameTextureIndex: 0
     FrameNormalIndex: 0
     MainTextureIndex: 0
@@ -199,29 +198,34 @@ MonoBehaviour:
     ItemPreview: {fileID: 21300000, guid: b20b9bff53fd4e049b1fdd7771c62f7f, type: 3}
   - Id: 2
     Sides:
-    - Directions: 63
-      MainAlbedoTexture: grass
-      MainNormalsTexture: dirt_normals
-      MainHeightsTexture: grass_heights
-      FrameAlbedoTexture: 
-      FrameNormalsTexture: 
-      FrameHeightsTexture: 
-      ItemPreview: {fileID: 0}
+    - Directions: 16
+      MainAlbedoTexture: Textures/Main/grass
+      MainNormalsTexture: Textures/Main/grass_normals
+      MainHeightsTexture: Textures/Main/grass_heights
+      FrameAlbedoTexture: Textures/Frame/Ground_albedo
+      FrameNormalsTexture: Textures/Frame/Ground_normals
+      FrameHeightsTexture: Textures/Frame/Ground_heights
+    - Directions: 47
+      MainAlbedoTexture: Textures/Main/Ground_albedo_384
+      MainNormalsTexture: Textures/Main/Ground_normals
+      MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      FrameAlbedoTexture: Textures/Frame/Ground_albedo
+      FrameNormalsTexture: Textures/Frame/Ground_normals
+      FrameHeightsTexture: Textures/Frame/Ground_heights
     FrameTextureIndex: 0
     FrameNormalIndex: 0
     MainTextureIndex: 1
     MainNormalIndex: 1
     ItemPreview: {fileID: 21300000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
-  - Id: 5
+  - Id: 3
     Sides:
     - Directions: 63
-      MainAlbedoTexture: handcrafted_planks
-      MainNormalsTexture: handcrafted_planks_normals
-      MainHeightsTexture: handcrafted_planks_heights
-      FrameAlbedoTexture: 
-      FrameNormalsTexture: 
-      FrameHeightsTexture: 
-      ItemPreview: {fileID: 0}
+      MainAlbedoTexture: Textures/Main/handcrafted_planks
+      MainNormalsTexture: Textures/Main/handcrafted_planks_normals
+      MainHeightsTexture: Textures/Main/handcrafted_planks_heights
+      FrameAlbedoTexture: Textures/Frame/nailed_wood_albedo
+      FrameNormalsTexture: Textures/Frame/nailed_wood_normals
+      FrameHeightsTexture: Textures/Frame/nailed_wood_heights
     FrameTextureIndex: 3
     FrameNormalIndex: 3
     MainTextureIndex: 4
@@ -1157,7 +1161,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 20
+  field of view: 55
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1800,7 +1804,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a9aeadf394940868821086c4c44944b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Preview: {fileID: 1381778200}
+  Preview: {fileID: 0}
 --- !u!1 &1412320017
 GameObject:
   m_ObjectHideFlags: 0

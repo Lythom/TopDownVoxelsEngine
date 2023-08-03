@@ -5,9 +5,6 @@ namespace Shared
         Air,
         Dirt,
         Grass,
-        Stone,
-        Snow,
-        Wood,
-        PavedStone,
+        Wood
     }
 }

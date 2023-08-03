@@ -55,9 +55,9 @@ MonoBehaviour:
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
-  ZoomLevel: 23
-  MinZoomLevel: 23
-  MaxZoomLevel: 23
+  ZoomLevel: 6
+  MinZoomLevel: 6
+  MaxZoomLevel: 6
   MinZAngle: 2.2
   MaxBaseZAngle: 0
   MaxRatioZAngle: 0.5

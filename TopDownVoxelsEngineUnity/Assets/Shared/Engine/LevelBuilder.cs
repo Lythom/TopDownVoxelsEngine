@@ -23,11 +23,11 @@ namespace Shared {
                     var cell = chunk.Cells[x, groundLevel + 1, z];
                     double chances = 0.02;
 
-                    cell.Block = rng.NextDouble() < chances ? BlockId.Stone : BlockId.Air;
+                    cell.Block = rng.NextDouble() < chances ? BlockId.Wood : BlockId.Air;
                     chunk.Cells[x, groundLevel + 1, z] = cell;
-                    if (cell.Block == BlockId.Stone) {
+                    if (cell.Block == BlockId.Wood) {
                         var wallTop = chunk.Cells[x, groundLevel + 2, z];
-                        wallTop.Block = rng.NextDouble() < 0.9 ? BlockId.Stone : BlockId.Air;
+                        wallTop.Block = rng.NextDouble() < 0.9 ? BlockId.Wood : BlockId.Air;
                         chunk.Cells[x, groundLevel + 2, z] = wallTop;
                     }
 

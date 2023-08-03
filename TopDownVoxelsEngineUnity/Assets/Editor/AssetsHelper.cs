@@ -11,8 +11,8 @@ namespace VoxelsEngineEditor.Editor {
         private static void RefreshTextures() {
             var mtextures = Resources.LoadAll<Texture2D>("Textures/Main");
             var ftextures = Resources.LoadAll<Texture2D>("Textures/Frame");
-            _allMainTextures = mtextures.Select(t => t.name).Prepend("").ToList();
-            _allFrameTextures = ftextures.Select(t => t.name).Prepend("").ToList();
+            _allMainTextures = mtextures.Select(t => $"Textures/Main/{t.name}").Prepend("").ToList();
+            _allFrameTextures = ftextures.Select(t => $"Textures/Frame/{t.name}").Prepend("").ToList();
         }
 
         public static List<string> GetMainTextures() {

@@ -21,6 +21,7 @@ public struct BlockRenderingSide {
     [ValueDropdown("@AssetsHelper.GetMainTextures()")]
     public string MainHeightsTexture;
     
+    // TODO: 
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
     public string FrameAlbedoTexture;
     
@@ -32,8 +33,6 @@ public struct BlockRenderingSide {
     
     // TODO: parfois je veux l'albedo du main mais le heights de la texture ? Bah non faut rajouter une frame
     // TODO: parfois je veux le normals du frame mais l'albedo du mains
-    
-    public Sprite? ItemPreview;
 }
 
 [Serializable]
@@ -50,7 +49,7 @@ public struct BlockRenderingConfiguration {
     public int MainTextureIndex;
     public int MainNormalIndex;
 
-    public Sprite? ItemPreview;
+    public Texture? ItemPreview;
 
     public BlockRenderingConfiguration(BlockId id) {
         Id = id;
