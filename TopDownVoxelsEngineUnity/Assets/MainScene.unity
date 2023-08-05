@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16de3edbd0c844068b1c939d6b2d91df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OpaqueBlocksMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
   BlocksLibrary:
   - Id: 0
     MiningLevel: 0
@@ -177,10 +178,6 @@ MonoBehaviour:
   BlocksRenderingLibrary:
   - Id: 0
     Sides: []
-    FrameTextureIndex: -1
-    FrameNormalIndex: -1
-    MainTextureIndex: -1
-    MainNormalIndex: -1
     ItemPreview: {fileID: 0}
   - Id: 1
     Sides:
@@ -191,11 +188,13 @@ MonoBehaviour:
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
-    FrameTextureIndex: 0
-    FrameNormalIndex: 0
-    MainTextureIndex: 0
-    MainNormalIndex: 0
-    ItemPreview: {fileID: 21300000, guid: b20b9bff53fd4e049b1fdd7771c62f7f, type: 3}
+      FrameTextureIndex: 0
+      FrameNormalsIndex: 0
+      FrameHeightsIndex: 0
+      MainTextureIndex: 0
+      MainNormalsIndex: 0
+      MainHeightsIndex: 0
+    ItemPreview: {fileID: 2800000, guid: b20b9bff53fd4e049b1fdd7771c62f7f, type: 3}
   - Id: 2
     Sides:
     - Directions: 16
@@ -205,6 +204,12 @@ MonoBehaviour:
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
+      FrameTextureIndex: 0
+      FrameNormalsIndex: 0
+      FrameHeightsIndex: 0
+      MainTextureIndex: 1
+      MainNormalsIndex: 1
+      MainHeightsIndex: 1
     - Directions: 47
       MainAlbedoTexture: Textures/Main/Ground_albedo_384
       MainNormalsTexture: Textures/Main/Ground_normals
@@ -212,11 +217,13 @@ MonoBehaviour:
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
-    FrameTextureIndex: 0
-    FrameNormalIndex: 0
-    MainTextureIndex: 1
-    MainNormalIndex: 1
-    ItemPreview: {fileID: 21300000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
+      FrameTextureIndex: 0
+      FrameNormalsIndex: 0
+      FrameHeightsIndex: 0
+      MainTextureIndex: 0
+      MainNormalsIndex: 0
+      MainHeightsIndex: 0
+    ItemPreview: {fileID: 2800000, guid: 06059d4883dfe5549975541a403b463e, type: 3}
   - Id: 3
     Sides:
     - Directions: 63
@@ -226,11 +233,13 @@ MonoBehaviour:
       FrameAlbedoTexture: Textures/Frame/nailed_wood_albedo
       FrameNormalsTexture: Textures/Frame/nailed_wood_normals
       FrameHeightsTexture: Textures/Frame/nailed_wood_heights
-    FrameTextureIndex: 3
-    FrameNormalIndex: 3
-    MainTextureIndex: 4
-    MainNormalIndex: 4
-    ItemPreview: {fileID: 21300000, guid: 9ac4899ad9d1d964e8cdeffb6b253224, type: 3}
+      FrameTextureIndex: 1
+      FrameNormalsIndex: 1
+      FrameHeightsIndex: 1
+      MainTextureIndex: 2
+      MainNormalsIndex: 2
+      MainHeightsIndex: 2
+    ItemPreview: {fileID: 2800000, guid: 05be50a530a4f0b4b90439218b25f1c0, type: 3}
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0
@@ -417,9 +426,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 339, y: 0}
+  m_AnchoredPosition: {x: 149.22498, y: 69.33911}
   m_SizeDelta: {x: 397.1501, y: 48.3218}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &461455573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1725,8 +1734,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1381778199}
   - component: {fileID: 1381778201}
-  - component: {fileID: 1381778200}
   - component: {fileID: 1381778202}
+  - component: {fileID: 1381778203}
   m_Layer: 5
   m_Name: SelectedItem
   m_TagString: Untagged
@@ -1751,39 +1760,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 78, y: 0}
+  m_AnchoredPosition: {x: 36.799988, y: 43.5}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1381778200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381778198}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 049662f5ca555804eb36d39c6b063187, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_Pivot: {x: 0, y: 0}
 --- !u!222 &1381778201
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1804,7 +1783,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a9aeadf394940868821086c4c44944b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Preview: {fileID: 0}
+  Preview: {fileID: 1381778203}
+--- !u!114 &1381778203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381778198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Texture: {fileID: 0}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
 --- !u!1 &1412320017
 GameObject:
   m_ObjectHideFlags: 0

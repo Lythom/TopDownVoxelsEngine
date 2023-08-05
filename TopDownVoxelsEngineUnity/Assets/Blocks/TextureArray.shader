@@ -3,12 +3,12 @@ Shader "Custom/TextureArray"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
-        _MainTex ("Albedo (RGB)", 2DArray) = "white" {}
-        _MainNormals ("Normals", 2DArray) = "white" {}
-        _MainHeights ("Heights", 2DArray) = "white" {}
-        _FrameTex ("Frame Albedo (RGB)", 2DArray) = "white" {}
-        _FrameNormals ("Frame Normals", 2DArray) = "white" {}
-        _FrameHeights ("Frame Heights", 2DArray) = "white" {}
+        _mainTex ("Albedo (RGB)", 2DArray) = "white" {}
+        _mainNormals ("Normals", 2DArray) = "white" {}
+        _mainHeights ("Heights", 2DArray) = "white" {}
+        _frameTex ("frame Albedo (RGB)", 2DArray) = "white" {}
+        _frameNormals ("frame Normals", 2DArray) = "white" {}
+        _frameHeights ("frame Heights", 2DArray) = "white" {}
         _Ramp ("Ramp", 2D) = "white" {}
         _ParallaxStrength ("Parallax Strength", Range(0, 1)) = 0
     }
@@ -26,12 +26,19 @@ Shader "Custom/TextureArray"
 
         #pragma target 5.0
 
-        UNITY_DECLARE_TEX2DARRAY(_MainTex);
-        UNITY_DECLARE_TEX2DARRAY(_FrameTex);
-        UNITY_DECLARE_TEX2DARRAY(_MainNormals);
-        UNITY_DECLARE_TEX2DARRAY(_MainHeights);
-        UNITY_DECLARE_TEX2DARRAY(_FrameNormals);
-        UNITY_DECLARE_TEX2DARRAY(_FrameHeights);
+        int2 Unpack(float packed)
+        {
+            int a = floor(packed / 4095.0);
+            int b = round(packed - a * 4095.0);
+            return int2(a, b);
+        }
+
+        UNITY_DECLARE_TEX2DARRAY(_mainTex);
+        UNITY_DECLARE_TEX2DARRAY(_frameTex);
+        UNITY_DECLARE_TEX2DARRAY(_mainNormals);
+        UNITY_DECLARE_TEX2DARRAY(_mainHeights);
+        UNITY_DECLARE_TEX2DARRAY(_frameNormals);
+        UNITY_DECLARE_TEX2DARRAY(_frameHeights);
 
         half _Glossiness;
         half _Metallic;
@@ -42,11 +49,16 @@ Shader "Custom/TextureArray"
         struct Input
         {
             float2 textCoords;
-            float3 textureIndex; // x in main, y is frame, z i tileIndex
             float3 worldPos;
             float3 worldNormals;
             float3 tangentViewDir;
-            float3 vertexOffset;
+            float mainTextureIndex;
+            float mainNormalsIndex;
+            float mainHeightsIndex;
+            float frameTextureIndex;
+            float frameNormalIndex;
+            float frameHeightsIndex;
+            float tileIndex;
         };
 
         float2 triplanarUV(Input IN)
@@ -54,7 +66,7 @@ Shader "Custom/TextureArray"
             float2 uv =
                 // "* float2(sign(IN.worldNormals.x), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
                 abs(IN.worldNormals.x) * IN.worldPos.zy * float2(sign(IN.worldNormals.x), 1)
-                // Can't get uvParallax to work if normal is absoluted for some weird reason
+                // Can't get uvParallax to work if normal is absolute for some weird reason
                 + IN.worldNormals.y * IN.worldPos.xz * float2(sign(IN.worldNormals.y), 1)
                 // "* float2(-sign(IN.worldNormals.z), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
                 + abs(IN.worldNormals.z) * IN.worldPos.xy * float2(-sign(IN.worldNormals.z), 1);
@@ -63,24 +75,26 @@ Shader "Custom/TextureArray"
 
         // x = height
         // y = isFrameVisible
-        float2 GetHeight(float3 rayPosFrame, float frameTextureIndex, float3 rayPosMain, float mainTextureIndex)
+        float2 GetHeight(float3 rayPosFrame, float frameHeightsIndex, float3 rayPosMain, float mainHeightsIndex)
         {
-            float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_FrameHeights, float3(rayPosFrame.xz, frameTextureIndex)).r;
-            float baseHeight = UNITY_SAMPLE_TEX2DARRAY(_MainHeights, float3(rayPosMain.xz, mainTextureIndex)).r;
-            float h = max(frameHeight, baseHeight);
+            const float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_frameHeights, float3(rayPosFrame.xz, frameHeightsIndex)).
+                r;
+            const float baseHeight = UNITY_SAMPLE_TEX2DARRAY(_mainHeights, float3(rayPosMain.xz, mainHeightsIndex)).r;
+            const float h = max(frameHeight, baseHeight);
             float isFrameVisible = frameHeight >= baseHeight;
             return float2((h - 1) * _ParallaxStrength, isFrameVisible);
-            // return float2((baseHeight - 1) * _ParallaxStrength, isFrameVisible);
+            // return float2((baseHeight - 1) * _ParallaxStrength, isframeVisible);
         }
 
         // x,y = uv
         // z = isFrameVisible
-        float3 ParallaxMapping(float2 frameTexCoord, fixed3 viewDir, float frameTextureIndex, float2 mainTexCoord,
-            float mainTextureIndex)
+        float3 ParallaxMapping(
+            float2 frameTexCoord, fixed3 viewDir, float frameHeightsIndex, float2 mainTexCoord, float mainHeightsIndex
+        )
         {
-            float maxSteps = 48;
+            const float maxSteps = 48;
 
-            float stepSize = 1.0 / maxSteps;
+            const float stepSize = 1.0 / maxSteps;
             // Where is the ray starting? y is up and we always start at the surface
             float3 rayPosFrame = float3(frameTexCoord.x, 0, frameTexCoord.y);
             float3 rayPosMain = float3(mainTexCoord.x, 0, mainTexCoord.y);
@@ -88,14 +102,14 @@ Shader "Custom/TextureArray"
             float rayHeight = 0;
             float currentHeight = 0;
             // What's the direction of the ray?
-            float3 rayDir = viewDir * _ParallaxStrength;
-            float3 rayStep = rayDir * stepSize;
+            const float3 rayDir = viewDir * _ParallaxStrength;
+            const float3 rayStep = rayDir * stepSize;
             float isFrameVisible = 0;
             for (int i = 0; i < maxSteps; ++i)
             {
                 // red is [0;1], height is [-_ParallaxStrength;0]
                 const float prevHeight = currentHeight;
-                float2 result = GetHeight(rayPosFrame, frameTextureIndex, rayPosMain, mainTextureIndex);
+                float2 result = GetHeight(rayPosFrame, frameHeightsIndex, rayPosMain, mainHeightsIndex);
                 currentHeight = result.x;
                 isFrameVisible = result.y;
                 // have we cross the texture height yet?
@@ -118,41 +132,45 @@ Shader "Custom/TextureArray"
 
         void surf(Input IN, inout SurfaceOutput o)
         {
-            float mainTextureIndex = IN.textureIndex.x;
-            float frameTextureIndex = max(0, IN.textureIndex.y);
-            float tileIndex = IN.textureIndex.z;
-            float scaleFactor = 0.3;
-            float2 tuv = triplanarUV(IN) * scaleFactor;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        float2 texCoord = IN.textCoords;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       float frameNormalIndex = frameTextureIndex * 55 + tileIndex;
-            // First, calculate new UV using parralax occlusion mapping
-            float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameNormalIndex, tuv,
-                mainTextureIndex);
-            float2 uvOffset = mapping.xy;
-            float isFrameVisible = saturate(1 - frameTextureIndex) + mapping.z;
+            // float t = (float)(IN.frameTextureIndex * 55 + IN.tileIndex);
+            // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
+            // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
+            // o.Albedo = IN.frameTextureIndex;
+            // return;
+            const float scaleFactor = 0.3;
+            const float2 tuv = triplanarUV(IN) * scaleFactor;
+            const float2 texCoord = IN.textCoords;
+            float frameHeightsIndex = IN.frameHeightsIndex * 55 + IN.tileIndex;
+            // First, calculate new UV using parallax occlusion mapping
+            float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameHeightsIndex, tuv,
+                IN.mainHeightsIndex);
+            const float2 uvOffset = mapping.xy;
+            const float isFrameVisible = mapping.z;
 
-            // 55 frames per collection of autotile, skip to offset to the start of the designated collection
+            // 55 frames per collection of auto-tile, skip to offset to the start of the designated collection
             // then pick the right tile in that collection
-            fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_FrameNormals,
-                float3(texCoord + uvOffset, frameNormalIndex));
-            half3 frameNormalsUnpacked = UnpackNormal(frameNormals);
-            
-            fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tuv + uvOffset, mainTextureIndex));
-            fixed4 normals = UNITY_SAMPLE_TEX2DARRAY(_MainNormals, float3(tuv + uvOffset, mainTextureIndex));
+            float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
+            fixed4 frameNormals = UNITY_SAMPLE_TEX2DARRAY(_frameNormals, float3(texCoord + uvOffset, frameNormalIndex));
+            const half3 frameNormalsUnpacked = frameNormals;
 
-            // Calcule la nouvelle normale
-            half3 normalsUnpacked = UnpackNormal(normals) * (1 - isFrameVisible) + frameNormalsUnpacked *
+            fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_mainTex, float3(tuv + uvOffset, IN.mainTextureIndex));
+            fixed4 mainNormals = UNITY_SAMPLE_TEX2DARRAY(_mainNormals, float3(tuv + uvOffset, IN.mainNormalsIndex));
+
+            // Calculate new normals
+            const half3 normalsUnpacked = mainNormals * (1 - isFrameVisible) + frameNormalsUnpacked *
                 isFrameVisible;
 
-            if (frameTextureIndex > 0)
+            if (IN.frameTextureIndex > -1)
             {
                 // 55 frames per collection of autotile, skip to offset to the start of the designated collection
                 // then pick the right tile in that collection
-                float frameAlbedoIndex = frameTextureIndex * 55 + tileIndex;
-                fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_FrameTex, float3(texCoord + uvOffset, frameAlbedoIndex));
+                float frameAlbedoIndex = IN.frameTextureIndex * 55 + IN.tileIndex;
+                fixed4 frameAlbedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(texCoord + uvOffset, frameAlbedoIndex));
                 // Use frame in priority, and mainAlbedo if frame alpha is smaller
                 mainAlbedo = lerp(mainAlbedo, frameAlbedo, isFrameVisible);
+                // mainAlbedo = isFrameVisible;
             }
+
             o.Albedo = mainAlbedo;
             // o.Alpha = mainAlbedo.a;
             //o.Normal = (normals - half4(0.5, 0.5, 0, 0));
@@ -173,28 +191,38 @@ Shader "Custom/TextureArray"
         void vert(inout appdata_full v, out Input o)
         {
                 UNITY_INITIALIZE_OUTPUT(Input, o);
-            float3 worldVertexPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-            float3 worldViewDir = worldVertexPos - _WorldSpaceCameraPos;
+            const float3 worldVertexPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+            const float3 worldViewDir = worldVertexPos - _WorldSpaceCameraPos;
 
             //To convert from world space to tangent space we need the following
             //https://docs.unity3d.com/Manual/SL-VertexFragmentShaderExamples.html
-            float3 worldNormal = UnityObjectToWorldNormal(v.normal);
-            float3 worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
-            float3 worldBitangent = cross(worldNormal, worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
+            const float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+            const float3 worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
+            const float3 worldBitangent = cross(worldNormal, worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
 
-            float3 viewDir = worldToTangentSpace(normalize(worldViewDir), worldNormal, worldTangent, worldBitangent);
+            const float3 viewDir = worldToTangentSpace(normalize(worldViewDir), worldNormal, worldTangent,
+                worldBitangent);
 
             // from https://github.com/basementstudio/basement-laboratory/blob/main/src/experiments/43.depth-shader.js#L56C7-L57C53
-            float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
-            float facingCoeficient = -dot(viewDir, normal);
-            // TODO: improve that +0.2 that is to limit the infinity effect when reaching near parallel angle (near 0)
-            o.tangentViewDir = viewDir / (facingCoeficient + lerp(0.3, 0, saturate(facingCoeficient)));
+            const float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);
+            const float facingCoefficient = -dot(viewDir, normal);
+            // + lerp to limit the infinity effect when reaching near parallel angle (near 0)
+            o.tangentViewDir = viewDir / (facingCoefficient + lerp(0.2, 0, saturate(facingCoefficient)));
             // o.tangentViewDir = viewDir;
 
+            int2 r = Unpack(v.texcoord.z);
+            o.mainTextureIndex = r.x;
+            o.mainNormalsIndex = r.y;
+            o.mainHeightsIndex = v.texcoord.w;
+
+            o.tileIndex = v.texcoord2.x;
+            // v.texcoord2.y currently unused
+            r = Unpack(v.texcoord2.z);
+            o.frameTextureIndex = r.x;
+            o.frameNormalIndex = r.y;
+            o.frameHeightsIndex = v.texcoord2.w;
+
             o.textCoords = v.texcoord.xy;
-            o.textureIndex.x = v.texcoord.z;
-            o.textureIndex.y = v.texcoord.w;
-            o.textureIndex.z = v.texcoord2.x;
             o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;
             o.worldNormals = worldNormal;
         }

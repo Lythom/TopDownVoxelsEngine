@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Shared;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
@@ -20,7 +21,7 @@ namespace VoxelsEngine {
         private readonly Vector3[] _vertices = new Vector3[10000];
         private int _verticesCount = 0;
         private readonly Vector4[] _uvs = new Vector4[10000];
-        private readonly Vector2[] _uvs2 = new Vector2[10000];
+        private readonly Vector4[] _uvs2 = new Vector4[10000];
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
 
@@ -50,7 +51,7 @@ namespace VoxelsEngine {
 
         private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, Chunk chunk, LevelMap level) {
             for (int i = 0; i < 6; i++) {
-                var dir = (Direction) i;
+                var dir = (Direction) (i + 1);
                 var x = cX + chunkKey.ChX * Chunk.Size;
                 var y = cY;
                 var z = cZ + chunkKey.ChZ * Chunk.Size;
@@ -72,22 +73,27 @@ namespace VoxelsEngine {
         /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask) {
-            CubeMeshData.FaceVertices((int) dir, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
+            if (block.Sides.Count == 0) return;
+            CubeMeshData.FaceVertices((int) dir - 1, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
             //     _vertices[_verticesCount] = faceVertex;
             //     _verticesCount++;
             // }
             int blobIndex = AutoTile48Blob.GetBlobIndex(bitMask);
+            var side = block.Sides.FirstOrDefault(s => s.Directions.HasFlagFast(dir)) ?? block.Sides[0];
 
-            _uvs[_uvsCount++] = new(1, 0, block.MainTextureIndex, block.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(0, 0, block.MainTextureIndex, block.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(0, 1, block.MainTextureIndex, block.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(1, 1, block.MainTextureIndex, block.FrameTextureIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.FrameNormalIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.FrameNormalIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.FrameNormalIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.FrameNormalIndex);
+            float mainTextureAlbedoNormals = CSharpToShaderPacking.Pack(side.MainTextureIndex, side.MainNormalsIndex);
+            float frameAlbedoNormals = CSharpToShaderPacking.Pack(side.FrameTextureIndex, side.FrameNormalsIndex);
+
+            _uvs[_uvsCount++] = new(1, 0, mainTextureAlbedoNormals, side.MainHeightsIndex);
+            _uvs[_uvsCount++] = new(0, 0, mainTextureAlbedoNormals, side.MainHeightsIndex);
+            _uvs[_uvsCount++] = new(0, 1, mainTextureAlbedoNormals, side.MainHeightsIndex);
+            _uvs[_uvsCount++] = new(1, 1, mainTextureAlbedoNormals, side.MainHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;
