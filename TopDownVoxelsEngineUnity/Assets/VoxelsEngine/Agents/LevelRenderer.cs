@@ -12,8 +12,6 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
     public class LevelRenderer : ConnectedBehaviour {
-        public int MaxRenderDistance = 4;
-
         private LevelMap? _level = null;
         public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
@@ -63,7 +61,7 @@ namespace VoxelsEngine {
             var playerPos = characterPosition;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
 
-            var range = 3;
+            var range = Configurator.Instance.RenderDistance;
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
                     var key = Chunk.GetFlatIndex(chX + x, chZ + z);

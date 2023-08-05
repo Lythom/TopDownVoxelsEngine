@@ -5,6 +5,7 @@ namespace Shared
         Air,
         Dirt,
         Grass,
-        Wood
+        Wood,
+        Test,
     }
 }

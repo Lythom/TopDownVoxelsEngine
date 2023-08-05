@@ -13,6 +13,8 @@ namespace VoxelsEngine {
     public class Configurator : MonoBehaviour {
         private static Configurator? _instance;
 
+        public int RenderDistance = 6;
+
         [Required]
         public Material OpaqueBlocksMaterial;
 

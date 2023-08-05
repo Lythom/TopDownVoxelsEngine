@@ -88,7 +88,8 @@ Shader "Custom/TextureArray"
 
         // x,y = uv
         // z = isFrameVisible
-        float3 ParallaxMapping(
+        // w = height
+        float4 ParallaxMapping(
             float2 frameTexCoord, fixed3 viewDir, float frameHeightsIndex, float2 mainTexCoord, float mainHeightsIndex
         )
         {
@@ -127,7 +128,32 @@ Shader "Custom/TextureArray"
             }
 
 
-            return float3(rayPosFrame.xz - frameTexCoord, isFrameVisible);
+            return float4(rayPosFrame.xz - frameTexCoord, isFrameVisible, currentHeight);
+        }
+
+        float RandomValue(float2 seed)
+        {
+            return frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        float Smoothstep(float edge0, float edge1, float x)
+        {
+            float t = saturate((x - edge0) / (edge1 - edge0));
+            return t * t * (3 - 2 * t);
+        }
+
+        float PerlinNoise(float2 p)
+        {
+            float2 fl = floor(p);
+            float2 fc = frac(p);
+
+            float a = RandomValue(fl);
+            float b = RandomValue(fl + float2(1, 0));
+            float c = RandomValue(fl + float2(0, 1));
+            float d = RandomValue(fl + float2(1, 1));
+
+            float2 u = fc * fc * (3.0 - 2.0 * fc);
+            return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
         }
 
         void surf(Input IN, inout SurfaceOutput o)
@@ -142,11 +168,25 @@ Shader "Custom/TextureArray"
             const float2 texCoord = IN.textCoords;
             float frameHeightsIndex = IN.frameHeightsIndex * 55 + IN.tileIndex;
             // First, calculate new UV using parallax occlusion mapping
-            float3 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameHeightsIndex, tuv,
+            float4 mapping = ParallaxMapping(IN.textCoords, IN.tangentViewDir, frameHeightsIndex, tuv,
                 IN.mainHeightsIndex);
-            const float2 uvOffset = mapping.xy;
+            float2 uvOffset = mapping.xy;
             const float isFrameVisible = mapping.z;
+            const float height = 0.2 + mapping.w * 3;
 
+            float perlin_noise = PerlinNoise(float2(
+                    (IN.worldPos.x - _Time.y * 10) * 0.03,
+                    (IN.worldPos.z - _Time.y * 8) * 0.1)
+            );
+            float perlin_noise2 = PerlinNoise(float2(
+                    (IN.worldPos.x - _Time.y * 2) * .1,
+                    (IN.worldPos.z - _Time.y * 6) * 0.5)
+            ) - 0.5;
+            float wind = (perlin_noise * perlin_noise2) * height;
+            uvOffset -= wind * 0.1;
+             // o.Albedo = wind;
+             // return;
+            
             // 55 frames per collection of auto-tile, skip to offset to the start of the designated collection
             // then pick the right tile in that collection
             float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
@@ -171,7 +211,7 @@ Shader "Custom/TextureArray"
                 // mainAlbedo = isFrameVisible;
             }
 
-            o.Albedo = mainAlbedo;
+            o.Albedo = mainAlbedo; // * windMask;
             // o.Alpha = mainAlbedo.a;
             //o.Normal = (normals - half4(0.5, 0.5, 0, 0));
             o.Normal = normalsUnpacked;

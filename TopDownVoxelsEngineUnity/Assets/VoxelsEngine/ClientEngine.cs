@@ -105,7 +105,7 @@ namespace VoxelsEngine {
                 foreach (var (key, c) in State.Characters) {
                     var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
                     if (c.Level.Value != null && State.Levels.ContainsKey(c.Level.Value)) {
-                        State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, 3, State.Levels);
+                        State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, Configurator.Instance.RenderDistance, State.Levels);
                     }
                 }
 
