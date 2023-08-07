@@ -668,9 +668,21 @@ namespace Shared {
                 Positions[7] = new(x, y, z - 1);
             }
 
+            Vector3Int normalOffset = dir switch {
+                Direction.North => new Vector3Int(0, 0, -1),
+                Direction.South => new Vector3Int(0, 0, 1),
+                Direction.West => new Vector3Int(-1, 0, 0),
+                Direction.East => new Vector3Int(1, 0, 0),
+                Direction.Up => new Vector3Int(0, 1, 0),
+                Direction.Down => new Vector3Int(0, -1, 0),
+                _ => new Vector3Int(0, 1, 0)
+            };
+
             int bitmask = 0;
             for (var i = 0; i < Positions.Length; i++) {
-                int isSameBlock = isBlockMatching(Positions[i], referenceBlock) ? 1 : 0;
+                var pos = Positions[i];
+                var hasTopBlock = !isBlockMatching(pos + normalOffset, BlockId.Air);
+                int isSameBlock = isBlockMatching(pos, referenceBlock) && !hasTopBlock ? 1 : 0;
                 bitmask |= isSameBlock << i;
             }
 

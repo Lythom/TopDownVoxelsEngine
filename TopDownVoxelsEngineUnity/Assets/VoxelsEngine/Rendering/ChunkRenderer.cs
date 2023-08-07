@@ -83,17 +83,18 @@ namespace VoxelsEngine {
             int blobIndex = AutoTile48Blob.GetBlobIndex(bitMask);
             var side = block.Sides.FirstOrDefault(s => s.Directions.HasFlagFast(dir)) ?? block.Sides[0];
 
-            float mainTextureAlbedoNormals = CSharpToShaderPacking.Pack(side.MainTextureIndex, side.MainNormalsIndex);
-            float frameAlbedoNormals = CSharpToShaderPacking.Pack(side.FrameTextureIndex, side.FrameNormalsIndex);
+            float mainTextureAlbedoNormals = CSharpToShaderPacking.PackTwo(side.MainTextureIndex, side.MainNormalsIndex);
+            float frameAlbedoNormals = CSharpToShaderPacking.PackTwo(side.FrameTextureIndex, side.FrameNormalsIndex);
+            float windFactor = CSharpToShaderPacking.PackThree(Mathf.FloorToInt(side.MainWindIntensity * 254), Mathf.FloorToInt(side.FrameWindIntensity * 254), 0);
 
             _uvs[_uvsCount++] = new(1, 0, mainTextureAlbedoNormals, side.MainHeightsIndex);
             _uvs[_uvsCount++] = new(0, 0, mainTextureAlbedoNormals, side.MainHeightsIndex);
             _uvs[_uvsCount++] = new(0, 1, mainTextureAlbedoNormals, side.MainHeightsIndex);
             _uvs[_uvsCount++] = new(1, 1, mainTextureAlbedoNormals, side.MainHeightsIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, windFactor, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, windFactor, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, windFactor, frameAlbedoNormals, side.FrameHeightsIndex);
+            _uvs2[_uvs2Count++] = new(blobIndex, windFactor, frameAlbedoNormals, side.FrameHeightsIndex);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;

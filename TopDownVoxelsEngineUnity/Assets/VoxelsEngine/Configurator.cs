@@ -4,7 +4,6 @@ using MessagePack;
 using MessagePack.Resolvers;
 using Shared;
 using Sirenix.OdinInspector;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Analytics;
 
@@ -25,7 +24,7 @@ namespace VoxelsEngine {
         public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
 
 #if UNITY_EDITOR
-        [InitializeOnLoadMethod]
+        [UnityEditor.InitializeOnLoadMethod]
         static void EditorInitialize() {
             Initialize();
         }
@@ -38,8 +37,6 @@ namespace VoxelsEngine {
 
         [Button(ButtonSizes.Large)]
         private void RegenerateAtlas() {
-            // TODO: plugin this output into BlockRenderingConfiguration calculated indexes and into shader.
-
             // Generate Main Albedos
             List<string> mainAlbedoSources = new();
             List<string> mainNormalsSources = new();
@@ -86,7 +83,11 @@ namespace VoxelsEngine {
             }
 
             outputTexture.Apply();
-            AssetDatabase.CreateAsset(outputTexture, outputPath);
+#if UNITY_EDITOR
+            if (!Application.isPlaying) {
+                UnityEditor.AssetDatabase.CreateAsset(outputTexture, outputPath);
+            }
+#endif
             return outputTexture;
         }
 
@@ -110,7 +111,12 @@ namespace VoxelsEngine {
             // Use camp for the frame because they are mostly not tilable
             outputTexture.wrapMode = TextureWrapMode.Clamp;
             outputTexture.Apply();
-            AssetDatabase.CreateAsset(outputTexture, outputPath);
+#if UNITY_EDITOR
+            if (!Application.isPlaying) {
+                UnityEditor.AssetDatabase.CreateAsset(outputTexture, outputPath);
+            }
+#endif
+
             return outputTexture;
         }
 

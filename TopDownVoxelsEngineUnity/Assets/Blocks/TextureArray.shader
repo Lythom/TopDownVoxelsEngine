@@ -26,11 +26,19 @@ Shader "Custom/TextureArray"
 
         #pragma target 5.0
 
-        int2 Unpack(float packed)
+        int2 Unpack2(float packed)
         {
             int a = floor(packed / 4095.0);
             int b = round(packed - a * 4095.0);
             return int2(a, b);
+        }
+
+        int3 Unpack3(float packed)
+        {
+            int a = floor(packed / (255.0 * 255.0));
+            int b = floor(packed - a * 255.0 * 255.0);
+            int c = floor(packed - a * 255.0 * 255.0 - b * 255.0);
+            return int3(a, b, c);
         }
 
         UNITY_DECLARE_TEX2DARRAY(_mainTex);
@@ -59,6 +67,8 @@ Shader "Custom/TextureArray"
             float frameNormalIndex;
             float frameHeightsIndex;
             float tileIndex;
+            float mainWindFactor;
+            float frameWindFactor;
         };
 
         float2 triplanarUV(Input IN)
@@ -95,7 +105,7 @@ Shader "Custom/TextureArray"
         {
             const float maxSteps = 48;
 
-            const float stepSize = 1.0 / maxSteps;
+            const float stepHeight = 1.0 / maxSteps;
             // Where is the ray starting? y is up and we always start at the surface
             float3 rayPosFrame = float3(frameTexCoord.x, 0, frameTexCoord.y);
             float3 rayPosMain = float3(mainTexCoord.x, 0, mainTexCoord.y);
@@ -104,7 +114,7 @@ Shader "Custom/TextureArray"
             float currentHeight = 0;
             // What's the direction of the ray?
             const float3 rayDir = viewDir * _ParallaxStrength;
-            const float3 rayStep = rayDir * stepSize;
+            const float3 rayStep = rayDir * stepHeight;
             float isFrameVisible = 0;
             for (int i = 0; i < maxSteps; ++i)
             {
@@ -117,14 +127,14 @@ Shader "Custom/TextureArray"
                 if (rayHeight <= currentHeight)
                 {
                     const float delta1 = currentHeight - rayHeight;
-                    const float delta2 = (rayHeight + stepSize * _ParallaxStrength) - prevHeight;
+                    const float delta2 = (rayHeight + stepHeight * _ParallaxStrength) - prevHeight;
                     const float ratio = delta1 / (delta1 + delta2);
                     rayPosFrame = (ratio) * (rayPosFrame - rayStep) + (1.0 - ratio) * rayPosFrame;
                     break;
                 }
                 rayPosFrame = rayPosFrame + rayStep;
                 rayPosMain = rayPosMain + rayStep;
-                rayHeight -= stepSize * _ParallaxStrength;
+                rayHeight -= stepHeight * _ParallaxStrength;
             }
 
 
@@ -161,7 +171,7 @@ Shader "Custom/TextureArray"
             // float t = (float)(IN.frameTextureIndex * 55 + IN.tileIndex);
             // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
             // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
-            // o.Albedo = IN.frameTextureIndex;
+            // o.Albedo = float3( IN.mainWindFactor, IN.frameWindFactor, 0);
             // return;
             const float scaleFactor = 0.3;
             const float2 tuv = triplanarUV(IN) * scaleFactor;
@@ -183,10 +193,10 @@ Shader "Custom/TextureArray"
                     (IN.worldPos.z - _Time.y * 6) * 0.5)
             ) - 0.5;
             float wind = (perlin_noise * perlin_noise2) * height;
-            uvOffset -= wind * 0.1;
-             // o.Albedo = wind;
-             // return;
-            
+            uvOffset -= wind * 0.1 * (IN.mainWindFactor * (1 - isFrameVisible) + IN.frameWindFactor * isFrameVisible);
+            // o.Albedo = wind;
+            // return;
+
             // 55 frames per collection of auto-tile, skip to offset to the start of the designated collection
             // then pick the right tile in that collection
             float frameNormalIndex = IN.frameNormalIndex * 55 + IN.tileIndex;
@@ -250,17 +260,20 @@ Shader "Custom/TextureArray"
             o.tangentViewDir = viewDir / (facingCoefficient + lerp(0.2, 0, saturate(facingCoefficient)));
             // o.tangentViewDir = viewDir;
 
-            int2 r = Unpack(v.texcoord.z);
+            int2 r = Unpack2(v.texcoord.z);
             o.mainTextureIndex = r.x;
             o.mainNormalsIndex = r.y;
             o.mainHeightsIndex = v.texcoord.w;
 
             o.tileIndex = v.texcoord2.x;
             // v.texcoord2.y currently unused
-            r = Unpack(v.texcoord2.z);
+            r = Unpack2(v.texcoord2.z);
             o.frameTextureIndex = r.x;
             o.frameNormalIndex = r.y;
             o.frameHeightsIndex = v.texcoord2.w;
+            int3 r3 = Unpack3(v.texcoord2.y);
+            o.mainWindFactor = r3.x / 254;
+            o.frameWindFactor = r3.y / 254;
 
             o.textCoords = v.texcoord.xy;
             o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;

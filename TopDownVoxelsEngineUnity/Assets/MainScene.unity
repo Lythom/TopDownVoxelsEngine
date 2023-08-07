@@ -186,9 +186,11 @@ MonoBehaviour:
       MainAlbedoTexture: Textures/Main/Ground_albedo_384
       MainNormalsTexture: Textures/Main/Ground_normals
       MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      MainWindIntensity: 0
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
+      FrameWindIntensity: 0
       FrameTextureIndex: 0
       FrameNormalsIndex: 0
       FrameHeightsIndex: 0
@@ -202,9 +204,11 @@ MonoBehaviour:
       MainAlbedoTexture: Textures/Main/grass
       MainNormalsTexture: Textures/Main/grass_normals
       MainHeightsTexture: Textures/Main/grass_heights
+      MainWindIntensity: 1
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
+      FrameWindIntensity: 0
       FrameTextureIndex: 0
       FrameNormalsIndex: 0
       FrameHeightsIndex: 0
@@ -215,9 +219,11 @@ MonoBehaviour:
       MainAlbedoTexture: Textures/Main/Ground_albedo_384
       MainNormalsTexture: Textures/Main/Ground_normals
       MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      MainWindIntensity: 0
       FrameAlbedoTexture: Textures/Frame/Ground_albedo
       FrameNormalsTexture: Textures/Frame/Ground_normals
       FrameHeightsTexture: Textures/Frame/Ground_heights
+      FrameWindIntensity: 0
       FrameTextureIndex: 0
       FrameNormalsIndex: 0
       FrameHeightsIndex: 0
@@ -231,9 +237,11 @@ MonoBehaviour:
       MainAlbedoTexture: Textures/Main/handcrafted_planks
       MainNormalsTexture: Textures/Main/handcrafted_planks_normals
       MainHeightsTexture: Textures/Main/handcrafted_planks_heights
+      MainWindIntensity: 0
       FrameAlbedoTexture: Textures/Frame/nailed_wood_albedo
       FrameNormalsTexture: Textures/Frame/nailed_wood_normals
       FrameHeightsTexture: Textures/Frame/nailed_wood_heights
+      FrameWindIntensity: 0
       FrameTextureIndex: 1
       FrameNormalsIndex: 1
       FrameHeightsIndex: 1
@@ -247,9 +255,11 @@ MonoBehaviour:
       MainAlbedoTexture: Textures/Main/Ground_albedo_384
       MainNormalsTexture: Textures/Main/Ground_normals
       MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      MainWindIntensity: 0
       FrameAlbedoTexture: Textures/Frame/nailed_wood_albedo
       FrameNormalsTexture: Textures/Frame/nailed_wood_normals
       FrameHeightsTexture: Textures/Frame/nailed_wood_heights
+      FrameWindIntensity: 0
       FrameTextureIndex: 1
       FrameNormalsIndex: 1
       FrameHeightsIndex: 1

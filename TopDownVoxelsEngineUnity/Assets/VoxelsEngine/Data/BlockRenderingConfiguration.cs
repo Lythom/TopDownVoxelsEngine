@@ -22,7 +22,8 @@ public class BlockRenderingSide {
     [ValueDropdown("@AssetsHelper.GetMainTextures()")]
     public string MainHeightsTexture;
 
-    // TODO: 
+    public float MainWindIntensity = 0;
+
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
     public string FrameAlbedoTexture;
 
@@ -32,26 +33,25 @@ public class BlockRenderingSide {
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
     public string FrameHeightsTexture;
 
+    public float FrameWindIntensity = 0;
+
+    [HideInInspector]
     public int FrameTextureIndex;
+
+    [HideInInspector]
     public int FrameNormalsIndex;
+
+    [HideInInspector]
     public int FrameHeightsIndex;
+
+    [HideInInspector]
     public int MainTextureIndex;
+
+    [HideInInspector]
     public int MainNormalsIndex;
+
+    [HideInInspector]
     public int MainHeightsIndex;
-
-    // TODO: parfois je veux l'albedo du main mais le heights de la texture ? Bah non faut rajouter une frame
-    // TODO: parfois je veux le normals du frame mais l'albedo du mains
-
-    public static float Pack(int a, int b, int c) {
-        return a * 1023f * 1023f + b * 1023f + c;
-    }
-
-    public static Vector3Int Unpack(double f) {
-        int r = (int) Math.Floor(f / 1023 / 1023);
-        int g = (int) Math.Floor((f - r * 1023 * 1023) / 1023);
-        int b = (int) Math.Floor(f - r * 1023 * 1023 - g * 1023);
-        return new Vector3Int(r, g, b);
-    }
 }
 
 [Serializable]
