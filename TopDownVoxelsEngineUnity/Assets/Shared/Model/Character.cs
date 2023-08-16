@@ -12,6 +12,8 @@ namespace Shared {
 
         // Input from the CharacterAgent (via local or via network)
         public Vector3 Velocity;
+        
+        public bool IsInAir;
 
         // 0 is forward on the z axis. Clockwise = positive, CounterClockwise = negative
         // Input from the CharacterAgent (via local or via network)

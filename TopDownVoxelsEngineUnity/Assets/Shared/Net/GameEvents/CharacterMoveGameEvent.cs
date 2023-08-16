@@ -20,14 +20,18 @@ namespace Shared.Net {
         [Key(4)]
         public byte Angle;
 
+        [Key(5)]
+        public bool IsInAir;
+
         public override int GetId() => Id;
 
-        public CharacterMoveGameEvent(int id, ushort characterShortId, Vector3 position, Vector3 velocity, byte angle) {
+        public CharacterMoveGameEvent(int id, ushort characterShortId, Vector3 position, Vector3 velocity, byte angle, bool isInAir) {
             Id = id;
             CharacterShortId = characterShortId;
             Position = position;
             Velocity = velocity;
             Angle = angle;
+            IsInAir = isInAir;
         }
 
         protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
@@ -35,6 +39,7 @@ namespace Shared.Net {
             gameState.Characters[CharacterShortId].Position = Position;
             gameState.Characters[CharacterShortId].Velocity = Velocity;
             gameState.Characters[CharacterShortId].Angle = Angle;
+            gameState.Characters[CharacterShortId].IsInAir = IsInAir;
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {

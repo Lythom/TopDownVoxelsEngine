@@ -23,17 +23,8 @@ namespace VoxelsEngine {
         [SerializeField]
         public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
 
-#if UNITY_EDITOR
-        [UnityEditor.InitializeOnLoadMethod]
-        static void EditorInitialize() {
-            Initialize();
-        }
+        public GameObject GrassProp;
 
-        [Button]
-        private void ForceReload() {
-            _serializerRegistered = false;
-            Initialize();
-        }
 
         [Button(ButtonSizes.Large)]
         private void RegenerateAtlas() {
@@ -60,10 +51,10 @@ namespace VoxelsEngine {
             if (mainSourceSize > 0) {
                 var mainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true);
                 var mainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true);
-                var mainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R8, false);
+                var mainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true);
                 var frameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true);
                 var frameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true);
-                var frameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R8, false);
+                var frameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true);
 
                 OpaqueBlocksMaterial.SetTexture(MainTex, mainAlbedo);
                 OpaqueBlocksMaterial.SetTexture(MainNormals, mainNormals);
@@ -82,6 +73,7 @@ namespace VoxelsEngine {
                 outputTexture.SetPixels(source.GetPixels(0), iSource, 0);
             }
 
+            outputTexture.anisoLevel = 8;
             outputTexture.Apply();
 #if UNITY_EDITOR
             if (!Application.isPlaying) {
@@ -110,6 +102,7 @@ namespace VoxelsEngine {
 
             // Use camp for the frame because they are mostly not tilable
             outputTexture.wrapMode = TextureWrapMode.Clamp;
+            outputTexture.anisoLevel = 8;
             outputTexture.Apply();
 #if UNITY_EDITOR
             if (!Application.isPlaying) {
@@ -153,6 +146,18 @@ namespace VoxelsEngine {
 
             return -1;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        static void EditorInitialize() {
+            Initialize();
+        }
+
+        [Button]
+        private void ForceReload() {
+            _serializerRegistered = false;
+            Initialize();
+        }
 #endif
 
 
@@ -187,10 +192,12 @@ namespace VoxelsEngine {
 
             _instance = this;
             FillLibrary();
+            Logr.Log("Configurator initialized");
         }
 
         private static void FillLibrary() {
             if (_instance == null) return;
+            _instance.RegenerateAtlas();
         }
 
         static bool _serializerRegistered = false;
@@ -209,6 +216,7 @@ namespace VoxelsEngine {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Initialize() {
             DisableUnityAnalytics();
+
 
             if (!_serializerRegistered) {
                 StaticCompositeResolver.Instance.Register(

@@ -28,12 +28,13 @@ namespace MessagePack.Formatters.Shared.Net
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(5);
+            writer.WriteArrayHeader(6);
             writer.Write(value.Id);
             writer.Write(value.CharacterShortId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
             writer.Write(value.Angle);
+            writer.Write(value.IsInAir);
         }
 
         public global::Shared.Net.CharacterMoveGameEvent Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -51,6 +52,7 @@ namespace MessagePack.Formatters.Shared.Net
             var __Position__ = default(global::Shared.Vector3);
             var __Velocity__ = default(global::Shared.Vector3);
             var __Angle__ = default(byte);
+            var __IsInAir__ = default(bool);
 
             for (int i = 0; i < length; i++)
             {
@@ -71,13 +73,16 @@ namespace MessagePack.Formatters.Shared.Net
                     case 4:
                         __Angle__ = reader.ReadByte();
                         break;
+                    case 5:
+                        __IsInAir__ = reader.ReadBoolean();
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, __CharacterShortId__, __Position__, __Velocity__, __Angle__);
+            var ____result = new global::Shared.Net.CharacterMoveGameEvent(__Id__, __CharacterShortId__, __Position__, __Velocity__, __Angle__, __IsInAir__);
             reader.Depth--;
             return ____result;
         }

@@ -11,6 +11,7 @@ Shader "Custom/TextureArray"
         _frameHeights ("frame Heights", 2DArray) = "white" {}
         _Ramp ("Ramp", 2D) = "white" {}
         _ParallaxStrength ("Parallax Strength", Range(0, 1)) = 0
+        _WindStrength ("_WindStrength", Range(0, 5)) = 0
     }
     SubShader
     {
@@ -53,6 +54,7 @@ Shader "Custom/TextureArray"
         fixed4 _Color;
         sampler2D _Ramp;
         float _ParallaxStrength;
+        float _WindStrength;
 
         struct Input
         {
@@ -69,6 +71,7 @@ Shader "Custom/TextureArray"
             float tileIndex;
             float mainWindFactor;
             float frameWindFactor;
+            float facingCoefficient;
         };
 
         float2 triplanarUV(Input IN)
@@ -100,13 +103,16 @@ Shader "Custom/TextureArray"
         // z = isFrameVisible
         // w = height
         float4 ParallaxMapping(
-            float2 frameTexCoord, fixed3 viewDir, float frameHeightsIndex, float2 mainTexCoord, float mainHeightsIndex
+            float2 frameTexCoord, fixed3 viewDir, float frameHeightsIndex, float2 mainTexCoord, float mainHeightsIndex,
+            float precision
         )
         {
-            const float maxSteps = 60;
-            float precisionLevel = 1;
+            const float minSteps = 16;
+            const float maxSteps = 50;
+            float steps = lerp(minSteps, maxSteps, precision);
+            float fineSteps = 6;
 
-            float stepHeight = 1.0 / maxSteps;
+            float stepHeight = 1.0 / steps;
             // Where is the ray starting? y is up and we always start at the surface
             float3 rayPosFrame = float3(frameTexCoord.x, 0, frameTexCoord.y);
             float3 rayPosMain = float3(mainTexCoord.x, 0, mainTexCoord.y);
@@ -117,78 +123,32 @@ Shader "Custom/TextureArray"
             // What's the direction of the ray?
             const float3 rayDir = viewDir * _ParallaxStrength;
             float3 rayStep = rayDir * stepHeight;
-            float isFrameVisible = 0;
-            float prevHeight = currentHeight;
             for (int i = 0; i < maxSteps; ++i)
             {
                 // red is [0;1], height is [-_ParallaxStrength;0]
-                prevRayHeight = rayHeight;
-                prevHeight = currentHeight;
+                float prevHeight = currentHeight;
                 float2 result = GetHeight(rayPosFrame.xz, frameHeightsIndex, rayPosMain.xz, mainHeightsIndex);
                 currentHeight = result.x;
-                isFrameVisible = result.y;
                 // have we cross the texture height yet?
                 if (rayHeight <= currentHeight)
                 {
-                    // roll back and retry with better precision
-                    rayStep *= 0.6;
+                    // rollback and retry with more precision
                     rayPosFrame = rayPosFrame - rayStep;
                     rayPosMain = rayPosMain - rayStep;
                     rayHeight += stepHeight * _ParallaxStrength;
-                    // rayPosFrame = rayPosFrame + rayStep;
-                    // rayPosMain = rayPosMain + rayStep;
-                    // rayHeight -= stepHeight * _ParallaxStrength;
+                    stepHeight *= 0.5;
+                    rayStep = rayDir * stepHeight;
+                    fineSteps--;
                 }
-                else
-                {
-                    rayPosFrame = rayPosFrame + rayStep;
-                    rayPosMain = rayPosMain + rayStep;
-                    rayHeight -= stepHeight * _ParallaxStrength;
-                }
+                if (fineSteps <= 0) break;
+                rayPosFrame = rayPosFrame + rayStep;
+                rayPosMain = rayPosMain + rayStep;
+                rayHeight -= stepHeight * _ParallaxStrength;
             }
-
-            // int sectionSteps = 1;
-            // int sectionIndex = 0;
-            // float3 finalPosFrame;
-            // float3 finalPosMain;
-            // float2 newResult;
-            // float newRayHeight;
-            // while (sectionIndex < sectionSteps)
-            // {
-            //     float intersection = (prevHeight - prevRayHeight) / (prevHeight - currentHeight + rayHeight -
-            //         prevRayHeight);
-            //     finalPosFrame = rayPosFrame + intersection * rayDir * stepHeight;
-            //     finalPosMain = rayPosMain + intersection * rayDir * stepHeight;
-            //     newRayHeight = rayHeight - stepHeight * _ParallaxStrength;
-            //     newResult = GetHeight(rayPosFrame, frameHeightsIndex, rayPosMain, mainHeightsIndex);
-            //     float newHeight = newResult.x;
-            //     if (newHeight > newRayHeight)
-            //     {
-            //         rayHeight = newRayHeight;
-            //         currentHeight = newHeight;
-            //         stepHeight = intersection * stepHeight; // finer detail
-            //     }
-            //     else
-            //     {
-            //         // went under, iterate "back"
-            //         rayPosFrame = finalPosFrame;
-            //         rayPosMain = finalPosMain;
-            //         prevHeight = newHeight;
-            //         prevRayHeight = newRayHeight;
-            //         stepHeight = (1 - intersection) * stepHeight;
-            //     }
-            //     sectionIndex++;
-            // }
-
-            //
-            float delta1 = currentHeight - rayHeight;
-            float delta2 = (rayHeight + stepHeight * _ParallaxStrength) - prevHeight;
-            float ratio = delta1 / (delta1 + delta2);
-            rayPosFrame = (ratio) * (rayPosFrame - rayStep) + (1.0 - ratio) * rayPosFrame;
 
             float2 result = GetHeight(rayPosFrame.xz, frameHeightsIndex, rayPosMain.xz, mainHeightsIndex);
             currentHeight = result.x;
-            isFrameVisible = result.y;
+            float isFrameVisible = result.y;
 
             return float4(rayPosFrame.xz - frameTexCoord, isFrameVisible, currentHeight);
         }
@@ -218,37 +178,55 @@ Shader "Custom/TextureArray"
             return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
         }
 
-        void surf(Input IN, inout SurfaceOutput o)
+        float calculateWind(float3 worldPos, float windStrength)
         {
             float perlin_noise = PerlinNoise(float2(
-                    (IN.worldPos.x - _Time.y * 10) * 0.03,
-                    (IN.worldPos.z - _Time.y * 8) * 0.1)
+                    (worldPos.x - _Time.y * 3) * .05,
+                    (worldPos.z - _Time.y * 5) * .02)
             );
             float perlin_noise2 = PerlinNoise(float2(
-                    (IN.worldPos.x - _Time.y * 2) * .1,
-                    (IN.worldPos.z - _Time.y * 6) * 0.5)
-            ) - 0.5;
-            float wind = (perlin_noise * perlin_noise2); // TODO only wind when the surface should.
-            float windFactor = 0.020;
+                    (worldPos.x - _Time.y * 4) * .3,
+                    (worldPos.z - _Time.y * 4) * .05)
+            );
+            float perlin_noiseDetail = PerlinNoise(float2(
+                (worldPos.x - _Time.y * (0.7 + windStrength * 0.3)) * 5,
+                (worldPos.z - _Time.y * (0.7 + windStrength * 0.3)) * 5
+            ));
+            float wind = saturate((0.15 + (windStrength - 1) * 0.15) + perlin_noise * perlin_noise2) * (0.5 - perlin_noiseDetail
+                * 0.7) * 0.02 * (0.5 + windStrength * 0.5);
+            return wind;
+        }
+
+        void surf(Input IN, inout SurfaceOutput o)
+        {
+            float wind = calculateWind(IN.worldPos, _WindStrength);
 
             // float t = (float)(IN.frameTextureIndex * 55 + IN.tileIndex);
             // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
             // o.Albedo = UNITY_SAMPLE_TEX2DARRAY(_frameTex, float3(IN.textCoords, t));
-            // o.Albedo = float3( IN.mainWindFactor, IN.frameWindFactor, 0);
+            const float3 distance = length(IN.worldPos - _WorldSpaceCameraPos);
+            float3 proximity = 1000 / distance * 0.01;
+            float precisionFactor = saturate(proximity * proximity * proximity + (1 - IN.facingCoefficient) * 0.1);
+            // o.Albedo = wind;
             // return;
             const float scaleFactor = 0.3;
             const float2 tuv = triplanarUV(IN) * scaleFactor;
             const float2 texCoord = IN.textCoords;
             float frameHeightsIndex = IN.frameHeightsIndex * 55 + IN.tileIndex;
+            float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_frameHeights, float3(texCoord, frameHeightsIndex));
+            float mainHeight = UNITY_SAMPLE_TEX2DARRAY(_mainHeights, float3(tuv, IN.mainHeightsIndex));
+            float mainWindFactor = IN.mainWindFactor * (1 - frameHeight * 0.9) * saturate(mainHeight - 0.7) * 3;
+
             // First, calculate new UV using parallax occlusion mapping
-            float4 mapping = ParallaxMapping(IN.textCoords - wind * windFactor, IN.tangentViewDir, frameHeightsIndex, tuv - wind * windFactor,
-                IN.mainHeightsIndex);
-            float2 uvOffset = mapping.xy - wind * (windFactor - 0.004);
+            float4 mapping = ParallaxMapping(IN.textCoords - wind * mainWindFactor,
+                IN.tangentViewDir,
+                frameHeightsIndex, tuv - wind * mainWindFactor,
+                IN.mainHeightsIndex,
+                precisionFactor
+            );
             const float isFrameVisible = mapping.z;
-            const float height = (1 - mapping.w * 5);
-            //uvOffset -= wind * height * 0.015 * (IN.mainWindFactor * (1 - isFrameVisible) + IN.frameWindFactor * isFrameVisible);
-            // o.Albedo = wind;
-            // return;
+            float2 uvOffset = mapping.xy - wind * (mainWindFactor * (1 - isFrameVisible) + IN.frameWindFactor *
+                isFrameVisible);
 
             // 55 frames per collection of auto-tile, skip to offset to the start of the designated collection
             // then pick the right tile in that collection
@@ -257,6 +235,7 @@ Shader "Custom/TextureArray"
             const half3 frameNormalsUnpacked = frameNormals;
 
             fixed4 mainAlbedo = UNITY_SAMPLE_TEX2DARRAY(_mainTex, float3(tuv + uvOffset, IN.mainTextureIndex));
+            mainAlbedo += 100 * wind * wind * mainWindFactor * (1 - isFrameVisible);
             fixed4 mainNormals = UNITY_SAMPLE_TEX2DARRAY(_mainNormals, float3(tuv + uvOffset, IN.mainNormalsIndex));
 
             // Calculate new normals
@@ -331,6 +310,7 @@ Shader "Custom/TextureArray"
             o.textCoords = v.texcoord.xy;
             o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;
             o.worldNormals = worldNormal;
+            o.facingCoefficient = facingCoefficient;
         }
         ENDCG
     }

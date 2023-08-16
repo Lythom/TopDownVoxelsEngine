@@ -60,27 +60,27 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _frameHeights:
-        m_Texture: {fileID: 18700000, guid: 2a79bf93479d6274e9a5feb5340e6ddf, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _frameNormals:
-        m_Texture: {fileID: 18700000, guid: d7351c1d08eecf44eb04a093f364d752, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _frameTex:
-        m_Texture: {fileID: 18700000, guid: 3db09b40c4e3f4748a8f3cc6a7ee081c, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _mainHeights:
-        m_Texture: {fileID: 18700000, guid: 6261ebb2c54698d40be76c3334f28ce4, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _mainNormals:
-        m_Texture: {fileID: 18700000, guid: 9632d3ee39a5ab9438c1484875d40bf2, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _mainTex:
-        m_Texture: {fileID: 18700000, guid: 0a3e87b454e9e4c4b9ce775aa60c0801, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -91,6 +91,7 @@ Material:
     - _ParallaxStrength: 0.2
     - _TextureIndex: 0
     - _Tiling: 1
+    - _WindStrength: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

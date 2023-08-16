@@ -1,11 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
+    public struct PropPlacement {
+        public Vector3 Position;
+        public Vector3 Angle;
+    }
+
     /// <summary>
     /// Generate a mesh for the chunk ChunkKey of Level.
     /// The renderer game object should be placed at (chX * ChunkData.Size, 0, chY * ChunkData.Size).
@@ -24,10 +33,17 @@ namespace VoxelsEngine {
         private readonly Vector4[] _uvs2 = new Vector4[10000];
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
+        private Dictionary<GameObject, List<PropPlacement>> Props = new();
+        private Transform _propsContainer = null!;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
+            Props.Add(Configurator.Instance.GrassProp, new List<PropPlacement>());
+            var pc = new GameObject();
+            pc.name = "Props";
+            pc.transform.parent = transform;
+            _propsContainer = pc.transform;
         }
 
         public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey) {
@@ -59,6 +75,20 @@ namespace VoxelsEngine {
                 if (n == null || n.Value.Block == BlockId.Air) {
                     var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
+                }
+
+                // TODO: use GPU instancing
+                if (dir == Direction.Up) {
+                    if (n != null && n.Value.Block == BlockId.Grass) {
+                        if (Props.TryGetValue(Configurator.Instance.GrassProp, out var list)) {
+                            for (int j = 0; j < 1; j++) {
+                                // list.Add(new PropPlacement() {
+                                //     Position = new Vector3(x + Random.Range(-0.4f, 0.4f), y + 1.48f, z + Random.Range(-0.4f, 0.4f)),
+                                //     Angle = new Vector3(0, Random.Range(0, 359), 0)
+                                // });
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -112,6 +142,14 @@ namespace VoxelsEngine {
             _mesh.SetUVs(1, _uvs2, 0, _uvs2Count);
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
+            _propsContainer.DestroyChildren();
+            foreach (var (obj, placements) in Props) {
+                foreach (var p in placements) {
+                    var i = Instantiate(obj, _propsContainer);
+                    i.transform.position = p.Position;
+                    i.transform.eulerAngles = p.Angle;
+                }
+            }
         }
     }
 }

@@ -1,11 +1,22 @@
 ﻿using LoneStoneStudio.Tools;
 using Shared;
+using Sirenix.OdinInspector;
 using UnityEngine;
-using Vector3 = Shared.Vector3;
+using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
     public class CharacterAgent : ConnectedBehaviour {
         // TODO: sync CharacterAgents and characters (use sync prefab list ?)
+
+        [Required]
+        public FaceController FaceController = null!;
+
+        [Required]
+        public Animator Animator = null!;
+
+
+        private static readonly int Velocity = Animator.StringToHash("Velocity");
+        private static readonly int Altitude = Animator.StringToHash("Altitude");
 
         public Reactive<ushort> CharacterId = new(0);
         private Character? _character;
@@ -16,6 +27,12 @@ namespace VoxelsEngine {
         private void Awake() {
             var position = transform.position;
             transform.position = new Vector3(position.x, 10, position.z);
+        }
+
+        private void UpdateAnimation(Vector3 movement, bool isInAir) {
+            Animator.SetFloat(Velocity, movement.x * movement.x + movement.z * movement.z);
+            Animator.SetFloat(Altitude, isInAir ? 1 : -0.01f);
+            FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
         protected override void OnSetup(GameState state) {
@@ -46,17 +63,20 @@ namespace VoxelsEngine {
             if (!ClientEngine.State.Levels.TryGetValue(levelId, out var level)) return;
 
             // update or calculate display position
-            if (_lastPosition != _character.Position) {
-                _calculatedPosition = _character.Position;
+            var pos = (Vector3) _character.Position;
+            var vel = (Vector3) _character.Velocity * Time.deltaTime;
+            if (_lastPosition != pos) {
+                _calculatedPosition = pos;
             } else {
-                _calculatedPosition += _character.Velocity * Time.deltaTime;
+                _calculatedPosition += vel;
             }
 
             // interpolate rendering
-            transform.position = UnityEngine.Vector3.Lerp(transform.position, _calculatedPosition, VisualSnappingStrength * 50 * Time.deltaTime);
-            UnityEngine.Vector3 currentRotation = transform.eulerAngles;
+            transform.position = Vector3.Lerp(transform.position, _calculatedPosition, VisualSnappingStrength * 50 * Time.deltaTime);
+            Vector3 currentRotation = transform.eulerAngles;
             currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
             transform.eulerAngles = currentRotation;
+            UpdateAnimation(vel, _character.IsInAir);
         }
     }
 }

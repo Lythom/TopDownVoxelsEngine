@@ -15,7 +15,7 @@ public class EditorScripts : MonoBehaviour {
     public static async void InstantCodeGen() {
         Debug.Log("Generating MessagePack Files");
         try {
-            var log = await InvokeProcessStartAsync("dotnet", "mpc -i . -o ./Scripts/VoxelsEngine/MessagePackGenerated");
+            var log = await InvokeProcessStartAsync("dotnet", "mpc -i . -o ./VoxelsEngine/MessagePackGenerated");
             if (log.Contains("Fail")) {
                 Debug.LogError(log);
             } else {

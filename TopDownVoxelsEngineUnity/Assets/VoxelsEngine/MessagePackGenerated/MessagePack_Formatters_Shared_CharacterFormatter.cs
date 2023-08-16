@@ -24,6 +24,8 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_Position() => new byte[1 + 8] { 168, 80, 111, 115, 105, 116, 105, 111, 110 };
         // Velocity
         private static global::System.ReadOnlySpan<byte> GetSpan_Velocity() => new byte[1 + 8] { 168, 86, 101, 108, 111, 99, 105, 116, 121 };
+        // IsInAir
+        private static global::System.ReadOnlySpan<byte> GetSpan_IsInAir() => new byte[1 + 7] { 167, 73, 115, 73, 110, 65, 105, 114 };
         // Angle
         private static global::System.ReadOnlySpan<byte> GetSpan_Angle() => new byte[1 + 5] { 165, 65, 110, 103, 108, 101 };
         // Level
@@ -56,13 +58,15 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(14);
+            writer.WriteMapHeader(15);
             writer.WriteRaw(GetSpan_Name());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Name, options);
             writer.WriteRaw(GetSpan_Position());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Position, options);
             writer.WriteRaw(GetSpan_Velocity());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Serialize(ref writer, value.Velocity, options);
+            writer.WriteRaw(GetSpan_IsInAir());
+            writer.Write(value.IsInAir);
             writer.WriteRaw(GetSpan_Angle());
             writer.Write(value.Angle);
             writer.WriteRaw(GetSpan_Level());
@@ -100,6 +104,8 @@ namespace MessagePack.Formatters.Shared
             var __Name__ = default(string);
             var __Position__ = default(global::Shared.Vector3);
             var __Velocity__ = default(global::Shared.Vector3);
+            var __IsInAir__IsInitialized = false;
+            var __IsInAir__ = default(bool);
             var __Angle__ = default(byte);
             var __Level__ = default(global::LoneStoneStudio.Tools.Reactive<string>);
             var __SelectedTool__ = default(global::LoneStoneStudio.Tools.Reactive<global::Shared.ToolId>);
@@ -137,6 +143,12 @@ namespace MessagePack.Formatters.Shared
                                 __Velocity__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.Vector3>(formatterResolver).Deserialize(ref reader, options);
                                 continue;
                         }
+                    case 7:
+                        if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 32203877089112905UL) { goto FAIL; }
+
+                        __IsInAir__IsInitialized = true;
+                        __IsInAir__ = reader.ReadBoolean();
+                        continue;
                     case 5:
                         switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
                         {
@@ -212,6 +224,11 @@ namespace MessagePack.Formatters.Shared
             }
 
             var ____result = new global::Shared.Character(__Name__, __Position__, __Velocity__, __Angle__, __Level__, __SelectedTool__, __SelectedBlock__, __SelectedTemplate__, __ToolRemoveBlockLevel__, __ToolAddBlockLevel__, __ToolAddFurnitureLevel__, __ToolReplaceBlockLevel__, __BlocsInventory__, __KnownTemplates__);
+            if (__IsInAir__IsInitialized)
+            {
+                ____result.IsInAir = __IsInAir__;
+            }
+
             reader.Depth--;
             return ____result;
         }

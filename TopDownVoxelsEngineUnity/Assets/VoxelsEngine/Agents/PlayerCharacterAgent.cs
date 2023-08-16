@@ -151,6 +151,7 @@ namespace VoxelsEngine {
             _character.Velocity = _vel;
             _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
             _character.Position = _position;
+            _character.IsInAir = isInAir;
 
             BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
             BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);

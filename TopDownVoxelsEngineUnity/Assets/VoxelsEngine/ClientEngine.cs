@@ -118,7 +118,8 @@ namespace VoxelsEngine {
                         LocalState.Instance.CurrentPlayerId,
                         c.Position,
                         c.Velocity,
-                        c.Angle
+                        c.Angle,
+                        c.IsInAir
                     )
                 );
             }

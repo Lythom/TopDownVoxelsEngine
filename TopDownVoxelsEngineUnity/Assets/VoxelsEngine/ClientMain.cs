@@ -2,6 +2,7 @@
 using System.IO;
 using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
+using LoneStoneStudio.Tools.Components;
 using MessagePack;
 using Shared;
 using Shared.Net;
@@ -28,10 +29,13 @@ namespace VoxelsEngine {
         public int ServerPort = 9999;
         private ClientEngine? _engine;
         private PlayerCharacterAgent? _agent;
+        private readonly PrefabListSynchronizer<CharacterAgent> _otherPlayersAgents = new();
 
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
         private void Awake() {
+            _otherPlayersAgents.Container = gameObject;
+            _otherPlayersAgents.Prefab = CharacterPrefab;
             if (ForceLocalPlay) StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
             // StartRemotePlay().Forget();
@@ -41,19 +45,51 @@ namespace VoxelsEngine {
             if (joinEvent.Character.Name == LocalState.Instance.CurrentPlayerName) {
                 AddPlayerCharacter(joinEvent.Character.Position, joinEvent.CharacterShortId).Forget();
             } else {
-                AddOtherCharacter(joinEvent.Character.Position, joinEvent.CharacterShortId);
+                UpdateAgents();
+            }
+        }
+
+        private void HandlePlayerLeave(CharacterLeaveGameEvent evt) {
+            if (evt.CharacterShortId == LocalState.Instance.CurrentPlayerId) {
+                // disconnect current player
+                if (_engine != null) {
+                    _engine.Stop();
+                }
+            } else {
+                UpdateAgents();
+            }
+        }
+
+        private void UpdateAgents() {
+            if (_engine != null) {
+                _otherPlayersAgents.DisplayInstances(declare => {
+                    foreach (var (key, value) in _engine.State.Characters) {
+                        if (key != LocalState.Instance.CurrentPlayerId) {
+                            var agent = declare();
+                            agent.CharacterId.Value = key;
+                            agent.transform.position = value.Position;
+                        }
+                    }
+                });
             }
         }
 
         private void OnDestroy() {
-            if (_engine != null) _engine.SocketClient.Close();
+            if (_engine != null) {
+                _engine.Stop();
+                _engine.SideEffectManager.For<CharacterJoinGameEvent>().StopListening(HandlePlayerJoin);
+                _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StopListening(HandlePlayerLeave);
+            }
         }
 
         public async UniTask StartRemotePlay() {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
+            _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
             await _engine.InitRemote(ServerPort);
+            Application.runInBackground = true;
         }
+
 
         private async UniTask StartLocalPlay() {
             GameState? state = null;
@@ -132,12 +168,6 @@ namespace VoxelsEngine {
             }
 
             await UniTask.Delay(1000);
-        }
-
-        public void AddOtherCharacter(Vector3 spawnPosition, ushort shortId) {
-            var agent = Instantiate(CharacterPrefab, _engine!.transform, true);
-            agent.CharacterId.Value = shortId;
-            agent.transform.position = spawnPosition;
         }
     }
 }
