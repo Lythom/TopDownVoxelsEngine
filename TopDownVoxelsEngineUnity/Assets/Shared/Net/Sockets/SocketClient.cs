@@ -17,12 +17,14 @@ namespace Shared.Net {
         public Action<INetworkMessage>? OnNetworkMessage { get; set; }
         public Action? OnConnexionLost { get; set; }
         private readonly ConcurrentQueue<INetworkMessage> _outbox = new();
+        private readonly ConcurrentQueue<INetworkMessage> _inbox = new();
 
         public async UniTask Init(string host, int port) {
             _cts = new CancellationTokenSource();
 
             Logr.Log("Connecting Tcp Client on server and port " + port, Tags.Client);
             _client = new TcpClient();
+            _client.NoDelay = true;
             var attempts = 5;
             while (!_client.Connected && attempts >= 0) {
                 try {
@@ -38,11 +40,15 @@ namespace Shared.Net {
 
             Logr.Log("Connected !", Tags.Client);
 
-            StartListening().Forget();
-            StartOutboxSendingAsync().Forget();
+            Thread inThread = new Thread(StartListening);
+            Thread outThread = new Thread(StartOutboxSendingAsync);
+            inThread.Start();
+            outThread.Start();
+
+            StartInboxAsync().Forget();
         }
 
-        private async UniTask StartOutboxSendingAsync() {
+        private async void StartOutboxSendingAsync() {
             while (_cts != null
                    && !_cts.Token.IsCancellationRequested
                    && _client.Connected) {
@@ -61,7 +67,26 @@ namespace Shared.Net {
             }
         }
 
-        private async UniTask StartListening() {
+        private async UniTask StartInboxAsync() {
+            while (_cts != null
+                   && !_cts.Token.IsCancellationRequested
+                   && _client.Connected) {
+                bool hasMessage = false;
+                hasMessage = _inbox.TryDequeue(out var m);
+                try {
+                    if (hasMessage) {
+                        OnNetworkMessage?.Invoke(m);
+                    } else {
+                        await UniTask.Yield();
+                    }
+                } catch (Exception) {
+                    if (hasMessage) Logr.LogError($"A message {m.GetType().Name} was not sent to server.");
+                }
+            }
+        }
+
+        private async void StartListening() {
+            var sw = new Stopwatch();
             var stream = _client.GetStream();
             byte[] lengthBuffer = new byte[4];
             byte[] buffer = new byte[BufferSize];
@@ -73,7 +98,9 @@ namespace Shared.Net {
                 while (_cts != null
                        && !_cts.Token.IsCancellationRequested
                        && _client.Connected) {
+                    sw.Restart();
                     bytesRead = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length, _cts.Token);
+                    // Logr.Log("Elapsed = " + sw.ElapsedMilliseconds);
                     if (bytesRead != lengthBuffer.Length) throw new Exception("Failed to read message length");
 
                     var messageLength = BitConverter.ToInt32(lengthBuffer, 0);
@@ -88,7 +115,7 @@ namespace Shared.Net {
                     if (_cts.IsCancellationRequested) break;
 
                     var msg = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                    OnNetworkMessage?.Invoke(msg);
+                    _inbox.Enqueue(msg);
                 }
             } catch (Exception e) {
                 Logr.LogException(e);
@@ -121,6 +148,7 @@ namespace Shared.Net {
             if (_cts == null || _cts.IsCancellationRequested) return;
             var stream = _client.GetStream();
             var token = _cts?.Token ?? CancellationToken.None;
+            var sw = new Stopwatch();
 
             int bufferLength;
             try {
