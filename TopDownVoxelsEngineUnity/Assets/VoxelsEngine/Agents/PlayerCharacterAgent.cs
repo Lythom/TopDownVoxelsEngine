@@ -5,6 +5,7 @@ using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using VoxelsEngine.Tools;
 using VoxelsEngine.VoxelsEngine.Tools;
 using Ray = UnityEngine.Ray;
@@ -24,6 +25,12 @@ namespace VoxelsEngine {
 
         [Required]
         public Animator Animator = null!;
+
+        [Required]
+        public Transform PreviewPlane = null!;
+
+        [Required]
+        public Transform PreviewArrow = null!;
 
         [RequiredInScene]
         public Transform CameraTransform = null!;
@@ -80,6 +87,7 @@ namespace VoxelsEngine {
         private string? _levelId;
         private bool _isPlacing;
         private Plane? _draggingPlane;
+        private Vector3Int? _draggingStartPosition;
         private bool _initialized;
 
         void Awake() {
@@ -137,11 +145,26 @@ namespace VoxelsEngine {
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var isInGrass = groundCell.IsGrass() && groundCell2.IsGrass() && groundCell3.IsGrass() && groundCell4.IsGrass();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
-            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay);
+            var isPlanar = Keyboard.current.altKey.isPressed;
+            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar);
+            var isArrowPreview = _isPlacing && !isPlanar;
+            PreviewArrow.SmartActive(isArrowPreview);
+            if (isArrowPreview && facingCursorPos != null && _draggingPlane != null) {
+                PreviewArrow.transform.position = facingCursorPos.Value;
+                PreviewArrow.transform.rotation = Quaternion.LookRotation(_draggingPlane.Value.normal);
+            }
+
+            var isPlanarPreview = _isPlacing && isPlanar;
+            PreviewPlane.SmartActive(isPlanarPreview);
+            if (isPlanarPreview && collidingBlockPos != null && facingCursorPos != null) {
+                PreviewPlane.transform.position = (Vector3) (facingCursorPos.Value + collidingBlockPos.Value) / 2f;
+                PreviewArrow.transform.rotation = Quaternion.LookRotation(_draggingPlane.Value.normal);
+            }
+
             UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
             UpdateCamera();
             Vector3 movement;
-            (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f - (isInGrass ? 0.05f: 0));
+            (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f - (isInGrass ? 0.05f : 0));
             UpdateAnimation(movement, isInAir);
             transform.position = Vector3.Lerp(transform.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
@@ -165,15 +188,22 @@ namespace VoxelsEngine {
             FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
-        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay) {
+        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar) {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
-            if (_isPlacing && _draggingPlane.HasValue) {
-                (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
+            if (_isPlacing && _draggingPlane.HasValue && _draggingStartPosition.HasValue) {
+                if (isPlanar) {
+                    (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
+                } else {
+                    // TODO : fix line direction (place normal is always positive)
+                    // TODO : fix preview orientation
+                    (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnLine(_draggingPlane.Value, _draggingStartPosition.Value);
+                }
             } else {
                 Plane? plane;
                 (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
                 if (plane.HasValue) _draggingPlane = plane.Value;
+                _draggingStartPosition = facingCursorPos;
             }
 
             return (collidingBlockPos, facingCursorPos);

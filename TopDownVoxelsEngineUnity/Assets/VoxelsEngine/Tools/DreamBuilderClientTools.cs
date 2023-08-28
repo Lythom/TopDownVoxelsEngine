@@ -20,6 +20,30 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
             return (collidingBlockPos, facingCursorPos);
         }
 
+        public static float PointToRayDistance(Vector3Int point, Ray ray) {
+            var cross = Vector3.Cross(ray.direction, point - ray.origin);
+            return cross.magnitude;
+        }
+
+        public static (Vector3Int?, Vector3Int?) GetBlocksOnLine(this Ray mouseRay, Plane plane, Vector3Int draggingStartPosition) {
+            Vector3Int axis = Vector3Int.RoundToInt(plane.normal);
+            Vector3Int? collidingBlockPos = draggingStartPosition - axis;
+            Vector3Int? facingCursorPos = draggingStartPosition;
+            float minDistance = PointToRayDistance(collidingBlockPos.Value, mouseRay);
+
+            for (int i = 0; i < 30; i++) {
+                var nextDistance = PointToRayDistance(collidingBlockPos.Value + axis, mouseRay);
+                if (nextDistance < minDistance) {
+                    facingCursorPos = collidingBlockPos.Value;
+                    collidingBlockPos = collidingBlockPos.Value + axis;
+                } else {
+                    break;
+                }
+            }
+
+            return (collidingBlockPos, facingCursorPos);
+        }
+
 
         public static (Shared.Vector3Int? collidingBlock, Shared.Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(
             this Ray mouseRay,

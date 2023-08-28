@@ -15,7 +15,7 @@ namespace VoxelsEngine {
         public int RenderDistance = 6;
 
         [Required]
-        public Material OpaqueBlocksMaterial;
+        public Material OpaqueBlocksMaterial = null!;
 
         [SerializeField]
         public List<BlockData> BlocksLibrary = new();

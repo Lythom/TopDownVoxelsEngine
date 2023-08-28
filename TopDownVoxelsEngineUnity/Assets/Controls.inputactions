@@ -11,7 +11,7 @@
                     "id": "1077f913-a9f9-41b1-acb3-b9ee0adbc744",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Tap,SlowTap",
+                    "interactions": "",
                     "initialStateCheck": false
                 },
                 {
@@ -20,7 +20,7 @@
                     "id": "9b3dc027-802e-4338-a834-cea10b685c58",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Tap,SlowTap",
+                    "interactions": "",
                     "initialStateCheck": false
                 },
                 {
@@ -51,6 +51,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "SelectTool",
+                    "type": "Value",
+                    "id": "17d01231-e835-42fa-97d1-fa8ac8c6c21e",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "SelectNextItem",
                     "type": "Button",
                     "id": "b3b08f25-4afd-4639-aa57-5e6aa63ea059",
@@ -69,13 +78,13 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SelectTool",
-                    "type": "Value",
-                    "id": "17d01231-e835-42fa-97d1-fa8ac8c6c21e",
-                    "expectedControlType": "Vector2",
+                    "name": "SelectPrevItem1",
+                    "type": "Button",
+                    "id": "889e6eac-1008-47c6-b052-66476c94cbef",
+                    "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": true
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -263,6 +272,17 @@
                     "processors": "NormalizeVector2",
                     "groups": "",
                     "action": "SelectTool",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "58b0d13a-830a-4a61-9e70-8a87114e45f7",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SelectPrevItem1",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
