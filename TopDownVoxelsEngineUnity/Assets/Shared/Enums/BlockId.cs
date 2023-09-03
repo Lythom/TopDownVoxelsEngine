@@ -6,6 +6,8 @@ namespace Shared
         Dirt,
         Grass,
         Wood,
+        Stone,
+        ConcreteTiles,
         Test,
     }
 }

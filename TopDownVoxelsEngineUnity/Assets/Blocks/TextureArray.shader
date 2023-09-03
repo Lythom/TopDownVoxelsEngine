@@ -90,11 +90,10 @@ Shader "Custom/TextureArray"
         // y = isFrameVisible
         float2 GetHeight(float2 rayPosFrame, float frameHeightsIndex, float2 rayPosMain, float mainHeightsIndex)
         {
-            const float frameHeight = UNITY_SAMPLE_TEX2DARRAY(_frameHeights, float3(rayPosFrame, frameHeightsIndex)).
-                r;
+            const float frameH = UNITY_SAMPLE_TEX2DARRAY(_frameHeights, float3(rayPosFrame, frameHeightsIndex)).r;
             const float baseHeight = UNITY_SAMPLE_TEX2DARRAY(_mainHeights, float3(rayPosMain, mainHeightsIndex)).r;
-            const float h = max(frameHeight, baseHeight);
-            float isFrameVisible = frameHeight >= baseHeight;
+            const float h = max(frameH, baseHeight);
+            float isFrameVisible = frameH > baseHeight;
             return float2((h - 1) * _ParallaxStrength, isFrameVisible);
             // return float2((baseHeight - 1) * _ParallaxStrength, isframeVisible);
         }
@@ -108,9 +107,9 @@ Shader "Custom/TextureArray"
         )
         {
             const float minSteps = 16;
-            const float maxSteps = 50;
+            const float maxSteps = 48;
             float steps = lerp(minSteps, maxSteps, precision);
-            float fineSteps = 6;
+            float fineSteps = 4;
 
             float stepHeight = 1.0 / steps;
             // Where is the ray starting? y is up and we always start at the surface
@@ -192,7 +191,8 @@ Shader "Custom/TextureArray"
                 (worldPos.x - _Time.y * (0.7 + windStrength * 0.3)) * 5,
                 (worldPos.z - _Time.y * (0.7 + windStrength * 0.3)) * 5
             ));
-            float wind = saturate((0.15 + (windStrength - 1) * 0.15) + perlin_noise * perlin_noise2) * (0.5 - perlin_noiseDetail
+            float wind = saturate((0.15 + (windStrength - 1) * 0.15) + perlin_noise * perlin_noise2) * (0.5 -
+                perlin_noiseDetail
                 * 0.7) * 0.02 * (0.5 + windStrength * 0.5);
             return wind;
         }
@@ -219,10 +219,10 @@ Shader "Custom/TextureArray"
 
             // First, calculate new UV using parallax occlusion mapping
             float4 mapping = ParallaxMapping(IN.textCoords - wind * mainWindFactor,
-                IN.tangentViewDir,
-                frameHeightsIndex, tuv - wind * mainWindFactor,
-                IN.mainHeightsIndex,
-                precisionFactor
+                                             IN.tangentViewDir,
+                                             frameHeightsIndex, tuv - wind * mainWindFactor,
+                                             IN.mainHeightsIndex,
+                                             precisionFactor
             );
             const float isFrameVisible = mapping.z;
             float2 uvOffset = mapping.xy - wind * (mainWindFactor * (1 - isFrameVisible) + IN.frameWindFactor *
@@ -283,7 +283,7 @@ Shader "Custom/TextureArray"
             const float3 worldBitangent = cross(worldNormal, worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
 
             const float3 viewDir = worldToTangentSpace(normalize(worldViewDir), worldNormal, worldTangent,
-                worldBitangent);
+                              worldBitangent);
 
             // from https://github.com/basementstudio/basement-laboratory/blob/main/src/experiments/43.depth-shader.js#L56C7-L57C53
             const float3 normal = worldToTangentSpace(worldNormal, worldNormal, worldTangent, worldBitangent);

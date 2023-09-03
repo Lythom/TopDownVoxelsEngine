@@ -154,28 +154,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RenderDistance: 4
   OpaqueBlocksMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
-  BlocksLibrary:
-  - Id: 0
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 1
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 2
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 3
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 4
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 5
-    MiningLevel: 0
-    RequiredEquipment: 0
-  - Id: 6
-    MiningLevel: 0
-    RequiredEquipment: 0
   BlocksRenderingLibrary:
   - Id: 0
     Sides: []
@@ -249,24 +227,42 @@ MonoBehaviour:
       MainNormalsIndex: 2
       MainHeightsIndex: 2
     ItemPreview: {fileID: 2800000, guid: 05be50a530a4f0b4b90439218b25f1c0, type: 3}
-  - Id: 0
+  - Id: 4
     Sides:
     - Directions: 63
-      MainAlbedoTexture: Textures/Main/Ground_albedo_384
-      MainNormalsTexture: Textures/Main/Ground_normals
-      MainHeightsTexture: Textures/Main/Ground_main_heights_384
+      MainAlbedoTexture: Textures/Main/Stone_basecolor
+      MainNormalsTexture: Textures/Main/Stone_normal
+      MainHeightsTexture: Textures/Main/Stone_height
       MainWindIntensity: 0
-      FrameAlbedoTexture: Textures/Frame/nailed_wood_albedo
-      FrameNormalsTexture: Textures/Frame/nailed_wood_normals
-      FrameHeightsTexture: Textures/Frame/nailed_wood_heights
+      FrameAlbedoTexture: Textures/Frame/Frame_Stone_basecolor__384
+      FrameNormalsTexture: Textures/Frame/Frame_Stone_normal_384
+      FrameHeightsTexture: Textures/Frame/Frame_Stone_heights_384
       FrameWindIntensity: 0
-      FrameTextureIndex: 1
-      FrameNormalsIndex: 1
-      FrameHeightsIndex: 1
-      MainTextureIndex: 0
-      MainNormalsIndex: 0
-      MainHeightsIndex: 0
-    ItemPreview: {fileID: 2800000, guid: dffef66376be4fa480fb02b19edbe903, type: 3}
+      FrameTextureIndex: 2
+      FrameNormalsIndex: 2
+      FrameHeightsIndex: 2
+      MainTextureIndex: 3
+      MainNormalsIndex: 3
+      MainHeightsIndex: 3
+    ItemPreview: {fileID: 2800000, guid: 3dd277703fc5f4742a1ef611c3eccfb9, type: 3}
+  - Id: 5
+    Sides:
+    - Directions: 63
+      MainAlbedoTexture: Textures/Main/Concrete_Albedo
+      MainNormalsTexture: Textures/Main/Concrete_Normal
+      MainHeightsTexture: Textures/Main/Concrete_Height
+      MainWindIntensity: 0
+      FrameAlbedoTexture: 
+      FrameNormalsTexture: Textures/Frame/soft_edges_normals
+      FrameHeightsTexture: 
+      FrameWindIntensity: 0
+      FrameTextureIndex: -1
+      FrameNormalsIndex: 3
+      FrameHeightsIndex: -1
+      MainTextureIndex: 4
+      MainNormalsIndex: 4
+      MainHeightsIndex: 4
+    ItemPreview: {fileID: 2800000, guid: 2aea8c876bf58f84caa2b1025d6a3036, type: 3}
   GrassProp: {fileID: 3950527112730552662, guid: fb2d519e154b81c4fb973b397eca4148, type: 3}
 --- !u!4 &149498319
 Transform:

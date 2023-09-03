@@ -18,9 +18,6 @@ namespace VoxelsEngine {
         public Material OpaqueBlocksMaterial = null!;
 
         [SerializeField]
-        public List<BlockData> BlocksLibrary = new();
-
-        [SerializeField]
         public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
 
         public GameObject GrassProp;
