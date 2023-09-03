@@ -1,5 +1,6 @@
 ﻿using Shared;
 using UnityEngine;
+using Gizmos = Popcron.Gizmos;
 using Ray = UnityEngine.Ray;
 using Vector3 = UnityEngine.Vector3;
 using Vector3Int = UnityEngine.Vector3Int;
@@ -10,7 +11,7 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
             Vector3Int? facingCursorPos = null;
             Vector3Int? collidingBlockPos = null;
             Vector3 axis = plane.normal;
-            int dir = UnityEngine.Vector3.Dot(mouseRay.direction, axis) > 0 ? 1 : -1;
+            int dir = Vector3.Dot(mouseRay.direction, axis) > 0 ? 1 : -1;
             if (plane.Raycast(mouseRay, out var enter)) {
                 Vector3 collisionPos = mouseRay.GetPoint(enter);
                 collidingBlockPos = LevelTools.WorldToCell((collisionPos + axis * (0.5f * dir)));
@@ -20,23 +21,31 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
             return (collidingBlockPos, facingCursorPos);
         }
 
-        public static float PointToRayDistance(Vector3Int point, Ray ray) {
-            var cross = Vector3.Cross(ray.direction, point - ray.origin);
-            return cross.magnitude;
+        public static Vector3 ClosestPointToRay(Vector3Int point, Ray ray) {
+            Vector3 lhs = point - ray.origin;
+            float dotP = Vector3.Dot(lhs, ray.direction);
+            return ray.origin + ray.direction * dotP;
         }
 
         public static (Vector3Int?, Vector3Int?) GetBlocksOnLine(this Ray mouseRay, Plane plane, Vector3Int draggingStartPosition) {
-            Vector3Int axis = Vector3Int.RoundToInt(plane.normal);
-            Vector3Int? collidingBlockPos = draggingStartPosition - axis;
+            int dir = Vector3.Dot(mouseRay.direction, plane.normal) > 0 ? 1 : -1;
+            Vector3Int? collidingBlockPos = LevelTools.WorldToCell(draggingStartPosition + plane.normal * dir);
             Vector3Int? facingCursorPos = draggingStartPosition;
-            float minDistance = PointToRayDistance(collidingBlockPos.Value, mouseRay);
+            var closestPointToRay = ClosestPointToRay(facingCursorPos.Value, mouseRay);
+            float minDistance = Vector3.Distance(facingCursorPos.Value, closestPointToRay);
 
-            for (int i = 0; i < 30; i++) {
-                var nextDistance = PointToRayDistance(collidingBlockPos.Value + axis, mouseRay);
+            var axis = facingCursorPos.Value - collidingBlockPos.Value;
+            Debug.Log(collidingBlockPos);
+
+            for (int i = 0; i < 31; i++) {
+                closestPointToRay = ClosestPointToRay(facingCursorPos.Value + axis, mouseRay);
+                var nextDistance = Vector3.Distance(facingCursorPos.Value + axis, closestPointToRay);
                 if (nextDistance < minDistance) {
-                    facingCursorPos = collidingBlockPos.Value;
-                    collidingBlockPos = collidingBlockPos.Value + axis;
+                    collidingBlockPos = facingCursorPos.Value;
+                    facingCursorPos = facingCursorPos.Value + axis;
+                    minDistance = nextDistance;
                 } else {
+                    Gizmos.Line(closestPointToRay, facingCursorPos.Value, Color.gray);
                     break;
                 }
             }
@@ -88,6 +97,7 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
             if (dir < 0) (start, stop) = (stop, start);
 
             for (int pos = start; pos != stop; pos += dir) {
+                // put the plane aligned with the backface
                 plane.SetNormalAndPosition(axis, axis * (pos + dir * 0.5f));
                 if (plane.Raycast(mouseRay, out var enter)) {
                     Vector3 position = mouseRay.GetPoint(enter);

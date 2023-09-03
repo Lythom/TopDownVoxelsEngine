@@ -183,6 +183,10 @@ namespace Shared {
             return new Vector3Int(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         }
 
+        public static Vector3Int operator -(Vector3Int a, Vector3Int b) {
+            return new Vector3Int(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        }
+
         public static implicit operator Vector3(Vector3Int from) => new(from.X, from.Y, from.Z);
 
 #if UNITY_2020_3_OR_NEWER

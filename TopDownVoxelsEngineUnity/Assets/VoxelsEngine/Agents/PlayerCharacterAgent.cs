@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using VoxelsEngine.Tools;
 using VoxelsEngine.VoxelsEngine.Tools;
+using Gizmos = Popcron.Gizmos;
 using Ray = UnityEngine.Ray;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -102,7 +103,7 @@ namespace VoxelsEngine {
 
         public void Init(ushort shortId, Camera cam, Vector3 position) {
             CharacterId = shortId;
-            transform.position = position;
+            Animator.transform.position = position;
             CameraTransform = cam.transform;
             _cam = cam;
             _position = position;
@@ -146,19 +147,25 @@ namespace VoxelsEngine {
             var isInGrass = groundCell.IsGrass() && groundCell2.IsGrass() && groundCell3.IsGrass() && groundCell4.IsGrass();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             var isPlanar = Keyboard.current.altKey.isPressed;
-            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar);
-            var isArrowPreview = _isPlacing && !isPlanar;
-            PreviewArrow.SmartActive(isArrowPreview);
-            if (isArrowPreview && facingCursorPos != null && _draggingPlane != null) {
-                PreviewArrow.transform.position = facingCursorPos.Value;
-                PreviewArrow.transform.rotation = Quaternion.LookRotation(_draggingPlane.Value.normal);
-            }
+            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar, selectedTool);
+            // var isArrowPreview = _isPlacing && !isPlanar;
+            // PreviewArrow.SmartActive(isArrowPreview);
+            // if (isArrowPreview && facingCursorPos != null && collidingBlockPos != null) {
+            //     PreviewArrow.transform.position = facingCursorPos.Value;
+            //     PreviewArrow.transform.rotation = Quaternion.FromToRotation(collidingBlockPos.Value, facingCursorPos.Value);
+            // }
 
-            var isPlanarPreview = _isPlacing && isPlanar;
-            PreviewPlane.SmartActive(isPlanarPreview);
-            if (isPlanarPreview && collidingBlockPos != null && facingCursorPos != null) {
-                PreviewPlane.transform.position = (Vector3) (facingCursorPos.Value + collidingBlockPos.Value) / 2f;
-                PreviewArrow.transform.rotation = Quaternion.LookRotation(_draggingPlane.Value.normal);
+            PreviewPlane.SmartActive(isPlanar);
+            if (collidingBlockPos != null && facingCursorPos != null) {
+                if (isPlanar) {
+                    PreviewPlane.transform.position = Vector3.Lerp(collidingBlockPos.Value, facingCursorPos.Value, 0.51f);
+                    var fw = (facingCursorPos.Value - collidingBlockPos.Value);
+                    PreviewPlane.transform.rotation = Quaternion.LookRotation(fw, Vector3.up);
+                } else {
+                    Vector3 axis = (facingCursorPos.Value - collidingBlockPos.Value);
+                    if (_isPlacing) axis *= 2f;
+                    Gizmos.Line(collidingBlockPos.Value, collidingBlockPos.Value + axis, Color.white);
+                }
             }
 
             UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
@@ -166,13 +173,14 @@ namespace VoxelsEngine {
             Vector3 movement;
             (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f - (isInGrass ? 0.05f : 0));
             UpdateAnimation(movement, isInAir);
-            transform.position = Vector3.Lerp(transform.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
-            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
+            Transform t = Animator.transform;
+            Animator.transform.position = Vector3.Lerp(t.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
+            t.rotation = Quaternion.Slerp(t.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
 
             // Wild override of state for client side prediction
             // Child, don't do that at home…
             _character.Velocity = _vel;
-            _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
+            _character.Angle = Character.CompressAngle(t.eulerAngles.y);
             _character.Position = _position;
             _character.IsInAir = isInAir;
 
@@ -188,22 +196,22 @@ namespace VoxelsEngine {
             FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
-        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar) {
+        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar, ToolId selectedTool) {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
             if (_isPlacing && _draggingPlane.HasValue && _draggingStartPosition.HasValue) {
                 if (isPlanar) {
                     (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
                 } else {
-                    // TODO : fix line direction (place normal is always positive)
-                    // TODO : fix preview orientation
                     (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnLine(_draggingPlane.Value, _draggingStartPosition.Value);
                 }
             } else {
                 Plane? plane;
                 (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
-                if (plane.HasValue) _draggingPlane = plane.Value;
-                _draggingStartPosition = facingCursorPos;
+                if (facingCursorPos.HasValue && collidingBlockPos.HasValue) {
+                    _draggingPlane = plane;
+                    _draggingStartPosition = facingCursorPos;
+                }
             }
 
             return (collidingBlockPos, facingCursorPos);
@@ -359,8 +367,9 @@ namespace VoxelsEngine {
             // Here we adjust _originalOffset.z based on ZoomLevel
             _originalOffset = Quaternion.Euler(0, _currentAngleX, 0) * new Vector3(0, CameraHeightOffset + _currentAngleZ * 2, -ZoomLevel - _currentAngleZ * CameraZoomTiltStrength).normalized * ZoomLevel;
 
-            CameraTransform.position = transform.position + _originalOffset;
-            CameraTransform.LookAt(transform.position + CameraLookOffset);
+            var pos = Animator.transform.position;
+            CameraTransform.position = pos + _originalOffset;
+            CameraTransform.LookAt(pos + CameraLookOffset);
         }
     }
 }
