@@ -152,6 +152,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16de3edbd0c844068b1c939d6b2d91df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SFXFootstep: {fileID: 8300000, guid: 1dee9ad2e4d6ae644817b27085fc0fa3, type: 3}
+  SFXFootstepPitchRange: 0.5
+  PlaceFX: {fileID: 7159507963483705760, guid: c96f43ce22c7bc14796b5cf1d01da71e, type: 3}
+  RemoveFX: {fileID: 893364139256490378, guid: 3f15845c021aae74c9eb27491b787677, type: 3}
   RenderDistance: 4
   OpaqueBlocksMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
   BlocksRenderingLibrary:
@@ -2117,6 +2121,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1677524908}
   m_CullTransparentMesh: 1
+--- !u!1 &1730655991
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1730655992}
+  m_Layer: 0
+  m_Name: SoundController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1730655992
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1730655991}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1025.2134, y: 10.754952, z: 1031.4542}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1840684585
 GameObject:
   m_ObjectHideFlags: 0
@@ -2546,3 +2581,4 @@ SceneRoots:
   - {fileID: 928272619}
   - {fileID: 1307387715}
   - {fileID: 195320489}
+  - {fileID: 1730655992}

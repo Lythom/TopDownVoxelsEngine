@@ -15,7 +15,7 @@ using Vector3 = UnityEngine.Vector3;
 using Vector3Int = Shared.Vector3Int;
 
 namespace VoxelsEngine {
-    public class PlayerCharacterAgent : ConnectedBehaviour {
+    public class PlayerCharacterAgent : ConnectedBehaviour, ICharacterSpeed {
         public ushort CharacterId = 0;
 
         [ShowInInspector]
@@ -119,6 +119,26 @@ namespace VoxelsEngine {
                 _rotation = Quaternion.Euler(0, Character.UncompressAngle(p.Angle), 0);
             });
             Subscribe(state.Selectors.LocalPlayerLevelIdSelector, lId => _levelId = lId);
+
+            SubscribeSideEffect<PlaceBlocksGameEvent>(evt => {
+                if (evt.CharacterShortId == CharacterId) return; // ignore self (optimistic VFX)
+
+                if (evt.Block == BlockId.Air) {
+                    DoFXRemove(new Vector3(evt.X, evt.Y, evt.Z));
+                } else {
+                    DoFXPlace(new Vector3(evt.X, evt.Y, evt.Z));
+                }
+            });
+        }
+
+        private static void DoFXPlace(Vector3 pos) {
+            var placeFX = Instantiate(Configurator.Instance.PlaceFX);
+            placeFX.transform.position = pos;
+        }
+
+        private static void DoFXRemove(Vector3 pos) {
+            var removeFX = Instantiate(Configurator.Instance.RemoveFX);
+            removeFX.transform.position = pos;
         }
 
         public void OnDisable() {
@@ -184,10 +204,10 @@ namespace VoxelsEngine {
             _character.Position = _position;
             _character.IsInAir = isInAir;
 
-            BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
-            BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
-            BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
-            BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
+            // BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
+            // BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
+            // BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
+            // BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
         }
 
         private void UpdateAnimation(Vector3 movement, bool isInAir) {
@@ -245,6 +265,11 @@ namespace VoxelsEngine {
                             if (succeeded) {
                                 var (x, y, z) = target;
                                 SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
+                                if (blockToSet == BlockId.Air) {
+                                    DoFXRemove(target);
+                                } else {
+                                    DoFXPlace(target);
+                                }
                             }
 
                             break;
@@ -371,5 +396,7 @@ namespace VoxelsEngine {
             CameraTransform.position = pos + _originalOffset;
             CameraTransform.LookAt(pos + CameraLookOffset);
         }
+
+        public float CurrentSpeed => _vel.magnitude / Speed;
     }
 }

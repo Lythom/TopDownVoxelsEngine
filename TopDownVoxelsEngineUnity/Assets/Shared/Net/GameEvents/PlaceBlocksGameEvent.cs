@@ -80,6 +80,7 @@ namespace Shared.Net {
             var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
             chunk.Cells[cx, cy, cz].Block = Block;
             ChunkDirtySEffect.Trigger(sideEffectManager, level!, chX, chZ, cx, cz);
+            sideEffectManager?.Trigger(this);
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {

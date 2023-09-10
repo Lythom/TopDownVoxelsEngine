@@ -5,7 +5,7 @@ using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
-    public class CharacterAgent : ConnectedBehaviour {
+    public class CharacterAgent : ConnectedBehaviour, ICharacterSpeed {
         // TODO: sync CharacterAgents and characters (use sync prefab list ?)
 
         [Required]
@@ -78,5 +78,7 @@ namespace VoxelsEngine {
             transform.eulerAngles = currentRotation;
             UpdateAnimation(vel, _character.IsInAir);
         }
+
+        public float CurrentSpeed => _character == null ? 0 : ((Vector3) _character.Velocity).magnitude / 5f;
     }
 }

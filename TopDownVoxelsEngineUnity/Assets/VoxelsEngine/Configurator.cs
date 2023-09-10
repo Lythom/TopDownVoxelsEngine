@@ -12,6 +12,21 @@ namespace VoxelsEngine {
     public class Configurator : MonoBehaviour {
         private static Configurator? _instance;
 
+
+        [Title("Audio")]
+        [Required, AssetsOnly]
+        public AudioClip SFXFootstep = null!;
+
+        public float SFXFootstepPitchRange = 0.5f;
+
+        [Title("FX")]
+        [Required, AssetsOnly]
+        public GameObject PlaceFX = null!;
+
+        [Required, AssetsOnly]
+        public GameObject RemoveFX = null!;
+
+        [Title("Rendering")]
         public int RenderDistance = 6;
 
         [Required]
