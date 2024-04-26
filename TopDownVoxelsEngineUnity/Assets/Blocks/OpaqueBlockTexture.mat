@@ -86,13 +86,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _Glossiness: 0.362
-    - _MainScaleFactor: 1
+    - _MainScaleFactor: 10
     - _Metallic: 0
     - _Parallax: 0.077
-    - _ParallaxStrength: 0.25
+    - _ParallaxStrength: 0.3
     - _TextureIndex: 0
     - _Tiling: 1
-    - _WindStrength: 1.15
+    - _WindStrength: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
