@@ -78,21 +78,21 @@ MonoBehaviour:
   PreviewArrow: {fileID: 6449189871365484725}
   CameraTransform: {fileID: 0}
   VisualSnappingStrength: 2
-  WallCollisionProximity: 0.6
+  WallCollisionProximity: 1
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
-  ZoomLevel: 6
-  MinZoomLevel: 6
-  MaxZoomLevel: 6
-  MinZAngle: 2.2
+  ZoomLevel: 10
+  MinZoomLevel: 10
+  MaxZoomLevel: 10
+  MinZAngle: 0
   MaxBaseZAngle: 0
   MaxRatioZAngle: 0.5
   ZoomSensitivity: 5
   CameraZoomTiltStrength: 0
   CameraLookOffset: {x: 0, y: 2.5, z: 0}
-  PlacementRadius: 31
-  Speed: 7
+  PlacementRadius: 35
+  Speed: 11
   JumpForce: 11
   JumpChargeIntensity: 1
   Gravity: 30
@@ -219,6 +219,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1835,7 +1838,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2300000, guid: 97a07e5406b34b74699f0a8f14e24db3, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: bf1ef9fed39775543af32afb423d37a7, type: 2}
     m_RemovedComponents: []
@@ -1875,6 +1878,18 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
       propertyPath: m_RootOrder
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2369,7 +2384,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6266624361702913249, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 98b523865b738574a974da335c2d9ab1, type: 2}
     - target: {fileID: 6350134815261427289, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}
@@ -2517,6 +2532,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: -6714362062533710740, guid: 9a2e37c904b35ed4582a8ea1e556f72d, type: 2}
   m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -2618,6 +2634,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: -6714362062533710740, guid: 9a2e37c904b35ed4582a8ea1e556f72d, type: 2}
   m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -2729,7 +2746,7 @@ MonoBehaviour:
   Renderer: {fileID: 5798956725110647242}
 --- !u!95 &2804287877322724724
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -2743,6 +2760,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -2783,9 +2801,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 2.5
+  m_Height: 3
   m_Direction: 1
-  m_Center: {x: 0, y: 1.25, z: 0}
+  m_Center: {x: 0, y: 1.45, z: 0}
 --- !u!4 &7991846461670056172 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8544054913069803037, guid: 020ae8f2930ca3d41a10da948371530f, type: 3}

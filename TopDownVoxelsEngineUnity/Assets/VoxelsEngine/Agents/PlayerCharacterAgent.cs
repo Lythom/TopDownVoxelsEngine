@@ -18,6 +18,8 @@ namespace VoxelsEngine {
     public class PlayerCharacterAgent : ConnectedBehaviour, ICharacterSpeed {
         public ushort CharacterId = 0;
 
+        public bool DEBUG = false;
+
         [ShowInInspector]
         public float DeltaTime => Time.deltaTime;
 
@@ -40,6 +42,8 @@ namespace VoxelsEngine {
         public float VisualSnappingStrength = 0.3f;
 
         public float WallCollisionProximity = 0.6f;
+
+        public float CharacterThickness = 0.42f;
 
         [Title("Zoom Configuration")]
         public float CameraHeightOffset = 2.5f;
@@ -155,25 +159,19 @@ namespace VoxelsEngine {
             var selectedBlock = _character.SelectedBlock.Value;
 
             UpdateTools(selectedTool, selectedBlock);
-            var groundPosition = new Shared.Vector3(_position.x + 0.38f, _position.y - 0.001f, _position.z + 0.38f).WorldToCell();
+            var groundPosition = new Shared.Vector3(_position.x + CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
             var groundCell = level.TryGetExistingCell(groundPosition);
-            var groundPosition2 = new Shared.Vector3(_position.x - 0.38f, _position.y - 0.001f, _position.z + 0.38f).WorldToCell();
+            var groundPosition2 = new Shared.Vector3(_position.x - CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
             var groundCell2 = level.TryGetExistingCell(groundPosition2);
-            var groundPosition3 = new Shared.Vector3(_position.x + 0.38f, _position.y - 0.001f, _position.z - 0.38f).WorldToCell();
+            var groundPosition3 = new Shared.Vector3(_position.x + CharacterThickness, _position.y - 0.001f, _position.z - CharacterThickness).WorldToCell();
             var groundCell3 = level.TryGetExistingCell(groundPosition3);
-            var groundPosition4 = new Shared.Vector3(_position.x - 0.38f, _position.y - 0.001f, _position.z - 0.38f).WorldToCell();
+            var groundPosition4 = new Shared.Vector3(_position.x - CharacterThickness, _position.y - 0.001f, _position.z - CharacterThickness).WorldToCell();
             var groundCell4 = level.TryGetExistingCell(groundPosition4);
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var isInGrass = groundCell.IsGrass() && groundCell2.IsGrass() && groundCell3.IsGrass() && groundCell4.IsGrass();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             var isPlanar = Keyboard.current.altKey.isPressed;
             var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar, selectedTool);
-            // var isArrowPreview = _isPlacing && !isPlanar;
-            // PreviewArrow.SmartActive(isArrowPreview);
-            // if (isArrowPreview && facingCursorPos != null && collidingBlockPos != null) {
-            //     PreviewArrow.transform.position = facingCursorPos.Value;
-            //     PreviewArrow.transform.rotation = Quaternion.FromToRotation(collidingBlockPos.Value, facingCursorPos.Value);
-            // }
 
             PreviewPlane.SmartActive(isPlanar);
             if (collidingBlockPos != null && facingCursorPos != null) {
@@ -204,10 +202,12 @@ namespace VoxelsEngine {
             _character.Position = _position;
             _character.IsInAir = isInAir;
 
-            // BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
-            // BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
-            // BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
-            // BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
+            if (DEBUG) {
+                BCubeDrawer.Cube(groundPosition, Quaternion.identity, Vector3.one, Color.gray);
+                BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
+                BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
+                BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
+            }
         }
 
         private void UpdateAnimation(Vector3 movement, bool isInAir) {
@@ -343,30 +343,36 @@ namespace VoxelsEngine {
                 vel.y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge));
             }
 
-            if (Mathf.Abs(vel.x) > 0) {
-                var forwardXPosFeet = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 0.5f, 0);
-                var forwardXPosStomach = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 1.5f, 0);
-                var forwardXPosHead = _position + new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, 2.5f, 0);
-                var cellFeet = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosFeet));
-                var cellStomach = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosStomach));
-                var cellHead = level.TryGetExistingCell(LevelTools.WorldToCell(forwardXPosHead));
-                if (!cellFeet.IsAir() || !cellStomach.IsAir() || !cellHead.IsAir()) {
-                    vel.x = 0;
+            var collisionPoints = new (float sideOffset, float yOffset)[] {
+                new(-CharacterThickness, 0.5f), // Feet
+                new(CharacterThickness, 0.5f), // Feet
+                new(-CharacterThickness, 1.5f), // Stomach
+                new(CharacterThickness, 1.5f), // Stomach
+                new(-CharacterThickness, 2.5f), // Shoulder
+                new(CharacterThickness, 2.5f), // Shoulder
+                new(-CharacterThickness, 3.5f), // Head
+                new(CharacterThickness, 3.5f), // Head
+            };
+
+            foreach (var p in collisionPoints) {
+                if (Mathf.Abs(vel.x) > 0) {
+                    var forwardX = new Vector3(Mathf.Sign(vel.x) * WallCollisionProximity, p.yOffset, p.sideOffset);
+                    if (CheckCellIsAir(level, forwardX)) {
+                        vel.x = 0;
+                        break;
+                    }
                 }
             }
 
-            if (Mathf.Abs(vel.z) > 0) {
-                var forwardZPosFeet = _position + new Vector3(0, 0.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
-                var forwardZPosStomach = _position + new Vector3(0, 1.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
-                var forwardZPosHead = _position + new Vector3(0, 2.5f, Mathf.Sign(vel.z) * WallCollisionProximity);
-                var cellFeet = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosFeet));
-                var cellStomach = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosStomach));
-                var cellHead = level.TryGetExistingCell(LevelTools.WorldToCell(forwardZPosHead));
-                if (!cellFeet.IsAir() || !cellStomach.IsAir() || !cellHead.IsAir()) {
-                    vel.z = 0;
+            foreach (var p in collisionPoints) {
+                if (Mathf.Abs(vel.z) > 0) {
+                    var forwardZ = new Vector3(p.sideOffset, p.yOffset, Mathf.Sign(vel.z) * WallCollisionProximity);
+                    if (CheckCellIsAir(level, forwardZ)) {
+                        vel.z = 0;
+                        break;
+                    }
                 }
             }
-
 
             _position += vel * Time.deltaTime;
 
@@ -375,6 +381,18 @@ namespace VoxelsEngine {
             }
 
             return (vel, moveDirection);
+        }
+
+        private bool CheckCellIsAir(LevelMap level, Vector3 offset) {
+            var cell = level.TryGetExistingCell(LevelTools.WorldToCell(_position + offset));
+            if (!cell.IsAir()) {
+                if (DEBUG) Gizmos.Sphere(_position + offset, 0.05f, Color.red);
+                return true;
+            } else {
+                if (DEBUG) Gizmos.Sphere(_position + offset, 0.05f);
+            }
+
+            return false;
         }
 
         private void UpdateCamera() {
