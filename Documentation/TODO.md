@@ -24,6 +24,12 @@ TODO:
   - SI modification antérieur et sur le même chunk indiquée par le serveur après application optimiste
     - Ce cas de figure est détecté au moment où le joueur reçoit la réponse du serveur
 
+- tester les perfs de génération et de rendu sur des plus grands chunks
+  - optimiser "3 quad par voxel + half offset and flip the back"
+
+- varier le rendu : voxels decorations / tesselation
+- Refaire le shader en URP ?
+
 Cas:
 - les modifications (ie. pose de blocs) dont identifées par un id uniquement généré par le client. ie. B2 pour le bloc posé par B et A5 pour celui posé par A.
 - A pose un Bloc et enregistre localement sa modification dans une liste ordonnée "en attente de validation"

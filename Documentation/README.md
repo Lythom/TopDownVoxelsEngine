@@ -1,6 +1,6 @@
-# VoxelsEngine
+# Dream Builder
 
-General documentation of the VoxelsEngine project.
+General documentation of the Dream Builder project.
 
 ---
 
@@ -48,14 +48,14 @@ General documentation of the VoxelsEngine project.
 ### Client
 
 -   Open the VoxelsEngineUnity project in Unity + IDE (we use Rider)
--   Shared project in located under `VoxelsEngineUnity/Assets/Shared`. It's compilation is handled by Unity client-side, and
+-   Shared project in located under `VoxelsEngineUnity/Assets/Shared`. Compilation is handled by Unity client-side, and
     by netstandard2.1 platform server-side. It must remains compatible in both contexts. Sirenix annotations have been
     added in the server project so that client can use them.
 -   Use play mode to run the client
 
 ### Nullable
 
-C# 8: Nullable Reference Types is a compiler option to raise warning when some nullability case are not explicitely handled. It is enabled in most or our code.
+C# 8: Nullable Reference Types is a compiler option to raise warning when some nullability case are not explicitly handled. It is enabled in most or our code.
 See [https://www.meziantou.net/csharp-8-nullable-reference-types.htm](https://www.meziantou.net/csharp-8-nullable-reference-types.htm)
 
 -   The nullable compiler option is enabled on :
@@ -103,47 +103,42 @@ dotnet ef database update
 
 Pour réinitialiser la base de données locale et régénérer le modèle à l'aide de Entity Framework Core, vous pouvez utiliser les commandes suivantes dans la console du gestionnaire de paquets (Package Manager Console) ou dans l'invite de commande (Command Prompt) :
 
-    Supprimer la base de données :
-
+Supprimer la base de données :
 ```shell
 dotnet ef database drop
 ```
 
-    Créer une nouvelle migration :
-
+Créer une nouvelle migration :
 ```shell
 dotnet ef migrations add InitialCreate
 ```
 
-    Appliquer la migration pour créer la base de données :
-
+Appliquer la migration pour créer la base de données :
 ```shell
 dotnet ef database update
 ```
 
-Notez que vous devez être dans le répertoire du projet qui contient le fichier .csproj pour exécuter ces commandes. De plus, le nom InitialCreate est juste un exemple, vous pouvez le remplacer par le nom que vous voulez donner à votre migration.
+Notez que vous devez être dans le répertoire du projet qui contient le fichier .csproj pour exécuter ces commandes. 
+De plus, le nom InitialCreate est juste un exemple, vous pouvez le remplacer par le nom que vous voulez donner à votre migration.
 
 Si vous utilisez la console du gestionnaire de paquets dans Visual Studio, vous pouvez utiliser les commandes suivantes à la place :
 
-    Supprimer la base de données :
-
+Supprimer la base de données :
 ```shell
 Drop-Database
 ```
 
-    Créer une nouvelle migration :
-
+Créer une nouvelle migration :
 ```shell
 Add-Migration InitialCreate
 ```
 
-    Appliquer la migration pour créer la base de données :
-
+Appliquer la migration pour créer la base de données :
 ```shell
 Update-Database
 ```
 
-Encore une fois, InitialCreate est juste un exemple et peut être remplacé par le nom que vous voulez donner à votre migration.
+Encore une fois, InitialCreate est juste un example et peut être remplacé par le nom que vous voulez donner à votre migration.
 
 ### Csproj
 
