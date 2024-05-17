@@ -24,6 +24,7 @@ public class BlockRenderingSide {
 
     public float MainWindIntensity = 0;
 
+    // A frame is optional, it will overlay framing texture around the main texture and tty to blend according to heights
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
     public string FrameAlbedoTexture;
 
@@ -35,6 +36,7 @@ public class BlockRenderingSide {
 
     public float FrameWindIntensity = 0;
 
+    // index of the frame texture. Should be multiplied by 55 to get the 1st tile sprite of the tiles serie.
     [HideInInspector]
     public int FrameTextureIndex;
 
@@ -44,6 +46,7 @@ public class BlockRenderingSide {
     [HideInInspector]
     public int FrameHeightsIndex;
 
+    // Index of the main texture.
     [HideInInspector]
     public int MainTextureIndex;
 

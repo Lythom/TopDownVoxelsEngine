@@ -153,11 +153,11 @@ MonoBehaviour:
   PlaceFX: {fileID: 7159507963483705760, guid: c96f43ce22c7bc14796b5cf1d01da71e, type: 3}
   RemoveFX: {fileID: 893364139256490378, guid: 3f15845c021aae74c9eb27491b787677, type: 3}
   RenderDistance: 4
-  OpaqueBlocksMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
+  OpaqueBlocksMaterial: {fileID: -876546973899608171, guid: 503fcef457ad29447b010126b0e36d56, type: 3}
   BlocksRenderingLibrary:
   - Id: 0
     Sides: []
-    ItemPreview: {fileID: 0}
+    ItemPreview: {fileID: 2800000, guid: 91d3d754c3f2ed742b805399cbbbe0e9, type: 3}
   - Id: 1
     Sides:
     - Directions: 63
@@ -1013,7 +1013,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelId: 0
-  BlockMaterial: {fileID: 2100000, guid: 5c7ea6b7f4e5e864aa74dee25c68e127, type: 2}
+  BlockMaterial: {fileID: -876546973899608171, guid: 503fcef457ad29447b010126b0e36d56, type: 3}
 --- !u!1 &953415490
 GameObject:
   m_ObjectHideFlags: 0

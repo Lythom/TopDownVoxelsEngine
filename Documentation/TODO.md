@@ -29,6 +29,7 @@ TODO:
 
 - varier le rendu : voxels decorations / tesselation
 - Refaire le shader en URP ?
+- Clarifier la cible ?
 
 Cas:
 - les modifications (ie. pose de blocs) dont identifées par un id uniquement généré par le client. ie. B2 pour le bloc posé par B et A5 pour celui posé par A.

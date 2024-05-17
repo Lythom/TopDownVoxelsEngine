@@ -84,15 +84,15 @@ Shader "Custom/TextureArray"
             float facingCoefficient;
         };
 
-        float2 triplanarUV(Input IN)
+        float2 triplanarUV(float3 worldPos, float3 worldNormals)
         {
             float2 uv =
                 // "* float2(sign(IN.worldNormals.x), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
-                abs(IN.worldNormals.x) * IN.worldPos.zy * float2(sign(IN.worldNormals.x), 1)
+                abs(worldNormals.x) * worldPos.zy * float2(sign(worldNormals.x), 1)
                 // Can't get uvParallax to work if normal is absolute for some weird reason
-                + IN.worldNormals.y * IN.worldPos.xz * float2(sign(IN.worldNormals.y), 1)
-                // "* float2(-sign(IN.worldNormals.z), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
-                + abs(IN.worldNormals.z) * IN.worldPos.xy * float2(-sign(IN.worldNormals.z), 1);
+                + worldNormals.y * worldPos.xz * float2(sign(worldNormals.y), 1)
+                // "* float2(-sign(worldNormals.z), 1)" is to correct UV on backfaces (because mesh vertex or reversed)
+                + abs(worldNormals.z) * worldPos.xy * float2(-sign(worldNormals.z), 1);
             return float2(uv.x, uv.y);
         }
 
@@ -227,7 +227,7 @@ Shader "Custom/TextureArray"
             float precisionFactor = saturate(proximity * proximity * proximity + (1 - IN.facingCoefficient) * 0.1);
             // o.Albedo = wind;
             // return;
-            const float2 rawtuv = triplanarUV(IN);
+            const float2 rawtuv = triplanarUV(IN.worldPos, IN.worldNormals);
             const float2 tuv = rawtuv * (1.0/3.0);
             const float2 texCoord = IN.textCoords;
             float frameHeightsIndex = IN.frameHeightsIndex * 55 + IN.tileIndex;
