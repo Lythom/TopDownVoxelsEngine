@@ -19,7 +19,7 @@ namespace VoxelsEngine {
         public bool IsLocalEngine() => SocketClient is FakeEchoingSocketClient;
 
         [ShowInInspector]
-        public GameState State = new(null, null, null);
+        public GameState State = new(null, null);
 
         public readonly SideEffectManager SideEffectManager = new();
 

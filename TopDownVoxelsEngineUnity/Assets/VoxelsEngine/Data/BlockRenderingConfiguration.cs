@@ -14,25 +14,25 @@ public class BlockRenderingSide {
 
     // A main texture is required
     [ValueDropdown("@AssetsHelper.GetMainTextures()")]
-    public string MainAlbedoTexture;
+    public string MainAlbedoTexture = null!;
 
     [ValueDropdown("@AssetsHelper.GetMainTextures()")]
-    public string MainNormalsTexture;
+    public string MainNormalsTexture = null!;
 
     [ValueDropdown("@AssetsHelper.GetMainTextures()")]
-    public string MainHeightsTexture;
+    public string MainHeightsTexture = null!;
 
     public float MainWindIntensity = 0;
 
     // A frame is optional, it will overlay framing texture around the main texture and tty to blend according to heights
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
-    public string FrameAlbedoTexture;
+    public string FrameAlbedoTexture = null!;
 
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
-    public string FrameNormalsTexture;
+    public string FrameNormalsTexture = null!;
 
     [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
-    public string FrameHeightsTexture;
+    public string FrameHeightsTexture = null!;
 
     public float FrameWindIntensity = 0;
 

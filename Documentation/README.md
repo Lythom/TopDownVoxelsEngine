@@ -52,7 +52,7 @@ General documentation of the Dream Builder project.
   by netstandard2.1 platform server-side. It must remains compatible in both contexts. Sirenix annotations have been
   added in the server project so that client can use them.
 - Use play mode to run the client
-- 
+- Most game files are into `VoxelsEngineUnity/Assets/VoxelsEngine`
 
 ### Nullable
 

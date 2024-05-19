@@ -7,7 +7,7 @@ using Shared.Net;
 
 namespace Shared {
     public class Server_GameServer : IDisposable {
-        public readonly GameState State = new(null, null, null);
+        public readonly GameState State = new(null, null);
         private readonly CancellationTokenSource _cancellationTokenSource;
         private CancellationToken _cancellationToken;
         public int Frames { get; private set; } = 0;

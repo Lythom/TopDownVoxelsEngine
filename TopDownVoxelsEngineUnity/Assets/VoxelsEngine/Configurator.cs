@@ -179,7 +179,7 @@ namespace VoxelsEngine {
 
 #if UNITY_EDITOR
                 // If we're in the editor find a ref in the scene
-                _instance = FindObjectOfType<Configurator>();
+                _instance = FindFirstObjectByType<Configurator>();
                 if (_instance != null) {
                     FillLibrary();
                 }

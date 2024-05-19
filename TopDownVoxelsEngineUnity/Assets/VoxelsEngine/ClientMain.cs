@@ -76,6 +76,13 @@ namespace VoxelsEngine {
 
         private void OnDestroy() {
             if (_engine != null) {
+                if (ForceLocalPlay) {
+                    var state = MessagePackSerializer.Serialize(_engine.State);
+                    File.WriteAllBytes(LocalSavePath, state);
+                    // File.WriteAllText(LocalSavePath + ".json", MessagePackSerializer.ConvertToJson(state));
+                    Logr.Log("writing game save at: " + LocalSavePath);
+                }
+
                 _engine.Stop();
                 _engine.SideEffectManager.For<CharacterJoinGameEvent>().StopListening(HandlePlayerJoin);
                 _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StopListening(HandlePlayerLeave);
@@ -99,6 +106,7 @@ namespace VoxelsEngine {
                     Logr.Log("Loading existing game", Tags.Standalone);
                 } catch (Exception e) {
                     Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
+                    _engine = null;
                     return;
                 }
             }
@@ -114,7 +122,7 @@ namespace VoxelsEngine {
 
                 if (state == null) {
                     Logr.Log("Creating new game", Tags.Standalone);
-                    state = new GameState(null, null, null);
+                    state = new GameState(null, null);
                     state.Levels.Add("World", new LevelMap("World", spawnPosition));
                     state.Characters.Add(0,
                         new Character(

@@ -18,8 +18,6 @@ namespace MessagePack.Formatters.Shared
 {
     public sealed class GameStateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.GameState>
     {
-        // IsApplyingEvent
-        private static global::System.ReadOnlySpan<byte> GetSpan_IsApplyingEvent() => new byte[1 + 15] { 175, 73, 115, 65, 112, 112, 108, 121, 105, 110, 103, 69, 118, 101, 110, 116 };
         // Characters
         private static global::System.ReadOnlySpan<byte> GetSpan_Characters() => new byte[1 + 10] { 170, 67, 104, 97, 114, 97, 99, 116, 101, 114, 115 };
         // Levels
@@ -36,9 +34,7 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(4);
-            writer.WriteRaw(GetSpan_IsApplyingEvent());
-            writer.Write(value.IsApplyingEvent);
+            writer.WriteMapHeader(3);
             writer.WriteRaw(GetSpan_Characters());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<ushort, global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
             writer.WriteRaw(GetSpan_Levels());
@@ -57,7 +53,8 @@ namespace MessagePack.Formatters.Shared
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var ____result = new global::Shared.GameState();
+            var __Characters__ = default(global::LoneStoneStudio.Tools.ReactiveDictionary<ushort, global::Shared.Character>);
+            var __Levels__ = default(global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>);
 
             for (int i = 0; i < length; i++)
             {
@@ -68,20 +65,15 @@ namespace MessagePack.Formatters.Shared
                     FAIL:
                       reader.Skip();
                       continue;
-                    case 15:
-                        if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_IsApplyingEvent().Slice(1))) { goto FAIL; }
-
-                        reader.Skip();
-                        continue;
                     case 10:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_Characters().Slice(1))) { goto FAIL; }
 
-                        reader.Skip();
+                        __Characters__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<ushort, global::Shared.Character>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 6:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 126909395920204UL) { goto FAIL; }
 
-                        reader.Skip();
+                        __Levels__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
                     case 7:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 34186468488475207UL) { goto FAIL; }
@@ -92,6 +84,7 @@ namespace MessagePack.Formatters.Shared
                 }
             }
 
+            var ____result = new global::Shared.GameState(__Characters__, __Levels__);
             reader.Depth--;
             return ____result;
         }
