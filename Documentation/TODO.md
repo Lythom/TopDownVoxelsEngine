@@ -1,21 +1,5 @@
 TODO:
-- Workflow de démarrage d'une partie
-  - local
-    1. Génération du level ("world")
-    2. Création d'un personnage joueur par défaut (0)
-    3. Instanciation d'un CharacterAgent pour ce perso (automatique via subscription au state ? Synchronized prefabs ?)
-  - Réseau
-    - client
-      1. Connexion au serveur (identification)
 
-- Clarifier la génération de chunk
-    - Généré par le serveur (normalement bien en amont, prégénérer large ?)
-    - Synchronisé avec le client à la connexion
-    - Rendu par le client un fois les infos reçues
-      - Le serveur pousse les infos et devine les besoins du client, le client ne rend rien tant qu'il n'a pas reçu d'infos
-
-
-- Routine de persistance des chunks
 - synchro des chunks
   - transmis uniquement une fois et automatiquement à l'approche du personnage
   - ensuite synchro simultanée block par block via application séquentielle des messages PlaceBlock
@@ -60,3 +44,11 @@ Done:
 - Créer des messages
   - PlayerJoinFromClient
 - Créer un tick qui résoud les changements dans le GameServer
+- Clarifier la génération de chunk
+  - Généré par le serveur (normalement bien en amont, prégénérer large ?)
+  - Synchronisé avec le client à la connexion
+  - Rendu par le client un fois les infos reçues
+    - Le serveur pousse les infos et devine les besoins du client, le client ne rend rien tant qu'il n'a pas reçu d'infos
+
+- Routine de persistance des chunks
+

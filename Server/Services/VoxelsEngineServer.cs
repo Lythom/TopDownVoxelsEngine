@@ -20,8 +20,8 @@ namespace Server {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         // Data
-        private readonly GameState _state = new();
-        private readonly GameState _stateBackup = new();
+        private readonly GameState _state = new(null, null);
+        private readonly GameState _stateBackup = new(null, null);
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -34,6 +34,7 @@ namespace Server {
         private readonly SocketServer _socketServer;
         private readonly ConcurrentQueue<InputMessage> _inbox = new();
         private readonly ConcurrentQueue<OutputMessage> _outbox = new();
+        private readonly ConcurrentDictionary<ChunkKey, Chunk> _dirtyChunks = new();
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
@@ -117,6 +118,68 @@ namespace Server {
                     }
                 } catch (Exception) {
                     if (hasMessage) Logr.LogError($"A message {m.Message.GetType().Name} was not sent to {m.RecipientId}");
+                }
+            }
+        }
+
+        private async UniTask StartPersistingAsync(DbGame currentDbSave) {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+
+            if (currentDbSave == null || currentDbSave.Levels == null) {
+                throw new Exception("The game save should include levels");
+            }
+
+            Dictionary<string, Guid> levelsByName = new();
+
+            void UpdateLevelsRefs() {
+                foreach (var dbLevel in context.Levels.Where(l => l.GameId == currentDbSave.GameId)) {
+                    levelsByName[dbLevel.Name] = dbLevel.LevelId;
+                }
+            }
+
+            UpdateLevelsRefs();
+
+            while (!_cts.Token.IsCancellationRequested) {
+                bool hasDirtyChunks = _dirtyChunks.Count > 0;
+                try {
+                    if (hasDirtyChunks) {
+                        var dirtyChunksCopy = new List<KeyValuePair<ChunkKey, Chunk>>(_dirtyChunks);
+                        _dirtyChunks.Clear();
+                        foreach (var (chunkKey, chunk) in dirtyChunksCopy) {
+                            if (!levelsByName.ContainsKey(chunkKey.LevelId)) UpdateLevelsRefs();
+                            var levelId = levelsByName[chunkKey.LevelId];
+                            var dbChunk = context.Chunks.SingleOrDefault(c => c.ChX == chunkKey.ChX && c.ChZ == chunkKey.ChZ && c.LevelId == levelId);
+                            if (dbChunk == null) {
+                                dbChunk = new DbChunk {
+                                    Cells = MessagePackSerializer.Serialize(chunk.Cells),
+                                    IsGenerated = chunk.IsGenerated,
+                                    LevelId = levelId,
+                                    ChX = (short) chunkKey.ChX,
+                                    ChZ = (short) chunkKey.ChZ
+                                };
+                                context.Chunks.Add(dbChunk);
+                                Logr.Log(context.Entry(dbChunk).State.ToString());
+                            } else {
+                                dbChunk.Cells = MessagePackSerializer.Serialize(chunk.Cells);
+                                dbChunk.IsGenerated = chunk.IsGenerated;
+                            }
+                        }
+
+                        await using var transaction = await context.Database.BeginTransactionAsync();
+                        try {
+                            await context.SaveChangesAsync();
+                            await transaction.CommitAsync();
+                            Logr.Log("chunks updated");
+                        } catch (Exception ex) {
+                            await transaction.RollbackAsync();
+                            Logr.LogError($"transaction failed. Exception: {ex.Message}");
+                        }
+                    } else {
+                        await UniTask.Yield();
+                    }
+                } catch (Exception ex) {
+                    Logr.LogError($"Could not persist {_dirtyChunks.Count} chunks. Exception: {ex.Message}");
                 }
             }
         }
@@ -238,6 +301,7 @@ namespace Server {
             }
 
             _state.LevelGenerator.GenerateFromQueue(PriorityLevel.All, _state.Levels);
+            StartPersistingAsync(currentDbSave).Forget();
         }
 
         [SuppressMessage("ReSharper", "PossibleLossOfFraction", Justification = "Manipulate only powers of 2.")]
@@ -293,6 +357,13 @@ namespace Server {
                         evt.Apply(_state, null);
 
                         SmartBroadcast(evt);
+
+                        if (evt is PlaceBlocksGameEvent pbgm) {
+                            var (chX, chZ) = LevelTools.GetChunkPosition(pbgm.X, pbgm.Z);
+                            var level = _state.Characters[pbgm.CharacterShortId].Level.Value;
+                            if (level != null) _dirtyChunks[new ChunkKey(level, chX, chZ)] = _state.Levels[level].Chunks[chX, chZ];
+                        }
+
                         break;
                     case HelloNetworkMessage hello: {
                         Console.WriteLine("A client said hello : " + hello.Username);
@@ -350,6 +421,7 @@ namespace Server {
                 }
             }
         }
+
 
         private async UniTask<(Character character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
             using var scope = _serviceScopeFactory.CreateScope();
