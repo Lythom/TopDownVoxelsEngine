@@ -1,18 +1,9 @@
 TODO:
 
-- synchro des chunks
-  - transmis uniquement une fois et automatiquement à l'approche du personnage
-  - ensuite synchro simultanée block par block via application séquentielle des messages PlaceBlock
-  - note: place block => Ajouter la possibilité de undo
-  - garder la liste ordonnées des X dernières secondes (ou juste une rotation queue d'un nombre fixe ?)
-  - SI modification antérieur et sur le même chunk indiquée par le serveur après application optimiste
-    - Ce cas de figure est détecté au moment où le joueur reçoit la réponse du serveur
-
 - tester les perfs de génération et de rendu sur des plus grands chunks
   - optimiser "3 quad par voxel + half offset and flip the back"
 
 - varier le rendu : voxels decorations / tesselation
-- Refaire le shader en URP ?
 - Clarifier la cible ?
 
 Cas:
@@ -52,3 +43,13 @@ Done:
 
 - Routine de persistance des chunks
 
+
+- synchro des chunks
+  - transmis uniquement une fois et automatiquement à l'approche du personnage
+  - ensuite synchro simultanée block par block via application séquentielle des messages PlaceBlock
+  - note: place block => Ajouter la possibilité de undo
+  - garder la liste ordonnées des X dernières secondes (ou juste une rotation queue d'un nombre fixe ?)
+  - SI modification antérieur et sur le même chunk indiquée par le serveur après application optimiste
+    - Ce cas de figure est détecté au moment où le joueur reçoit la réponse du serveur
+
+- Refaire le shader en URP ?
