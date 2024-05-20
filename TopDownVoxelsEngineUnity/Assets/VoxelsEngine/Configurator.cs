@@ -61,12 +61,12 @@ namespace VoxelsEngine {
             }
 
             if (mainSourceSize > 0) {
-                var mainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true);
-                var mainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true);
-                var mainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true);
-                var frameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true);
-                var frameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true);
-                var frameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true);
+                var mainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
+                var mainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
+                var mainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
+                var frameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
+                var frameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
+                var frameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
 
                 OpaqueBlocksMaterial.SetTexture(MainTex, mainAlbedo);
                 OpaqueBlocksMaterial.SetTexture(MainNormals, mainNormals);
@@ -77,8 +77,8 @@ namespace VoxelsEngine {
             }
         }
 
-        private static Texture2DArray Create2DArrayTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain) {
-            Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count, textureFormat, mipChain);
+        private static Texture2DArray Create2DArrayTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
+            Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count, textureFormat, mipChain, linear);
             for (var iSource = 0; iSource < sources.Count; iSource++) {
                 var sourceTexturePath = sources[iSource];
                 var source = Resources.Load<Texture2D>(sourceTexturePath);
@@ -95,8 +95,8 @@ namespace VoxelsEngine {
             return outputTexture;
         }
 
-        private static Texture2DArray Create2DArrayFrameTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain) {
-            Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count * 55, textureFormat, mipChain);
+        private static Texture2DArray Create2DArrayFrameTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
+            Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count * 55, textureFormat, mipChain, linear);
             for (var iSource = 0; iSource < sources.Count; iSource++) {
                 var sourceTexturePath = sources[iSource];
                 var source = Resources.Load<Texture2D>(sourceTexturePath);
@@ -133,7 +133,7 @@ namespace VoxelsEngine {
                 var res = Resources.Load<Texture2D>(texturePath);
                 if (expectedSize == 0) expectedSize = res.width;
                 if (expectedSize != res.width || expectedSize != res.height) {
-                    throw new ApplicationException("Source main textures must be square and have the same size");
+                    throw new ApplicationException($"Source main textures must be square and have the same size. Texture: {texturePath}, expected: {expectedSize}, loaded: {res.width}x{res.height}. ");
                 }
 
                 return sourceList.Count - 1;
@@ -231,10 +231,14 @@ namespace VoxelsEngine {
 
 
             if (!_serializerRegistered) {
-                StaticCompositeResolver.Instance.Register(
-                    StandardResolver.Instance,
-                    GeneratedResolver.Instance
-                );
+                try {
+                    StaticCompositeResolver.Instance.Register(
+                        StandardResolver.Instance,
+                        GeneratedResolver.Instance
+                    );
+                } catch (Exception e) {
+                    Logr.LogException(e);
+                }
 
                 MessagePackSerializer.DefaultOptions = MessagePackOptions;
                 _serializerRegistered = true;

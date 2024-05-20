@@ -488,7 +488,7 @@ namespace Server {
             var range = 3;
             var userSessionData = _userSessionData
                 .Select(u => u.Value)
-                .FirstOrDefault(u => u.ShortId == playerKey);
+                .SingleOrDefault(u => u.ShortId == playerKey);
 
             if (userSessionData == null) return;
             for (int x = -range; x <= range; x++) {
