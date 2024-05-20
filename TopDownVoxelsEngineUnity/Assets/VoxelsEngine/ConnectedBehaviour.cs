@@ -79,7 +79,7 @@ namespace VoxelsEngine {
         protected ClientEngine ClientEngine {
             get {
                 if (_gameManager == null) _gameManager = GetComponentInParent<ClientEngine>(true);
-                if (_gameManager == null) _gameManager = FindObjectOfType<ClientEngine>(true);
+                if (_gameManager == null) _gameManager = FindFirstObjectByType<ClientEngine>(FindObjectsInactive.Include);
                 return _gameManager;
             }
         }

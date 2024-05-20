@@ -47,7 +47,7 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(52)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(54)
             {
                 { typeof(global::LoneStoneStudio.Tools.Reactive<byte>), 0 },
                 { typeof(global::LoneStoneStudio.Tools.Reactive<global::Shared.BlockId>), 1 },
@@ -101,6 +101,8 @@ namespace MessagePack.Resolvers
                 { typeof(global::Shared.Vector2Int), 49 },
                 { typeof(global::Shared.Vector3), 50 },
                 { typeof(global::Shared.Vector3Int), 51 },
+                { typeof(global::VoxelsEngine.Data.FrameTextureConfiguration), 52 },
+                { typeof(global::VoxelsEngine.Data.MainTextureConfiguration), 53 },
             };
         }
 
@@ -166,6 +168,8 @@ namespace MessagePack.Resolvers
                 case 49: return new MessagePack.Formatters.Shared.Vector2IntFormatter();
                 case 50: return new MessagePack.Formatters.Shared.Vector3Formatter();
                 case 51: return new MessagePack.Formatters.Shared.Vector3IntFormatter();
+                case 52: return new MessagePack.Formatters.VoxelsEngine.Data.FrameTextureConfigurationFormatter();
+                case 53: return new MessagePack.Formatters.VoxelsEngine.Data.MainTextureConfigurationFormatter();
                 default: return null;
             }
         }

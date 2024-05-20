@@ -12,7 +12,6 @@ namespace VoxelsEngine {
     public class Configurator : MonoBehaviour {
         private static Configurator? _instance;
 
-
         [Title("Audio")]
         [Required, AssetsOnly]
         public AudioClip SFXFootstep = null!;
@@ -35,7 +34,7 @@ namespace VoxelsEngine {
         [SerializeField]
         public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
 
-        public GameObject GrassProp;
+        public GameObject? GrassProp;
 
 
         [Button(ButtonSizes.Large)]
@@ -49,14 +48,19 @@ namespace VoxelsEngine {
             List<string> frameHeightsSources = new();
             int mainSourceSize = 0;
             int frameSourceSize = 0;
-            foreach (var brc in BlocksRenderingLibrary) {
+
+            var blockConfigs = Resources.LoadAll<BlockConfiguration>("Configurations");
+            
+            foreach (var brc in blockConfigs) {
                 foreach (var side in brc.Sides) {
                     side.MainTextureIndex = TryAddTexture(mainAlbedoSources, ref mainSourceSize, side.MainAlbedoTexture);
-                    side.MainNormalsIndex = TryAddTexture(mainNormalsSources, ref mainSourceSize, side.MainNormalsTexture);
-                    side.MainHeightsIndex = TryAddTexture(mainHeightsSources, ref mainSourceSize, side.MainHeightsTexture);
-                    side.FrameTextureIndex = TryAddFramesTexture(frameAlbedoSources, ref frameSourceSize, side.FrameAlbedoTexture);
-                    side.FrameNormalsIndex = TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
-                    side.FrameHeightsIndex = TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
+                    TryAddTexture(mainNormalsSources, ref mainSourceSize, side.MainNormalsTexture);
+                    TryAddTexture(mainHeightsSources, ref mainSourceSize, side.MainHeightsTexture);
+                    if (side.FrameAlbedoTexture != null && side.FrameNormalsTexture != null && side.FrameHeightsTexture != null) {
+                        side.FrameTextureIndex = TryAddFramesTexture(frameAlbedoSources, ref frameSourceSize, side.FrameAlbedoTexture);
+                        TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
+                        TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
+                    }
                 }
             }
 

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e855363838da49e984bcbfbb672970cf, type: 3}
+  m_Name: StoneBlock
+  m_EditorClassIdentifier: 
+  Id: 4
+  ItemPreview: {fileID: 2800000, guid: 3dd277703fc5f4742a1ef611c3eccfb9, type: 3}
+  Sides:
+  - Directions: 63
+    MainAlbedoTexture: Textures/Main/Stone_basecolor
+    MainNormalsTexture: Textures/Main/Stone_normal
+    MainHeightsTexture: Textures/Main/Stone_height
+    MainTextureConfiguration: '{"MainAlbedoTexture":"Textures/Main/Stone_basecolor","MainNormalsTexture":"Textures/Main/Stone_normal","MainHeightsTexture":"Textures/Main/Stone_height"}'
+    FrameAlbedoTexture: Textures/Frame/Frame_Stone_basecolor__384
+    FrameNormalsTexture: Textures/Frame/Frame_Stone_normal_384
+    FrameHeightsTexture: Textures/Frame/Frame_Stone_heights_384
+    FrameTextureConfiguration: '{"FrameAlbedoTexture":"Textures/Frame/Frame_Stone_basecolor__384","FrameNormalsTexture":"Textures/Frame/Frame_Stone_normal_384","FrameHeightsTexture":"Textures/Frame/Frame_Stone_heights_384"}'
+    FrameTextureIndex: 2
+    MainTextureIndex: 3

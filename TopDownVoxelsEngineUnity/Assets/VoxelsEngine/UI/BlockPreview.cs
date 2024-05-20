@@ -1,6 +1,10 @@
-﻿using LoneStoneStudio.Tools;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using LoneStoneStudio.Tools;
 using Shared;
 using Sirenix.OdinInspector;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace VoxelsEngine.UI {
@@ -8,12 +12,18 @@ namespace VoxelsEngine.UI {
         [Required]
         public RawImage Preview = null!;
 
+        private Dictionary<BlockId, Texture?> _previewsById;
+
+        private void Awake() {
+            var blockConfigs = Resources.LoadAll<BlockConfiguration>("Configurations");
+            _previewsById = blockConfigs.ToDictionary(c => c.Id, c => c.ItemPreview);
+        }
+
         protected override void OnSetup(GameState state) {
             Subscribe(state.Selectors.PlayerBlockSelector, state.Selectors.PlayerToolSelector, (block, tool) => {
                 this.SmartActive(tool == ToolId.PlaceBlock || tool == ToolId.ExchangeBlock);
-                var lib = Configurator.Instance.BlocksRenderingLibrary;
-                int id = (int) block;
-                Preview.texture = (id >= 0 && id < lib.Count ? lib[id].ItemPreview : null)!;
+                if (_previewsById.TryGetValue(block, out var value))
+                    Preview.texture = value!;
             });
         }
     }

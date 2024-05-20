@@ -3,9 +3,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using MessagePack;
 using UnityEditor;
 using UnityEditor.Build.Player;
 using UnityEngine;
+using UnityEngine.Windows;
+using VoxelsEngine.Data;
 using Debug = UnityEngine.Debug;
 
 public class EditorScripts : MonoBehaviour {
@@ -45,6 +48,68 @@ public class EditorScripts : MonoBehaviour {
             Debug.Log("CheckScripts: no errors.");
         }
     }
+
+
+    // Ajoute une entrée au menu contextuel de la vue Projet
+    [MenuItem("Assets/CreateTextureConfig", true)]
+    private static bool ValidateCreateTextureConfigAction() {
+        // Valide que exactement trois éléments sont sélectionnés
+        return Selection.objects.Length == 3;
+    }
+
+    [MenuItem("Assets/CreateTextureConfig")]
+    private static void CreateTextureConfigAction() {
+        bool isFrame = false;
+        string? albedo = null;
+        string? normals = null;
+        string? heights = null;
+
+        // Assurez-vous que trois éléments sont sélectionnés
+        if (Selection.objects.Length == 3) {
+            var files = Selection.objects.Select(AssetDatabase.GetAssetPath).ToList();
+            // Exécutez votre fonction arbitraire sur les fichiers sélectionnés
+            foreach (var selectedObject in files) {
+                if (selectedObject.Contains("/Frame/")) isFrame = true;
+                if (selectedObject.ToLower().Contains("normal")) normals = selectedObject;
+                else if (selectedObject.ToLower().Contains("height")) heights = selectedObject;
+                else if (albedo == null) albedo = selectedObject;
+                else throw new Exception($"Could figure out if {selectedObject} is albedo, normals or heights");
+            }
+
+            if (albedo == null) throw new Exception($"Couldn't find albedo in {string.Join(",", files)}.");
+            if (normals == null) throw new Exception($"Couldn't find normals in {string.Join(",", files)}.");
+            if (heights == null) throw new Exception($"Couldn't find heights in {string.Join(",", files)}.");
+            var resourcesIdx = albedo.LastIndexOf("/Resources/", StringComparison.Ordinal);
+            var slashIdx = albedo.LastIndexOf("/", StringComparison.Ordinal);
+            var dotIdx = albedo.LastIndexOf(".", StringComparison.Ordinal);
+            var name = albedo.Substring(slashIdx, dotIdx - slashIdx)
+                .Replace("albedo", "")
+                .Replace("Albedo", "")
+                .Replace("_", "");
+            var folder = albedo.Substring(0, slashIdx);
+
+            if (isFrame) {
+                FrameTextureConfiguration c = new FrameTextureConfiguration();
+                c.FrameAlbedoTexture = albedo.Substring(resourcesIdx + 11).Replace(".png", "");
+                c.FrameNormalsTexture = normals.Substring(resourcesIdx + 11).Replace(".png", "");
+                c.FrameHeightsTexture = heights.Substring(resourcesIdx + 11).Replace(".png", "");
+                var confJson = MessagePackSerializer.SerializeToJson(c);
+                System.IO.File.WriteAllText($"{folder}/{name}.json", confJson);
+                AssetDatabase.ImportAsset($"{folder}/{name}.json");
+            } else {
+                MainTextureConfiguration c = new MainTextureConfiguration();
+                c.MainAlbedoTexture = albedo.Substring(resourcesIdx + 11).Replace(".png", "");
+                c.MainNormalsTexture = normals.Substring(resourcesIdx + 11).Replace(".png", "");
+                c.MainHeightsTexture = heights.Substring(resourcesIdx + 11).Replace(".png", "");
+                var confJson = MessagePackSerializer.SerializeToJson(c);
+                System.IO.File.WriteAllText($"{folder}/{name}.json", confJson);
+                AssetDatabase.ImportAsset($"{folder}/{name}.json");
+            }
+        } else {
+            Debug.LogWarning("Please select exactly three items.");
+        }
+    }
+
 
     public static async UniTask<string> InvokeProcessStartAsync(string fileName, string arguments) {
         var psi = new ProcessStartInfo() {

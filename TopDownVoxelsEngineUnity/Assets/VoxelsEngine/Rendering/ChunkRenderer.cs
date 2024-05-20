@@ -4,9 +4,6 @@ using System.Linq;
 using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
-using UnityEngine.UIElements;
-using Random = UnityEngine.Random;
-using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
@@ -35,6 +32,7 @@ namespace VoxelsEngine {
         private int _uvs2Count = 0;
         private Dictionary<GameObject, List<PropPlacement>> Props = new();
         private Transform _propsContainer = null!;
+        private Dictionary<BlockId, BlockConfiguration> _blocksById = null!;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
@@ -44,6 +42,9 @@ namespace VoxelsEngine {
             pc.name = "Props";
             pc.transform.parent = transform;
             _propsContainer = pc.transform;
+
+            var blockConfigs = Resources.LoadAll<BlockConfiguration>("Configurations");
+            _blocksById = blockConfigs.ToDictionary(c => c.Id, c => c);
         }
 
         public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey) {
@@ -56,8 +57,7 @@ namespace VoxelsEngine {
             _uvs2Count = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
-                if (cell.Block != BlockId.Air) {
-                    var blockDef = Configurator.Instance.BlocksRenderingLibrary[(int) cell.Block];
+                if (cell.Block != BlockId.Air && _blocksById.TryGetValue(cell.Block, out var blockDef)) {
                     MakeCube(x, y, z, chunkKey, blockDef, chunk, level);
                 }
             }
@@ -65,7 +65,7 @@ namespace VoxelsEngine {
             return true;
         }
 
-        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRenderingConfiguration blockDef, Chunk chunk, LevelMap level) {
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockConfiguration blockDef, Chunk chunk, LevelMap level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) (i + 1);
                 var x = cX + chunkKey.ChX * Chunk.Size;
@@ -102,7 +102,7 @@ namespace VoxelsEngine {
         /// <param name="z"></param>
         /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
-        private void MakeFace(Direction dir, int x, int y, int z, BlockRenderingConfiguration block, int bitMask) {
+        private void MakeFace(Direction dir, int x, int y, int z, BlockConfiguration block, int bitMask) {
             if (block.Sides.Count == 0) return;
             CubeMeshData.FaceVertices((int) dir - 1, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //

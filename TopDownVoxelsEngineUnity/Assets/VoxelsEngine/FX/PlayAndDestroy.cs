@@ -1,9 +1,11 @@
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace VoxelsEngine {
     public class PlayAndDestroy : MonoBehaviour {
-        public AudioSource Audio;
+        [Required]
+        public AudioSource Audio = null!;
 
         void Start() {
             DoPlay().Forget();
