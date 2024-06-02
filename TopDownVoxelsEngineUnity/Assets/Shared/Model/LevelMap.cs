@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
@@ -23,7 +25,6 @@ namespace Shared {
             LevelId = levelId;
             SpawnPosition = spawnPosition;
         }
-
 
         public void Dispose() {
             _cts.Cancel(false);
@@ -55,22 +56,6 @@ namespace Shared {
         //     var filePath = Path.Join(Application.persistentDataPath, "Saves/" + saveId, key.ToString());
         //     return filePath;
         // }
-
-        public Chunk GetOrGenerateChunk(int chX, int chZ) {
-            // var key = ChunkData.GetFlatIndex(chX, chZ);
-            //if (GenerationQueue.Contains(key)) await WaitUntil(() => !GenerationQueue.Contains(key));
-
-            var chunk = Chunks[chX, chZ];
-            if (chunk.IsGenerated) {
-                return chunk;
-            }
-
-            //GenerationQueue.Enqueue(key);
-            // await WaitUntil(() => Chunks[chX, chZ].IsGenerated);
-            LevelBuilder.GenerateTestChunk(chX, chZ, LevelId, ref Chunks[chX, chZ]);
-
-            return Chunks[chX, chZ];
-        }
 
         public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock) {
             if (position.Y < 0 || position.Y >= Chunk.Size || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
@@ -119,14 +104,6 @@ namespace Shared {
             }
 
             return null;
-        }
-
-        public Cell? GetOrCreateCell(int x, int y, int z) {
-            var chX = (int) Math.Floor((double) x / Chunk.Size);
-            var chZ = (int) Math.Floor((double) z / Chunk.Size);
-            if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
-            var chunk = GetOrGenerateChunk(chX, chZ);
-            return chunk.Cells?[M.Mod(x, Chunk.Size), y, M.Mod(z, Chunk.Size)];
         }
 
         public bool CanSet(Vector3Int p, BlockId selectedItemValue) {

@@ -3,15 +3,15 @@
 namespace Shared {
     [MessagePackObject(true)]
     public struct Cell {
-        public BlockId Block;
+        public ushort Block;
         public byte DamageLevel;
 
-        public Cell(BlockId block, byte damageLevel) {
+        public Cell(ushort block, byte damageLevel) {
             Block = block;
             DamageLevel = damageLevel;
         }
 
-        public Cell(BlockId idx) {
+        public Cell(ushort idx) {
             Block = idx;
             DamageLevel = 0;
         }

@@ -1,9 +1,27 @@
 TODO:
 
+
 - tester les perfs de génération et de rendu sur des plus grands chunks
   - optimiser "3 quad par voxel + half offset and flip the back"
 
 - varier le rendu : voxels decorations / tesselation
+  - 1 définition des textures via un JSON. OK
+```C#
+        private static void RefreshTextures() {
+            var mtextures = Resources.LoadAll<TextAsset>("Textures/Main");
+            _allMainTextures = new ValueDropdownList<string>();
+            foreach (var textAsset in mtextures) {
+                _allMainTextures.Add(textAsset.name, textAsset.text);
+            }
+
+            var ftextures = Resources.LoadAll<TextAsset>("Textures/Frame");
+            _allFrameTextures = new ValueDropdownList<string>();
+            foreach (var textAsset in ftextures) {
+                _allFrameTextures.Add(textAsset.name, textAsset.text);
+            }
+        }
+```
+
 - Clarifier la cible ?
 
 Cas:

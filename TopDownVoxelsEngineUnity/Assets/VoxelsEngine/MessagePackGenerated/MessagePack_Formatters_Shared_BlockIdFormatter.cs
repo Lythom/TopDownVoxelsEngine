@@ -8,24 +8,53 @@
 #pragma warning disable 168
 #pragma warning disable CS1591 // document public APIs
 
+#pragma warning disable SA1129 // Do not use default value type constructor
+#pragma warning disable SA1309 // Field names should not begin with underscore
+#pragma warning disable SA1312 // Variable names should begin with lower-case letter
 #pragma warning disable SA1403 // File may only contain a single namespace
 #pragma warning disable SA1649 // File name should match first type name
 
 namespace MessagePack.Formatters.Shared
 {
-
     public sealed class BlockIdFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Shared.BlockId>
     {
+
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.BlockId value, global::MessagePack.MessagePackSerializerOptions options)
         {
-            writer.Write((global::System.Int32)value);
+            writer.WriteArrayHeader(1);
+            writer.Write(value.Id);
         }
 
         public global::Shared.BlockId Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
-            return (global::Shared.BlockId)reader.ReadInt32();
+            if (reader.TryReadNil())
+            {
+                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+            }
+
+            options.Security.DepthStep(ref reader);
+            var length = reader.ReadArrayHeader();
+            var __Id__ = default(ushort);
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        __Id__ = reader.ReadUInt16();
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            var ____result = new global::Shared.BlockId(__Id__);
+            reader.Depth--;
+            return ____result;
         }
     }
+
 }
 
 #pragma warning restore 168
@@ -33,5 +62,8 @@ namespace MessagePack.Formatters.Shared
 #pragma warning restore 618
 #pragma warning restore 612
 
+#pragma warning restore SA1129 // Do not use default value type constructor
+#pragma warning restore SA1309 // Field names should not begin with underscore
+#pragma warning restore SA1312 // Variable names should begin with lower-case letter
 #pragma warning restore SA1403 // File may only contain a single namespace
 #pragma warning restore SA1649 // File name should match first type name

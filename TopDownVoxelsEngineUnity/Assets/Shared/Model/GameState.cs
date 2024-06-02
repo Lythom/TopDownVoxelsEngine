@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LoneStoneStudio.Tools;
 using MessagePack;
 
@@ -19,6 +20,8 @@ namespace Shared {
 
         public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
+        public readonly string?[] BlockPathById = new string?[ushort.MaxValue];
+        public readonly Dictionary<string, ushort> BlockIdByPath = new();
 
         public readonly float Gravity = 1.4f;
 
@@ -30,7 +33,7 @@ namespace Shared {
 
         // internal or non serialized properties
         [IgnoreMember]
-        public readonly LevelGenerator LevelGenerator = new();
+        public readonly LevelGenerator LevelGenerator;
 
         [IgnoreMember]
         private readonly HashSet<uint> _dirtyChunks = new();
@@ -42,6 +45,33 @@ namespace Shared {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (levels != null) Levels.SynchronizeToTarget(levels);
             Selectors = new Selectors(this);
+            LevelGenerator = new LevelGenerator(BlockIdByPath);
+        }
+
+        public void UpdateBlockMapping(Registry<BlockConfigJson> registry) {
+            BlockPathById[0] = "Air";
+            foreach (var block in BlockPathById) {
+                if (block != null && block != "Air" && registry.Get(block) == null) {
+                    throw new ApplicationException($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Comportement de suppression de bloc non implémenté.");
+                }
+            }
+
+            foreach (var blockPath in registry.Get().Keys) {
+                if (BlockPathById.Contains(blockPath)) continue;
+                var nextIdx = Array.IndexOf(BlockPathById, null);
+                if (nextIdx == -1) {
+                    throw new InvalidOperationException("Le tableau BlockPathById est plein. Impossible d'ajouter de nouveaux éléments.");
+                }
+
+                BlockPathById[nextIdx] = blockPath;
+            }
+
+            // update inverted lookup
+            BlockIdByPath.Clear();
+            for (ushort blockId = 0; blockId < BlockPathById.Length; blockId++) {
+                var blockPath = BlockPathById[blockId];
+                if (blockPath != null) BlockIdByPath[blockPath] = blockId;
+            }
         }
 
         public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {
@@ -71,6 +101,9 @@ namespace Shared {
         public void UpdateValue(GameState nextState) {
             Characters.SynchronizeToTarget(nextState.Characters);
             Levels.SynchronizeToTarget(nextState.Levels);
+            for (var i = 0; i < BlockPathById.Length; i++) BlockPathById[i] = nextState.BlockPathById[i];
+            BlockIdByPath.Clear();
+            foreach (var (key, value) in nextState.BlockIdByPath) BlockIdByPath[key] = value;
         }
     }
 

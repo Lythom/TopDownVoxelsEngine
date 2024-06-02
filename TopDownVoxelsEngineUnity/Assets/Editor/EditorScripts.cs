@@ -79,7 +79,9 @@ public class EditorScripts : MonoBehaviour {
             if (albedo == null) throw new Exception($"Couldn't find albedo in {string.Join(",", files)}.");
             if (normals == null) throw new Exception($"Couldn't find normals in {string.Join(",", files)}.");
             if (heights == null) throw new Exception($"Couldn't find heights in {string.Join(",", files)}.");
-            var resourcesIdx = albedo.LastIndexOf("/Resources/", StringComparison.Ordinal);
+            var rootFolder = "Assets/StreamingAssets/";
+            var rootFolderLength = rootFolder.Length;
+            var rootFolderIdx = albedo.LastIndexOf(rootFolder, StringComparison.Ordinal);
             var slashIdx = albedo.LastIndexOf("/", StringComparison.Ordinal);
             var dotIdx = albedo.LastIndexOf(".", StringComparison.Ordinal);
             var name = albedo.Substring(slashIdx, dotIdx - slashIdx)
@@ -89,18 +91,18 @@ public class EditorScripts : MonoBehaviour {
             var folder = albedo.Substring(0, slashIdx);
 
             if (isFrame) {
-                FrameTextureConfiguration c = new FrameTextureConfiguration();
-                c.FrameAlbedoTexture = albedo.Substring(resourcesIdx + 11).Replace(".png", "");
-                c.FrameNormalsTexture = normals.Substring(resourcesIdx + 11).Replace(".png", "");
-                c.FrameHeightsTexture = heights.Substring(resourcesIdx + 11).Replace(".png", "");
+                FrameTextureJson c = new FrameTextureJson();
+                c.FrameAlbedoTexture = albedo.Substring(rootFolderIdx + rootFolderLength);
+                c.FrameNormalsTexture = normals.Substring(rootFolderIdx + rootFolderLength);
+                c.FrameHeightsTexture = heights.Substring(rootFolderIdx + rootFolderLength);
                 var confJson = MessagePackSerializer.SerializeToJson(c);
                 System.IO.File.WriteAllText($"{folder}/{name}.json", confJson);
                 AssetDatabase.ImportAsset($"{folder}/{name}.json");
             } else {
-                MainTextureConfiguration c = new MainTextureConfiguration();
-                c.MainAlbedoTexture = albedo.Substring(resourcesIdx + 11).Replace(".png", "");
-                c.MainNormalsTexture = normals.Substring(resourcesIdx + 11).Replace(".png", "");
-                c.MainHeightsTexture = heights.Substring(resourcesIdx + 11).Replace(".png", "");
+                MainTextureJson c = new MainTextureJson();
+                c.MainAlbedoTexture = albedo.Substring(rootFolderIdx + rootFolderLength);
+                c.MainNormalsTexture = normals.Substring(rootFolderIdx + rootFolderLength);
+                c.MainHeightsTexture = heights.Substring(rootFolderIdx + rootFolderLength);
                 var confJson = MessagePackSerializer.SerializeToJson(c);
                 System.IO.File.WriteAllText($"{folder}/{name}.json", confJson);
                 AssetDatabase.ImportAsset($"{folder}/{name}.json");

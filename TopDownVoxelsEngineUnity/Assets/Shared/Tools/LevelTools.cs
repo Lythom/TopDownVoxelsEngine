@@ -35,17 +35,6 @@ namespace Shared {
             return c == null || IsAir(c.Value);
         }
 
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsGrass(this Cell c) {
-            return c.Block == BlockId.Grass;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsGrass(this Cell? c) {
-            return c == null || IsGrass(c.Value);
-        }
-
         public static (uint cx, uint cy, uint cz) WorldToCellInChunk(int x, int y, int z) {
             var cx = M.Mod(x, Chunk.Size);
             var cy = M.Mod(y, Chunk.Size);

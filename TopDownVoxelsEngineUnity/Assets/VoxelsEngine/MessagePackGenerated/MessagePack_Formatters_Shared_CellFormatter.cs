@@ -25,10 +25,9 @@ namespace MessagePack.Formatters.Shared
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Shared.Cell value, global::MessagePack.MessagePackSerializerOptions options)
         {
-            var formatterResolver = options.Resolver;
             writer.WriteMapHeader(2);
             writer.WriteRaw(GetSpan_Block());
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Serialize(ref writer, value.Block, options);
+            writer.Write(value.Block);
             writer.WriteRaw(GetSpan_DamageLevel());
             writer.Write(value.DamageLevel);
         }
@@ -41,9 +40,8 @@ namespace MessagePack.Formatters.Shared
             }
 
             options.Security.DepthStep(ref reader);
-            var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var __Block__ = default(global::Shared.BlockId);
+            var __Block__ = default(ushort);
             var __DamageLevel__ = default(byte);
 
             for (int i = 0; i < length; i++)
@@ -58,7 +56,7 @@ namespace MessagePack.Formatters.Shared
                     case 5:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 461229747266UL) { goto FAIL; }
 
-                        __Block__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Shared.BlockId>(formatterResolver).Deserialize(ref reader, options);
+                        __Block__ = reader.ReadUInt16();
                         continue;
                     case 11:
                         if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_DamageLevel().Slice(1))) { goto FAIL; }

@@ -1,7 +1,6 @@
 using System;
 using LoneStoneStudio.Tools;
 using MessagePack;
-using Shared.SideEffects;
 
 namespace Shared.Net {
     [MessagePackObject]

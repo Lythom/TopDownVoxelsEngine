@@ -29,7 +29,7 @@ namespace Shared {
             LocalPlayerLevelIdSelector = new(null);
             LocalPlayerLevelIdSelector.BindNestedSelector(LocalPlayerStateSelector, lpss => lpss?.Level, cancellationToken);
 
-            PlayerBlockSelector = new Reactive<BlockId>(BlockId.Dirt);
+            PlayerBlockSelector = new Reactive<BlockId>(1);
             PlayerBlockSelector.BindNestedSelector(LocalPlayerStateSelector, c => c?.SelectedBlock, cancellationToken);
             PlayerToolSelector = new Reactive<ToolId>(ToolId.None);
             PlayerToolSelector.BindNestedSelector(LocalPlayerStateSelector, c => c?.SelectedTool, cancellationToken);

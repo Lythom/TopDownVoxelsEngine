@@ -76,6 +76,8 @@ namespace Server {
 
             _tick.MinPriority = _minimumPriority;
             _tick.Apply(_voxelsEngineServer.State, sideEffectManager);
+            
+            // TODO: Should be part of the tickGameEvent ?
             _voxelsEngineServer.TryGenerateChunks(_minimumPriority);
             _voxelsEngineServer.SendScheduledChunks();
 

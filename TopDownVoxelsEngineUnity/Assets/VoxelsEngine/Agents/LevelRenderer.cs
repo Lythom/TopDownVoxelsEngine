@@ -133,7 +133,7 @@ namespace VoxelsEngine {
             if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
             ChunkRenderer cr = ChunkRenderers[chX, chZ];
             if (cr != null) {
-                cr.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ));
+                cr.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
                 cr.UpdateMesh();
             }
         }
@@ -160,7 +160,7 @@ namespace VoxelsEngine {
                     }
 
                     chunkRenderer.transform.SetParent(transform, true);
-                    chunkRenderer.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ));
+                    chunkRenderer.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
                     chunkRenderer.UpdateMesh();
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);

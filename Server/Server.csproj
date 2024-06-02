@@ -61,4 +61,11 @@
     <ItemGroup>
         <Folder Include="Migrations" />
     </ItemGroup>
+
+    <!-- Include all files in Shared/Ressources -->
+    <ItemGroup>
+        <None Update="..\TopDownVoxelsEngineUnity\Assets\StreamingAssets\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 </Project>

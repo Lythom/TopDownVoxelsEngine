@@ -22,6 +22,10 @@ namespace MessagePack.Formatters.Shared
         private static global::System.ReadOnlySpan<byte> GetSpan_Characters() => new byte[1 + 10] { 170, 67, 104, 97, 114, 97, 99, 116, 101, 114, 115 };
         // Levels
         private static global::System.ReadOnlySpan<byte> GetSpan_Levels() => new byte[1 + 6] { 166, 76, 101, 118, 101, 108, 115 };
+        // BlockPathById
+        private static global::System.ReadOnlySpan<byte> GetSpan_BlockPathById() => new byte[1 + 13] { 173, 66, 108, 111, 99, 107, 80, 97, 116, 104, 66, 121, 73, 100 };
+        // BlockIdByPath
+        private static global::System.ReadOnlySpan<byte> GetSpan_BlockIdByPath() => new byte[1 + 13] { 173, 66, 108, 111, 99, 107, 73, 100, 66, 121, 80, 97, 116, 104 };
         // Gravity
         private static global::System.ReadOnlySpan<byte> GetSpan_Gravity() => new byte[1 + 7] { 167, 71, 114, 97, 118, 105, 116, 121 };
 
@@ -34,11 +38,15 @@ namespace MessagePack.Formatters.Shared
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(3);
+            writer.WriteMapHeader(5);
             writer.WriteRaw(GetSpan_Characters());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<ushort, global::Shared.Character>>(formatterResolver).Serialize(ref writer, value.Characters, options);
             writer.WriteRaw(GetSpan_Levels());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Serialize(ref writer, value.Levels, options);
+            writer.WriteRaw(GetSpan_BlockPathById());
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string[]>(formatterResolver).Serialize(ref writer, value.BlockPathById, options);
+            writer.WriteRaw(GetSpan_BlockIdByPath());
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, ushort>>(formatterResolver).Serialize(ref writer, value.BlockIdByPath, options);
             writer.WriteRaw(GetSpan_Gravity());
             writer.Write(value.Gravity);
         }
@@ -75,6 +83,23 @@ namespace MessagePack.Formatters.Shared
 
                         __Levels__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::LoneStoneStudio.Tools.ReactiveDictionary<string, global::Shared.LevelMap>>(formatterResolver).Deserialize(ref reader, options);
                         continue;
+                    case 13:
+                        switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
+                        {
+                            default: goto FAIL;
+                            case 8386072403300543554UL:
+                                if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 430729413224UL) { goto FAIL; }
+
+                                reader.Skip();
+                                continue;
+
+                            case 4784029429752884290UL:
+                                if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 448629133433UL) { goto FAIL; }
+
+                                reader.Skip();
+                                continue;
+
+                        }
                     case 7:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 34186468488475207UL) { goto FAIL; }
 

@@ -1,43 +1,37 @@
-﻿using JetBrains.Annotations;
-using Sirenix.OdinInspector;
+﻿using System.Linq;
+using Shared;
 using UnityEditor;
-using UnityEngine;
+using VoxelsEngine.Data;
+using VoxelsEngine.Tools;
 
 namespace VoxelsEngineEditor.Editor {
     public class AssetsHelper : AssetPostprocessor {
-        [CanBeNull]
-        private static ValueDropdownList<string> _allMainTextures = null;
+        public static readonly Registry<MainTextureJson> MainTextureRegistry = new(StreamAssets.GetPath("Textures", "Main"), "*.json");
+        public static readonly Registry<FrameTextureJson> FrameTextureRegistry = new(StreamAssets.GetPath("Textures", "Frame"), "*.json");
+        public static readonly SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
+        public static readonly Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
 
-        [CanBeNull]
-        private static ValueDropdownList<string> _allFrameTextures = null;
-
-        private static void RefreshTextures() {
-            var mtextures = Resources.LoadAll<TextAsset>("Textures/Main");
-            _allMainTextures = new ValueDropdownList<string>();
-            foreach (var textAsset in mtextures) {
-                _allMainTextures.Add(textAsset.name, textAsset.text);
-            }
-
-            var ftextures = Resources.LoadAll<TextAsset>("Textures/Frame");
-            _allFrameTextures = new ValueDropdownList<string>();
-            foreach (var textAsset in ftextures) {
-                _allFrameTextures.Add(textAsset.name, textAsset.text);
-            }
+        public static string[] GetMainTextures() {
+            return MainTextureRegistry.Get().Keys.ToArray();
         }
 
-        public static ValueDropdownList<string> GetMainTextures() {
-            RefreshTextures();
-            return _allMainTextures;
+        public static string[] GetFrameTextures() {
+            return FrameTextureRegistry.Get().Keys.ToArray();
         }
 
-        public static ValueDropdownList<string> GetFrameTextures() {
-            RefreshTextures();
-            return _allFrameTextures;
+        public static string[] GetSpriteTextures() {
+            return SpriteRegistry.Get().Keys.ToArray();
         }
 
-        void OnPostprocessTexture(Texture2D texture) {
-            _allMainTextures = null;
-            _allFrameTextures = null;
+        public static string[] GetBlocks() {
+            return BlockRegistry.Get().Keys.ToArray();
+        }
+
+        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths) {
+            MainTextureRegistry.Reload();
+            FrameTextureRegistry.Reload();
+            SpriteRegistry.Reload();
+            BlockRegistry.Reload();
         }
     }
 }

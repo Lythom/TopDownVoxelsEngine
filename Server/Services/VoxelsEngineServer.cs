@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Server {
         // Data
         private readonly GameState _state = new(null, null);
         private readonly GameState _stateBackup = new(null, null);
+        private readonly Registry<BlockConfigJson> BlockRegistry = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Blocks"), "*.json");
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -64,6 +66,7 @@ namespace Server {
                 await context.SaveChangesAsync(_cts.Token);
             }
 
+            _state.UpdateBlockMapping(BlockRegistry);
             InitState(dbSave);
             SubscribeRemoveSessionOnCharacterLeave(_state);
 
@@ -294,7 +297,6 @@ namespace Server {
                         IsGenerated = true
                     };
                 }
-
                 _state.Levels.Add(dbLevel.Name, levelMap);
                 var (chX, chZ) = LevelTools.GetChunkPosition(spawnPosition);
                 _state.LevelGenerator.EnqueueUninitializedChunksAround(levelMap.LevelId, chX, chZ, 6, _state.Levels);

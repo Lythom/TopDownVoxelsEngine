@@ -16,7 +16,7 @@
 
 namespace MessagePack.Formatters.VoxelsEngine.Data
 {
-    public sealed class FrameTextureConfigurationFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::VoxelsEngine.Data.FrameTextureConfiguration>
+    public sealed class FrameTextureConfigurationFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::VoxelsEngine.Data.FrameTextureJson>
     {
         // FrameAlbedoTexture
         private static global::System.ReadOnlySpan<byte> GetSpan_FrameAlbedoTexture() => new byte[1 + 18] { 178, 70, 114, 97, 109, 101, 65, 108, 98, 101, 100, 111, 84, 101, 120, 116, 117, 114, 101 };
@@ -25,7 +25,7 @@ namespace MessagePack.Formatters.VoxelsEngine.Data
         // FrameHeightsTexture
         private static global::System.ReadOnlySpan<byte> GetSpan_FrameHeightsTexture() => new byte[1 + 19] { 179, 70, 114, 97, 109, 101, 72, 101, 105, 103, 104, 116, 115, 84, 101, 120, 116, 117, 114, 101 };
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::VoxelsEngine.Data.FrameTextureConfiguration value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::VoxelsEngine.Data.FrameTextureJson value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value is null)
             {
@@ -43,7 +43,7 @@ namespace MessagePack.Formatters.VoxelsEngine.Data
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.FrameHeightsTexture, options);
         }
 
-        public global::VoxelsEngine.Data.FrameTextureConfiguration Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::VoxelsEngine.Data.FrameTextureJson Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -53,7 +53,7 @@ namespace MessagePack.Formatters.VoxelsEngine.Data
             options.Security.DepthStep(ref reader);
             var formatterResolver = options.Resolver;
             var length = reader.ReadMapHeader();
-            var ____result = new global::VoxelsEngine.Data.FrameTextureConfiguration();
+            var ____result = new global::VoxelsEngine.Data.FrameTextureJson();
 
             for (int i = 0; i < length; i++)
             {

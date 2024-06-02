@@ -103,6 +103,8 @@ namespace VoxelsEngine {
             if (File.Exists(LocalSavePath)) {
                 try {
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
+                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
+
                     Logr.Log("Loading existing game", Tags.Standalone);
                 } catch (Exception e) {
                     Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
@@ -123,7 +125,9 @@ namespace VoxelsEngine {
                 if (state == null) {
                     Logr.Log("Creating new game", Tags.Standalone);
                     state = new GameState(null, null);
-                    state.Levels.Add("World", new LevelMap("World", spawnPosition));
+                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
+                    var levelMap = new LevelMap("World", spawnPosition);
+                    state.Levels.Add("World", levelMap);
                     state.Characters.Add(0,
                         new Character(
                             "Local",

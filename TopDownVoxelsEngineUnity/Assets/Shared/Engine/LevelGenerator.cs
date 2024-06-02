@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using LoneStoneStudio.Tools;
 using Priority_Queue;
 
@@ -7,6 +9,14 @@ namespace Shared {
     public class LevelGenerator {
         public readonly SimplePriorityQueue<ChunkKey, int> ToBeGeneratedQueue = new();
         private readonly Stopwatch _frameStopwatch = new();
+        private ushort _woodBlockId;
+        private ushort _grassBlockId;
+        private ushort _groundBlockId;
+        private Dictionary<string, ushort> _blockIdByPath;
+
+        public LevelGenerator(Dictionary<string, ushort> blockIdByPath) {
+            _blockIdByPath = blockIdByPath;
+        }
 
         public void GenerateFromQueue(PriorityLevel minPriority, ReactiveDictionary<string, LevelMap> levels) {
             _frameStopwatch.Reset();
@@ -18,7 +28,14 @@ namespace Shared {
                 _ => 10
             };
             while (_frameStopwatch.ElapsedMilliseconds < budget && ToBeGeneratedQueue.TryDequeue(out var key)) {
-                LevelBuilder.GenerateTestChunk(key.ChX, key.ChZ, key.LevelId, ref levels[key.LevelId].Chunks[key.ChX, key.ChZ]);
+                foreach (var (path, blockId) in _blockIdByPath) {
+                    if (_woodBlockId > 0 && _grassBlockId > 0 && _groundBlockId > 0) break;
+                    if (path.ToLower().Contains("wood")) _woodBlockId = blockId;
+                    if (path.ToLower().Contains("grass")) _grassBlockId = blockId;
+                    if (path.ToLower().Contains("ground")) _groundBlockId = blockId;
+                }
+
+                LevelBuilder.GenerateTestChunk(key.ChX, key.ChZ, key.LevelId, ref levels[key.LevelId].Chunks[key.ChX, key.ChZ], _woodBlockId, _grassBlockId, _groundBlockId);
                 ChunkKeyPool.Return(key);
             }
         }

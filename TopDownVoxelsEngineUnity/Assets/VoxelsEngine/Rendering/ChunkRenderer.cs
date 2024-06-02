@@ -32,22 +32,19 @@ namespace VoxelsEngine {
         private int _uvs2Count = 0;
         private Dictionary<GameObject, List<PropPlacement>> Props = new();
         private Transform _propsContainer = null!;
-        private Dictionary<BlockId, BlockConfiguration> _blocksById = null!;
+        private Dictionary<BlockId, BlockRendering> _blocksById = null!;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
-            Props.Add(Configurator.Instance.GrassProp, new List<PropPlacement>());
+            if (Configurator.Instance.GrassProp != null) Props.Add(Configurator.Instance.GrassProp, new List<PropPlacement>());
             var pc = new GameObject();
             pc.name = "Props";
             pc.transform.parent = transform;
             _propsContainer = pc.transform;
-
-            var blockConfigs = Resources.LoadAll<BlockConfiguration>("Configurations");
-            _blocksById = blockConfigs.ToDictionary(c => c.Id, c => c);
         }
 
-        public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey) {
+        public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
             var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -57,15 +54,18 @@ namespace VoxelsEngine {
             _uvs2Count = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
-                if (cell.Block != BlockId.Air && _blocksById.TryGetValue(cell.Block, out var blockDef)) {
-                    MakeCube(x, y, z, chunkKey, blockDef, chunk, level);
+                var blockPath = blockPathById[cell.Block];
+                if (cell.Block != BlockId.Air
+                    && blockPath != null
+                    && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef)) {
+                    MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
                 }
             }
 
             return true;
         }
 
-        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockConfiguration blockDef, Chunk chunk, LevelMap level) {
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRendering blockDef, ushort blockId, LevelMap level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) (i + 1);
                 var x = cX + chunkKey.ChX * Chunk.Size;
@@ -73,22 +73,22 @@ namespace VoxelsEngine {
                 var z = cZ + chunkKey.ChZ * Chunk.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.Value.Block == BlockId.Air) {
-                    var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockDef.Id, Level.CellMatchDefinition);
+                    var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockId, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
 
                 // TODO: use GPU instancing
                 if (dir == Direction.Up) {
-                    if (n != null && n.Value.Block == BlockId.Grass) {
-                        if (Props.TryGetValue(Configurator.Instance.GrassProp, out var list)) {
-                            for (int j = 0; j < 1; j++) {
-                                // list.Add(new PropPlacement() {
-                                //     Position = new Vector3(x + Random.Range(-0.4f, 0.4f), y + 1.48f, z + Random.Range(-0.4f, 0.4f)),
-                                //     Angle = new Vector3(0, Random.Range(0, 359), 0)
-                                // });
-                            }
-                        }
-                    }
+                    // if (n != null && n.Value.Block == BlockId.Grass) {
+                    //     if (Props.TryGetValue(Configurator.Instance.GrassProp, out var list)) {
+                    //         for (int j = 0; j < 1; j++) {
+                    //             // list.Add(new PropPlacement() {
+                    //             //     Position = new Vector3(x + Random.Range(-0.4f, 0.4f), y + 1.48f, z + Random.Range(-0.4f, 0.4f)),
+                    //             //     Angle = new Vector3(0, Random.Range(0, 359), 0)
+                    //             // });
+                    //         }
+                    //     }
+                    // }
                 }
             }
         }
@@ -102,7 +102,7 @@ namespace VoxelsEngine {
         /// <param name="z"></param>
         /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbours cells of the same type</param>
-        private void MakeFace(Direction dir, int x, int y, int z, BlockConfiguration block, int bitMask) {
+        private void MakeFace(Direction dir, int x, int y, int z, BlockRendering block, int bitMask) {
             if (block.Sides.Count == 0) return;
             CubeMeshData.FaceVertices((int) dir - 1, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //

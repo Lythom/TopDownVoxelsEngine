@@ -102,6 +102,7 @@ namespace VoxelsEngine {
 
             // When this is run by the client for himself, ne need to ask server
             if (IsLocalEngine()) {
+                // TODO:to be part of TickGameEvent ?
                 foreach (var (_, c) in State.Characters) {
                     var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
                     if (c.Level.Value != null && State.Levels.ContainsKey(c.Level.Value)) {

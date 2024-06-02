@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using MessagePack;
 using MessagePack.Resolvers;
 using Shared;
 using Sirenix.OdinInspector;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Analytics;
+using VoxelsEngine.Data;
+using VoxelsEngine.Tools;
 
 namespace VoxelsEngine {
     [Serializable]
@@ -31,28 +35,43 @@ namespace VoxelsEngine {
         [Required]
         public Material OpaqueBlocksMaterial = null!;
 
-        [SerializeField]
-        public List<BlockRenderingConfiguration> BlocksRenderingLibrary = new();
+        [ShowInInspector]
+        public Dictionary<string, BlockRendering> BlocksRenderingLibrary = new();
+
+        public Registry<MainTextureJson> MainTextureRegistry = new(StreamAssets.GetPath("Textures", "Main"), "*.json");
+        public Registry<FrameTextureJson> FrameTextureRegistry = new(StreamAssets.GetPath("Textures", "Frame"), "*.json");
+        public SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
+        public Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
 
         public GameObject? GrassProp;
 
-
         [Button(ButtonSizes.Large)]
         private void RegenerateAtlas() {
+            MainTextureRegistry.Reload();
+            FrameTextureRegistry.Reload();
+            SpriteRegistry.Reload();
+            BlockRegistry.Reload();
+
+            var blockConfigs = BlockRegistry.Get();
+
+            BlocksRenderingLibrary.Clear();
+            BlocksRenderingLibrary.Add("Air", new BlockRendering("Air"));
+            foreach (var (blockPath, blockConfig) in blockConfigs) {
+                BlocksRenderingLibrary.Add(blockPath, new BlockRendering(blockPath, blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
+            }
+
             // Generate Main Albedos
-            List<string> mainAlbedoSources = new();
-            List<string> mainNormalsSources = new();
-            List<string> mainHeightsSources = new();
-            List<string> frameAlbedoSources = new();
-            List<string> frameNormalsSources = new();
-            List<string> frameHeightsSources = new();
+            List<Texture2D> mainAlbedoSources = new();
+            List<Texture2D> mainNormalsSources = new();
+            List<Texture2D> mainHeightsSources = new();
+            List<Texture2D> frameAlbedoSources = new();
+            List<Texture2D> frameNormalsSources = new();
+            List<Texture2D> frameHeightsSources = new();
             int mainSourceSize = 0;
             int frameSourceSize = 0;
 
-            var blockConfigs = Resources.LoadAll<BlockConfiguration>("Configurations");
-            
-            foreach (var brc in blockConfigs) {
-                foreach (var side in brc.Sides) {
+            foreach (var br in BlocksRenderingLibrary.Values) {
+                foreach (var side in br.Sides) {
                     side.MainTextureIndex = TryAddTexture(mainAlbedoSources, ref mainSourceSize, side.MainAlbedoTexture);
                     TryAddTexture(mainNormalsSources, ref mainSourceSize, side.MainNormalsTexture);
                     TryAddTexture(mainHeightsSources, ref mainSourceSize, side.MainHeightsTexture);
@@ -81,11 +100,10 @@ namespace VoxelsEngine {
             }
         }
 
-        private static Texture2DArray Create2DArrayTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
+        private static Texture2DArray Create2DArrayTexture(int size, List<Texture2D> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
             Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count, textureFormat, mipChain, linear);
             for (var iSource = 0; iSource < sources.Count; iSource++) {
-                var sourceTexturePath = sources[iSource];
-                var source = Resources.Load<Texture2D>(sourceTexturePath);
+                var source = sources[iSource];
                 outputTexture.SetPixels(source.GetPixels(0), iSource, 0);
             }
 
@@ -93,17 +111,16 @@ namespace VoxelsEngine {
             outputTexture.Apply();
 #if UNITY_EDITOR
             if (!Application.isPlaying) {
-                UnityEditor.AssetDatabase.CreateAsset(outputTexture, outputPath);
+                AssetDatabase.CreateAsset(outputTexture, outputPath);
             }
 #endif
             return outputTexture;
         }
 
-        private static Texture2DArray Create2DArrayFrameTexture(int size, List<string> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
+        private static Texture2DArray Create2DArrayFrameTexture(int size, List<Texture2D> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
             Texture2DArray outputTexture = new Texture2DArray(size, size, sources.Count * 55, textureFormat, mipChain, linear);
             for (var iSource = 0; iSource < sources.Count; iSource++) {
-                var sourceTexturePath = sources[iSource];
-                var source = Resources.Load<Texture2D>(sourceTexturePath);
+                var source = sources[iSource];
 
                 for (int x = 0; x < 11; x++) {
                     for (int y = 0; y < 5; y++) {
@@ -122,22 +139,21 @@ namespace VoxelsEngine {
             outputTexture.Apply();
 #if UNITY_EDITOR
             if (!Application.isPlaying) {
-                UnityEditor.AssetDatabase.CreateAsset(outputTexture, outputPath);
+                AssetDatabase.CreateAsset(outputTexture, outputPath);
             }
 #endif
 
             return outputTexture;
         }
 
-        private static int TryAddTexture(List<string> sourceList, ref int expectedSize, string texturePath) {
-            if (!string.IsNullOrEmpty(texturePath)) {
-                var idx = sourceList.IndexOf(texturePath);
+        private static int TryAddTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
+            if (texture != null) {
+                var idx = sourceList.IndexOf(texture);
                 if (idx > -1) return idx;
-                sourceList.Add(texturePath);
-                var res = Resources.Load<Texture2D>(texturePath);
-                if (expectedSize == 0) expectedSize = res.width;
-                if (expectedSize != res.width || expectedSize != res.height) {
-                    throw new ApplicationException($"Source main textures must be square and have the same size. Texture: {texturePath}, expected: {expectedSize}, loaded: {res.width}x{res.height}. ");
+                sourceList.Add(texture);
+                if (expectedSize == 0) expectedSize = texture.width;
+                if (expectedSize != texture.width || expectedSize != texture.height) {
+                    throw new ApplicationException($"Source main textures must be square and have the same size. Texture: {texture}, expected: {expectedSize}, loaded: {texture.width}x{texture.height}. ");
                 }
 
                 return sourceList.Count - 1;
@@ -146,14 +162,13 @@ namespace VoxelsEngine {
             return -1;
         }
 
-        private static int TryAddFramesTexture(List<string> sourceList, ref int expectedSize, string texturePath) {
-            if (!string.IsNullOrEmpty(texturePath)) {
-                var idx = sourceList.IndexOf(texturePath);
+        private static int TryAddFramesTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
+            if (texture != null) {
+                var idx = sourceList.IndexOf(texture);
                 if (idx > -1) return idx;
-                sourceList.Add(texturePath);
-                var res = Resources.Load<Texture2D>(texturePath);
-                if (expectedSize == 0) expectedSize = res.width / 11;
-                if (expectedSize != res.width / 11 || expectedSize != res.height / 5) {
+                sourceList.Add(texture);
+                if (expectedSize == 0) expectedSize = texture.width / 11;
+                if (expectedSize != texture.width / 11 || expectedSize != texture.height / 5) {
                     throw new ApplicationException("Source frame textures must be a 11 by 5 grid of the same size");
                 }
 
@@ -164,7 +179,7 @@ namespace VoxelsEngine {
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.InitializeOnLoadMethod]
+        [InitializeOnLoadMethod]
         static void EditorInitialize() {
             Initialize();
         }

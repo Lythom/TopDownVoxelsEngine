@@ -21,7 +21,7 @@ namespace Shared {
 
         public readonly Reactive<string?> Level = new(null);
         public readonly Reactive<ToolId> SelectedTool = new(ToolId.None);
-        public readonly Reactive<BlockId> SelectedBlock = new(BlockId.Dirt);
+        public readonly Reactive<BlockId> SelectedBlock = new(1);
         public readonly Reactive<TemplateId> SelectedTemplate = new(TemplateId.None);
         public readonly Reactive<byte> ToolRemoveBlockLevel = new(0);
         public readonly Reactive<byte> ToolAddBlockLevel = new(0);
