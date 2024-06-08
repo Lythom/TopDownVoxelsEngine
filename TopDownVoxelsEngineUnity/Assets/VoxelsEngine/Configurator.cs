@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MessagePack;
 using MessagePack.Resolvers;
 using Shared;
@@ -55,9 +56,9 @@ namespace VoxelsEngine {
             var blockConfigs = BlockRegistry.Get();
 
             BlocksRenderingLibrary.Clear();
-            BlocksRenderingLibrary.Add("Air", new BlockRendering("Air"));
+            BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
             foreach (var (blockPath, blockConfig) in blockConfigs) {
-                BlocksRenderingLibrary.Add(blockPath, new BlockRendering(blockPath, blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
+                BlocksRenderingLibrary.Add(blockPath, new BlockRendering(blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
             }
 
             // Generate Main Albedos
@@ -79,25 +80,32 @@ namespace VoxelsEngine {
                         side.FrameTextureIndex = TryAddFramesTexture(frameAlbedoSources, ref frameSourceSize, side.FrameAlbedoTexture);
                         TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
                         TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
+                    } else {
+                        side.FrameTextureIndex = -1;
                     }
                 }
             }
 
             if (mainSourceSize > 0) {
-                var mainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
-                var mainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
-                var mainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
-                var frameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
-                var frameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
-                var frameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
+                _lastMainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
+                _lastMainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
+                _lastMainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
+                _lastFrameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
+                _lastFrameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
+                _lastFrameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
 
-                OpaqueBlocksMaterial.SetTexture(MainTex, mainAlbedo);
-                OpaqueBlocksMaterial.SetTexture(MainNormals, mainNormals);
-                OpaqueBlocksMaterial.SetTexture(MainHeights, mainHeights);
-                OpaqueBlocksMaterial.SetTexture(FrameTex, frameAlbedo);
-                OpaqueBlocksMaterial.SetTexture(FrameNormals, frameNormals);
-                OpaqueBlocksMaterial.SetTexture(FrameHeights, frameHeights);
+                UploadTexturesToShader();
             }
+        }
+
+        [Button(ButtonSizes.Large)]
+        private void UploadTexturesToShader() {
+            OpaqueBlocksMaterial.SetTexture(MainTex, _lastMainAlbedo);
+            OpaqueBlocksMaterial.SetTexture(MainNormals, _lastMainNormals);
+            OpaqueBlocksMaterial.SetTexture(MainHeights, _lastMainHeights);
+            OpaqueBlocksMaterial.SetTexture(FrameTex, _lastFrameAlbedo);
+            OpaqueBlocksMaterial.SetTexture(FrameNormals, _lastFrameNormals);
+            OpaqueBlocksMaterial.SetTexture(FrameHeights, _lastFrameHeights);
         }
 
         private static Texture2DArray Create2DArrayTexture(int size, List<Texture2D> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {
@@ -243,6 +251,14 @@ namespace VoxelsEngine {
         private static readonly int FrameTex = Shader.PropertyToID("_frameTex");
         private static readonly int FrameNormals = Shader.PropertyToID("_frameNormals");
         private static readonly int FrameHeights = Shader.PropertyToID("_frameHeights");
+        private static readonly int FrameWithoutAlbedo = Shader.PropertyToID("_frameWithoutAlbedo");
+        private Texture2DArray _lastMainAlbedo;
+        private Texture2DArray _lastMainNormals;
+        private Texture2DArray _lastMainHeights;
+        private Texture2DArray _lastFrameAlbedo;
+        private Texture2DArray _lastFrameNormals;
+        private Texture2DArray _lastFrameHeights;
+        private List<int> _frameIndexesWithoutAlbedo;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Initialize() {

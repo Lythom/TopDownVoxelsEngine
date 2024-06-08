@@ -292,13 +292,16 @@ namespace VoxelsEngine {
             }
 
             if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
-                BlockId nextBlockId = (BlockId) M.Mod((int) selectedBlock + 1, Enum.GetNames(typeof(BlockId)).Length);
-                if (nextBlockId == BlockId.Air) nextBlockId++;
+                BlockId nextBlockId = selectedBlock + 1;
+                // beyond limit: loop
+                if (nextBlockId >= ushort.MaxValue || ClientEngine.State.BlockPathById[nextBlockId] == null) nextBlockId = 1;
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, nextBlockId));
             } else if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
-                var length = Enum.GetNames(typeof(BlockId)).Length;
-                BlockId prevBlockId = (BlockId) M.Mod((int) selectedBlock - 1, length);
-                if (prevBlockId == BlockId.Air) prevBlockId = (BlockId) (length - 1);
+                BlockId prevBlockId = selectedBlock - 1;
+                if (prevBlockId == BlockId.Air) {
+                    while (ClientEngine.State.BlockPathById[prevBlockId] != null) prevBlockId++;
+                    prevBlockId--;
+                }
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, prevBlockId));
             }
         }

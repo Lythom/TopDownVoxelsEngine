@@ -12,6 +12,8 @@ public class BlockConfigJson {
     [ListDrawerSettings(ShowFoldout = false)]
     public List<BlockSideJson> Sides;
 
+    public bool IgnoreFrameAlbedo = false;
+
     public BlockConfigJson() {
         ItemPreviewSprite = null;
         Sides = new List<BlockSideJson>();
@@ -30,6 +32,10 @@ public class BlockSideJson {
     public string MainTextureConfig = null!;
 
     // A frame is optional, it will overlay framing texture around the main texture and tty to blend according to heights
-    [ValueDropdown("@AssetsHelper.GetFrameTextures()")]
+    [ValueDropdown("@AssetsHelper.GetFrameTextures()"), OnValueChanged("HandleFrameTextureConfigChange")]
     public string? FrameTextureConfig = null;
+
+    public void HandleFrameTextureConfigChange() {
+        if (FrameTextureConfig == "null") FrameTextureConfig = null;
+    }
 }

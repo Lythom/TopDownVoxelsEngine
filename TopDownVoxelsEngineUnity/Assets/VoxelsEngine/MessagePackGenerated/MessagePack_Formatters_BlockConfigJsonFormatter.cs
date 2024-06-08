@@ -22,6 +22,8 @@ namespace MessagePack.Formatters
         private static global::System.ReadOnlySpan<byte> GetSpan_ItemPreviewSprite() => new byte[1 + 17] { 177, 73, 116, 101, 109, 80, 114, 101, 118, 105, 101, 119, 83, 112, 114, 105, 116, 101 };
         // Sides
         private static global::System.ReadOnlySpan<byte> GetSpan_Sides() => new byte[1 + 5] { 165, 83, 105, 100, 101, 115 };
+        // IgnoreFrameAlbedo
+        private static global::System.ReadOnlySpan<byte> GetSpan_IgnoreFrameAlbedo() => new byte[1 + 17] { 177, 73, 103, 110, 111, 114, 101, 70, 114, 97, 109, 101, 65, 108, 98, 101, 100, 111 };
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::BlockConfigJson value, global::MessagePack.MessagePackSerializerOptions options)
         {
@@ -32,11 +34,13 @@ namespace MessagePack.Formatters
             }
 
             var formatterResolver = options.Resolver;
-            writer.WriteMapHeader(2);
+            writer.WriteMapHeader(3);
             writer.WriteRaw(GetSpan_ItemPreviewSprite());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.ItemPreviewSprite, options);
             writer.WriteRaw(GetSpan_Sides());
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::BlockSideJson>>(formatterResolver).Serialize(ref writer, value.Sides, options);
+            writer.WriteRaw(GetSpan_IgnoreFrameAlbedo());
+            writer.Write(value.IgnoreFrameAlbedo);
         }
 
         public global::BlockConfigJson Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -61,10 +65,22 @@ namespace MessagePack.Formatters
                       reader.Skip();
                       continue;
                     case 17:
-                        if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ItemPreviewSprite().Slice(1))) { goto FAIL; }
+                        switch (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey))
+                        {
+                            default: goto FAIL;
+                            case 8531350758881588297UL:
+                                if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_ItemPreviewSprite().Slice(1 + 8))) { goto FAIL; }
 
-                        ____result.ItemPreviewSprite = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        continue;
+                                ____result.ItemPreviewSprite = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                                continue;
+
+                            case 8234380510863714121UL:
+                                if (!global::System.MemoryExtensions.SequenceEqual(stringKey, GetSpan_IgnoreFrameAlbedo().Slice(1 + 8))) { goto FAIL; }
+
+                                ____result.IgnoreFrameAlbedo = reader.ReadBoolean();
+                                continue;
+
+                        }
                     case 5:
                         if (global::MessagePack.Internal.AutomataKeyGen.GetKey(ref stringKey) != 495622318419UL) { goto FAIL; }
 

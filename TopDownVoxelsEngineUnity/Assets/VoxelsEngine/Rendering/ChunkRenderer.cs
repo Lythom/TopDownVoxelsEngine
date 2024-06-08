@@ -117,10 +117,10 @@ namespace VoxelsEngine {
             _uvs[_uvsCount++] = new(0, 0, side.MainTextureIndex, side.FrameTextureIndex);
             _uvs[_uvsCount++] = new(0, 1, side.MainTextureIndex, side.FrameTextureIndex);
             _uvs[_uvsCount++] = new(1, 1, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;

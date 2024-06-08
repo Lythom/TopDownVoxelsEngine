@@ -1,5 +1,9 @@
-﻿using System.Linq;
+﻿#nullable enable
+using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using Shared;
+using Sirenix.OdinInspector;
 using UnityEditor;
 using VoxelsEngine.Data;
 using VoxelsEngine.Tools;
@@ -15,8 +19,14 @@ namespace VoxelsEngineEditor.Editor {
             return MainTextureRegistry.Get().Keys.ToArray();
         }
 
-        public static string[] GetFrameTextures() {
-            return FrameTextureRegistry.Get().Keys.ToArray();
+        [ItemCanBeNull]
+        public static ValueDropdownList<string?> GetFrameTextures() {
+            var arr = new ValueDropdownList<string?> {{"", "null"}};
+            foreach (var key in FrameTextureRegistry.Get().Keys) {
+                arr.Add(key, key);
+            }
+
+            return arr;
         }
 
         public static string[] GetSpriteTextures() {

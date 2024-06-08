@@ -8,26 +8,20 @@ using VoxelsEngine.Tools;
 
 [Serializable]
 public struct BlockRendering {
-    public string Path;
-
     [ListDrawerSettings(ShowFoldout = false)]
     public List<BlockRenderingSide> Sides;
 
     public Texture? ItemPreview;
+    public readonly bool IgnoreFrameAlbedo;
 
-    public BlockRendering(string path) {
-        Path = path;
-        ItemPreview = null;
-        Sides = new List<BlockRenderingSide>();
-    }
+    public static BlockRendering Air = new (new BlockConfigJson(), null, null, null);
 
-    public BlockRendering(string path, BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
-        Path = path;
+    public BlockRendering(BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
         Sides = new();
         foreach (var side in blockConfig.Sides) {
             var mainJson = mainTextures.Get(side.MainTextureConfig);
             var frameJson = side.FrameTextureConfig == null ? null : frameTextures.Get(side.FrameTextureConfig);
-            if (mainJson == null) throw new OperationCanceledException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block {path}.");
+            if (mainJson == null) throw new OperationCanceledException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block.");
             Sides.Add(new BlockRenderingSide {
                 Directions = side.Directions,
                 MainAlbedoTexture = StreamAssets.FromRelativePath(mainJson.MainAlbedoTexture),
@@ -41,6 +35,7 @@ public struct BlockRendering {
 
         var previewSpritePath = blockConfig.ItemPreviewSprite == null ? null : spritesRegistry.Get(blockConfig.ItemPreviewSprite);
         ItemPreview = previewSpritePath == null ? null : StreamAssets.FromRelativePath(previewSpritePath);
+        IgnoreFrameAlbedo = blockConfig.IgnoreFrameAlbedo;
     }
 }
 

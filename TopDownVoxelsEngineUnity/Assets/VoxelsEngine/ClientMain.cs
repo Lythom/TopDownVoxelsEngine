@@ -33,7 +33,7 @@ namespace VoxelsEngine {
 
         private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
 
-        private void Awake() {
+        private void Start() {
             _otherPlayersAgents.Container = gameObject;
             _otherPlayersAgents.Prefab = CharacterPrefab;
             if (ForceLocalPlay) StartLocalPlay().Forget();
