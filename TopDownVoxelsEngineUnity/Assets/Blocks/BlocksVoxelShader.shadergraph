@@ -2013,8 +2013,8 @@
     "m_ShaderOutputName": "B",
     "m_StageCapability": 3,
     "m_Value": {
-        "x": 3.0,
-        "y": 3.0,
+        "x": 6.0,
+        "y": 6.0,
         "z": 2.0,
         "w": 2.0
     },
