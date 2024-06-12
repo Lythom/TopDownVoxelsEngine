@@ -226,7 +226,8 @@ namespace VoxelsEngine {
 
         private void Awake() {
             if (_instance != null && _instance.isActiveAndEnabled) {
-                Destroy(gameObject);
+                // detroy self if it's not the current instance already
+                if (_instance.gameObject != gameObject) Destroy(gameObject);
                 return;
             }
 
