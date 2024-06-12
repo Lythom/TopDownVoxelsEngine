@@ -7,6 +7,7 @@ using LoneStoneStudio.Tools;
 using Shared;
 using Shared.SideEffects;
 using Sirenix.OdinInspector;
+using Sirenix.Utilities;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -45,6 +46,11 @@ namespace VoxelsEngine {
             });
 
             SubscribeSideEffect<ChunkDirtySEffect>(cse => SetDirty(cse.ChX, cse.ChZ));
+        }
+
+        [Button]
+        public void ForceRerender() {
+            _dirtySet.AddRange(_renderedChunks);
         }
 
         public void SetDirty(int chX, int chZ) {

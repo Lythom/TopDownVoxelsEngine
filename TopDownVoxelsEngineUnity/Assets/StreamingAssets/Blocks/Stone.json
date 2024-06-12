@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"Stone_basecolor.png","Sides":[{"Directions":16,"MainTextureConfig":"Stone.json","FrameTextureConfig":"SoftEdge\\softedges.json"},{"Directions":47,"MainTextureConfig":"Stone.json","FrameTextureConfig":"SoftEdge\\softedges.json"}],"IgnoreFrameAlbedo":true}
+{"ItemPreviewSprite":"Stone_basecolor.png","Sides":[{"Directions":63,"MainTextureConfig":"Stone\\Stone.json","FrameTextureConfig":"SoftEdge\\softedges.json"}],"IgnoreFrameAlbedo":true}

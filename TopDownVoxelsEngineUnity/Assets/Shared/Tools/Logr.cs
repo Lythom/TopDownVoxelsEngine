@@ -2,7 +2,9 @@
 
 #if !UNITY_2020_3_OR_NEWER
 using Serilog;
-
+using HideInCallstackAttribute = Shared.UnityCompat.HideInCallstackAttribute;
+#else
+using HideInCallstackAttribute = UnityEngine.HideInCallstackAttribute;
 #endif
 
 namespace Shared {
@@ -23,6 +25,7 @@ namespace Shared {
 #endif
         }
 
+        [HideInCallstack]
         public static void Log(string e, string tag = "general") {
             var value = $"[{tag}] {e}";
 
@@ -33,6 +36,7 @@ namespace Shared {
 #endif
         }
 
+        [HideInCallstack]
         public static void LogException(Exception e, string? message = null, string tag = "general") {
             var eMessage = $"[{tag}] {(string.IsNullOrEmpty(message) ? "" : message + "\n")}{e.Message}\n{e}";
 #if UNITY_2020_3_OR_NEWER
@@ -44,6 +48,7 @@ namespace Shared {
 #endif
         }
 
+        [HideInCallstack]
         public static void LogError(string? message = null, string tag = "general") {
             var eMessage = $"[{tag}] {message}";
 #if UNITY_2020_3_OR_NEWER

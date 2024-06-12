@@ -199,6 +199,9 @@ namespace VoxelsEngine {
         }
 #endif
 
+        public static bool IsInstanceCreatedYet() {
+            return _instance != null;
+        }
 
         public static Configurator Instance {
             get {

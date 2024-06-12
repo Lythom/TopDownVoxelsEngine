@@ -87,6 +87,7 @@ public class EditorScripts : MonoBehaviour {
             var name = albedo.Substring(slashIdx, dotIdx - slashIdx)
                 .Replace("albedo", "")
                 .Replace("Albedo", "")
+                .Replace("basecolor", "")
                 .Replace("_", "");
             var folder = albedo.Substring(0, slashIdx);
 

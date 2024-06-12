@@ -7,6 +7,7 @@ using MessagePack;
 using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxelsEngine.UI;
@@ -103,6 +104,7 @@ namespace VoxelsEngine {
             if (File.Exists(LocalSavePath)) {
                 try {
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
+                    while (!Configurator.IsInstanceCreatedYet()) await UniTask.Delay(50);
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
 
                     Logr.Log("Loading existing game", Tags.Standalone);

@@ -20,7 +20,7 @@ namespace Shared {
 
         public Dictionary<string, T> Get() {
             if (_data != null) return _data;
-            Logr.Log($"Loading assets {typeof(T)} in {_resourcePath}{Path.DirectorySeparatorChar}{_searchPattern}.");
+            // Logr.Log($"Loading assets {typeof(T)} in {_resourcePath}{Path.DirectorySeparatorChar}{_searchPattern}.", "dataloading");
             _data = new Dictionary<string, T>();
             var jsonFiles = Directory.GetFiles(_resourcePath, _searchPattern, SearchOption.AllDirectories);
             foreach (var jsonFile in jsonFiles) {
