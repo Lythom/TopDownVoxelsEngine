@@ -28,6 +28,9 @@ namespace VoxelsEngine {
 
         [Required]
         public Animator Animator = null!;
+        
+        [Required]
+        public Transform Model = null!;
 
         [Required]
         public Transform PreviewPlane = null!;
@@ -107,7 +110,7 @@ namespace VoxelsEngine {
 
         public void Init(ushort shortId, Camera cam, Vector3 position) {
             CharacterId = shortId;
-            Animator.transform.position = position;
+            Model.position = position;
             CameraTransform = cam.transform;
             _cam = cam;
             _position = position;
@@ -190,8 +193,8 @@ namespace VoxelsEngine {
             Vector3 movement;
             (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f);
             UpdateAnimation(movement, isInAir);
-            Transform t = Animator.transform;
-            Animator.transform.position = Vector3.Lerp(t.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
+            Transform t = Model;
+            Model.position = Vector3.Lerp(t.position, _position, VisualSnappingStrength * 10 * Time.deltaTime);
             t.rotation = Quaternion.Slerp(t.rotation, _rotation, VisualSnappingStrength * 10 * Time.deltaTime);
 
             // Wild override of state for client side prediction
@@ -412,7 +415,7 @@ namespace VoxelsEngine {
             // Here we adjust _originalOffset.z based on ZoomLevel
             _originalOffset = Quaternion.Euler(0, _currentAngleX, 0) * new Vector3(0, CameraHeightOffset + _currentAngleZ * 2, -ZoomLevel - _currentAngleZ * CameraZoomTiltStrength).normalized * ZoomLevel;
 
-            var pos = Animator.transform.position;
+            var pos = Model.position;
             CameraTransform.position = pos + _originalOffset;
             CameraTransform.LookAt(pos + CameraLookOffset);
         }
