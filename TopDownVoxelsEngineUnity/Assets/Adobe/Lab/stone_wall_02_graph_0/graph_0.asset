@@ -1,0 +1,647 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eed5864476f84ce4b85454db09ca4eaa, type: 3}
+  m_Name: graph_0
+  m_EditorClassIdentifier: 
+  AssetPath: Assets/Adobe/Lab/stone_wall_02.sbsar
+  RawData: {fileID: -244192453324840774, guid: da187648e52f292459372a02f09a1561, type: 3}
+  Name: graph_0
+  IsRoot: 1
+  FlagedForDelete: 0
+  GUID: 4e647549-24ea-424f-990c-0e4309846f4f
+  Index: 0
+  Input:
+  - rid: 4619580821837185099
+  - rid: 4619580821837185100
+  - rid: 4619580821837185101
+  - rid: 4619580821837185102
+  - rid: 4619580821837185103
+  - rid: 4619580821837185104
+  - rid: 4619580821837185105
+  - rid: 4619580821837185106
+  - rid: 4619580821837185107
+  - rid: 4619580821837185108
+  - rid: 4619580821837185109
+  - rid: 4619580821837185110
+  - rid: 4619580821837185111
+  - rid: 4619580821837185112
+  - rid: 4619580821837185113
+  - rid: 4619580821837185114
+  - rid: 4619580821837185115
+  - rid: 4619580821837185116
+  - rid: 4619580821837185117
+  - rid: 4619580821837185118
+  - rid: 4619580821837185119
+  - rid: 4619580821837185120
+  Output:
+  - Index: 0
+    VirtualOutputIndex: 7
+    Description:
+      Identifier: baseColor
+      Label: baseColor
+      Index: 0
+      Type: 8
+      Channel: baseColor
+    OutputTexture: {fileID: 2800000, guid: 93c301c9c10f89f4f80ef616d1bf0d8e, type: 3}
+    sRGB: 1
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: _BaseMap
+  - Index: 1
+    VirtualOutputIndex: 8
+    Description:
+      Identifier: normal
+      Label: normal
+      Index: 1
+      Type: 8
+      Channel: normal
+    OutputTexture: {fileID: 2800000, guid: 8b5fa470b86dbdd44995e21d471e379a, type: 3}
+    sRGB: 0
+    IsVirtual: 0
+    IsAlphaAssignable: 0
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: _BumpMap
+  - Index: 2
+    VirtualOutputIndex: 9
+    Description:
+      Identifier: roughness
+      Label: roughness
+      Index: 2
+      Type: 8
+      Channel: roughness
+    OutputTexture: {fileID: 0}
+    sRGB: 0
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: _RoughnessMap
+  - Index: 3
+    VirtualOutputIndex: 10
+    Description:
+      Identifier: height
+      Label: height
+      Index: 3
+      Type: 8
+      Channel: height
+    OutputTexture: {fileID: 2800000, guid: f6fdbd9dde3924247ba3539c77501993, type: 3}
+    sRGB: 1
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: _ParallaxMap
+  - Index: 4
+    VirtualOutputIndex: 11
+    Description:
+      Identifier: ambientOcclusion
+      Label: ambientOcclusion
+      Index: 4
+      Type: 8
+      Channel: ambientOcclusion
+    OutputTexture: {fileID: 2800000, guid: 58d4346920bf0464c85b781c3b84f2f2, type: 3}
+    sRGB: 0
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: _OcclusionMap
+  - Index: 5
+    VirtualOutputIndex: 12
+    Description:
+      Identifier: ao_r_m_h
+      Label: ao_r_m_h
+      Index: 5
+      Type: 8
+      Channel: any
+    OutputTexture: {fileID: 0}
+    sRGB: 0
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: 
+    InvertAssignedAlpha: 0
+    Flags: 0
+    MaterialTextureTarget: 
+  - Index: 6
+    VirtualOutputIndex: 13
+    Description:
+      Identifier: metallic
+      Label: metallic
+      Index: 6
+      Type: 8
+      Channel: metallic
+    OutputTexture: {fileID: 2800000, guid: a816b2f85e016b844aa4cdd7db312586, type: 3}
+    sRGB: 0
+    IsVirtual: 0
+    IsAlphaAssignable: 1
+    AlphaChannel: roughness
+    InvertAssignedAlpha: 1
+    Flags: 0
+    MaterialTextureTarget: _MetallicGlossMap
+  HasPhysicalSize: 0
+  PhysicalSize: {x: 0, y: 0, z: 0}
+  EnablePhysicalSize: 0
+  Thumbnail: 
+  HasThumbnail: 0
+  CurrentStatePreset: " <sbspreset pkgurl=\"pkg://stone_wall_02\" label=\"\" >\n 
+    <presetinput identifier=\"$outputsize\" uid=\"2462758959\" type=\"8\" value=\"9,9\"
+    />\n  <presetinput identifier=\"opacitymult\" uid=\"4036144743\" type=\"0\" value=\"0.315\"
+    />\n  <presetinput identifier=\"outputcolor\" uid=\"4036144715\" type=\"3\" value=\"0.564706,0.533333,0.533333,1\"
+    />\n  <presetinput identifier=\"outputcolor_1\" uid=\"4036146670\" type=\"3\"
+    value=\"0.205723,0.207647,0.216981,1\" />\n  <presetinput identifier=\"intensity\"
+    uid=\"4036146672\" type=\"0\" value=\"6\" />\n  <presetinput identifier=\"x_amount\"
+    uid=\"4035788298\" type=\"4\" value=\"3\" />\n  <presetinput identifier=\"y_amount\"
+    uid=\"4035793839\" type=\"4\" value=\"3\" />\n </sbspreset>\n"
+  IsRuntimeOnly: 0
+  GenerateAllOutputs: 0
+  GenerateAllMipmaps: 1
+  OutputMaterial: {fileID: 2100000, guid: 56f8a204bd85cb74f81bc2a7994c66c5, type: 2}
+  DefaultPreset: " <sbspreset pkgurl=\"pkg://stone_wall_02\" label=\"\" >\n  <presetinput
+    identifier=\"$outputsize\" uid=\"2462758959\" type=\"8\" value=\"10,10\" />\n
+    </sbspreset>\n"
+  MaterialShader: Universal Render Pipeline/Lit
+  RenderTextures: 0
+  OutputRemaped: 0
+  Presets: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 4619580821837185099
+      type: {class: SubstanceInputInt2, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 0
+        Description:
+          Identifier: $outputsize
+          Label: $outputsize
+          GuiGroup: 
+          GuiDescription: 
+          Type: 5
+          WidgetType: 0
+        Data: {x: 9, y: 9}
+        NumericalDescription:
+          DefaultValue: {x: 8, y: 8}
+          MinValue: {x: 0, y: 0}
+          MaxValue: {x: 1, y: 1}
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185100
+      type: {class: SubstanceInputInt, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 1
+        Description:
+          Identifier: $randomseed
+          Label: $randomseed
+          GuiGroup: 
+          GuiDescription: 
+          Type: 4
+          WidgetType: 0
+        Data: 0
+        NumericalDescription:
+          DefaultValue: 0
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          LabelFalse: 
+          LabelTrue: 
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185101
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 2
+        Description:
+          Identifier: opacitymult_3
+          Label: Edge Damage 2
+          GuiGroup: Details
+          GuiDescription: The <b>Opacity</b> parameter sets the transparency of the
+            blend
+          Type: 0
+          WidgetType: 1
+        Data: 1
+        NumericalDescription:
+          DefaultValue: 1
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185102
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 3
+        Description:
+          Identifier: opacitymult_2
+          Label: Edge Damage
+          GuiGroup: Details
+          GuiDescription: The <b>Opacity</b> parameter sets the transparency of the
+            blend
+          Type: 0
+          WidgetType: 1
+        Data: 0.4
+        NumericalDescription:
+          DefaultValue: 0.4
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185103
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 4
+        Description:
+          Identifier: hue
+          Label: Hue
+          GuiGroup: Color
+          GuiDescription: The <b>Hue</b> parameter determines the color of the input
+            image
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185104
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 5
+        Description:
+          Identifier: saturation
+          Label: Saturation
+          GuiGroup: Color
+          GuiDescription: The <b>Saturation</b> parameter determines the saturation
+            of the input image's color
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185105
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 6
+        Description:
+          Identifier: luminosity
+          Label: Lightness
+          GuiGroup: Color
+          GuiDescription: The <b>Lightness</b> parameter determines the lightness
+            of the input image
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185106
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 7
+        Description:
+          Identifier: Contrast
+          Label: Contrast
+          GuiGroup: Color
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0
+        NumericalDescription:
+          DefaultValue: 0
+          MinValue: -1
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185107
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 8
+        Description:
+          Identifier: position
+          Label: Highlight coverage
+          GuiGroup: Color
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0.36
+        NumericalDescription:
+          DefaultValue: 0.36
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185108
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 9
+        Description:
+          Identifier: opacitymult
+          Label: Highlight Intensity
+          GuiGroup: Color
+          GuiDescription: The <b>Opacity</b> parameter sets the transparency of the
+            blend
+          Type: 0
+          WidgetType: 1
+        Data: 0.315
+        NumericalDescription:
+          DefaultValue: 0.3
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185109
+      type: {class: SubstanceInputFloat4, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 10
+        Description:
+          Identifier: outputcolor
+          Label: Highlight color Color
+          GuiGroup: Color
+          GuiDescription: The <b>Color Output</b> parameter creates a uniform color
+            output image
+          Type: 3
+          WidgetType: 3
+        Data: {x: 0.5647059, y: 0.53333336, z: 0.53333336, w: 1}
+        NumericalDescription:
+          DefaultValue: {x: 0.745098, y: 0.65098, z: 0.466667, w: 1}
+          MinValue: {x: 0, y: 0, z: 0, w: 0}
+          MaxValue: {x: 0, y: 0, z: 0, w: 0}
+          SliderStep: 0
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185110
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 11
+        Description:
+          Identifier: opacitymult_1
+          Label: Dirt Intensity
+          GuiGroup: Color
+          GuiDescription: The <b>Opacity</b> parameter sets the transparency of the
+            blend
+          Type: 0
+          WidgetType: 1
+        Data: 0.4
+        NumericalDescription:
+          DefaultValue: 0.4
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185111
+      type: {class: SubstanceInputFloat4, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 12
+        Description:
+          Identifier: outputcolor_1
+          Label: Dirt Color
+          GuiGroup: Color
+          GuiDescription: The <b>Color Output</b> parameter creates a uniform color
+            output image
+          Type: 3
+          WidgetType: 3
+        Data: {x: 0.20572266, y: 0.20764662, z: 0.21698111, w: 1}
+        NumericalDescription:
+          DefaultValue: {x: 0.815686, y: 0.766024, z: 0.646518, w: 1}
+          MinValue: {x: 0, y: 0, z: 0, w: 0}
+          MaxValue: {x: 0, y: 0, z: 0, w: 0}
+          SliderStep: 0
+          SliderClamp: 0
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185112
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 13
+        Description:
+          Identifier: intensity
+          Label: Intensity
+          GuiGroup: Normal
+          GuiDescription: 'The <b>Intensity</b> parameter modifies the intensity
+            of height map '
+          Type: 0
+          WidgetType: 1
+        Data: 6
+        NumericalDescription:
+          DefaultValue: 5
+          MinValue: 0
+          MaxValue: 15
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185113
+      type: {class: SubstanceInputInt, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 14
+        Description:
+          Identifier: inversedy
+          Label: Normal Format OpenGL
+          GuiGroup: Normal
+          GuiDescription: The <b>Normal Format</b> parameter inverts y coordinates
+            of height map (Open-GL)
+          Type: 4
+          WidgetType: 4
+        Data: 0
+        NumericalDescription:
+          DefaultValue: 0
+          MinValue: 0
+          MaxValue: 0
+          SliderStep: 0
+          SliderClamp: 0
+          LabelFalse: 
+          LabelTrue: 
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185114
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 15
+        Description:
+          Identifier: height_depth
+          Label: AO Depth
+          GuiGroup: Ambient Occlussion
+          GuiDescription: 'Defines the height map scale compared to the image size.
+
+            A
+            value of 1 means the height map depth is the same as its the largest
+            border.'
+          Type: 0
+          WidgetType: 1
+        Data: 0.04
+        NumericalDescription:
+          DefaultValue: 0.04
+          MinValue: 0
+          MaxValue: 0.3
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185115
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 16
+        Description:
+          Identifier: Position
+          Label: Roughness
+          GuiGroup: Roughness
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185116
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 17
+        Description:
+          Identifier: Contrast_1
+          Label: Contrast
+          GuiGroup: Roughness
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0
+        NumericalDescription:
+          DefaultValue: 0
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185117
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 18
+        Description:
+          Identifier: range
+          Label: Range
+          GuiGroup: Height
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185118
+      type: {class: SubstanceInputFloat, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 19
+        Description:
+          Identifier: position_1
+          Label: Position
+          GuiGroup: Height
+          GuiDescription: 
+          Type: 0
+          WidgetType: 1
+        Data: 0.5
+        NumericalDescription:
+          DefaultValue: 0.5
+          MinValue: 0
+          MaxValue: 1
+          SliderStep: 0.01
+          SliderClamp: 1
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185119
+      type: {class: SubstanceInputInt, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 20
+        Description:
+          Identifier: x_amount
+          Label: Stone X Amount
+          GuiGroup: Details
+          GuiDescription: 
+          Type: 4
+          WidgetType: 1
+        Data: 3
+        NumericalDescription:
+          DefaultValue: 6
+          MinValue: 1
+          MaxValue: 20
+          SliderStep: 1
+          SliderClamp: 1
+          LabelFalse: 
+          LabelTrue: 
+          EnumValueCount: 0
+          EnumValues: []
+    - rid: 4619580821837185120
+      type: {class: SubstanceInputInt, ns: Adobe.Substance.Input, asm: Adobe.Substance}
+      data:
+        Index: 21
+        Description:
+          Identifier: y_amount
+          Label: Stone Y Amount
+          GuiGroup: Details
+          GuiDescription: 
+          Type: 4
+          WidgetType: 1
+        Data: 3
+        NumericalDescription:
+          DefaultValue: 10
+          MinValue: 1
+          MaxValue: 20
+          SliderStep: 1
+          SliderClamp: 1
+          LabelFalse: 
+          LabelTrue: 
+          EnumValueCount: 0
+          EnumValues: []
