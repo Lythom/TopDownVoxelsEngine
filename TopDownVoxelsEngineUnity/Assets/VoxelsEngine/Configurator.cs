@@ -87,12 +87,12 @@ namespace VoxelsEngine {
             }
 
             if (mainSourceSize > 0) {
-                _lastMainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
-                _lastMainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
-                _lastMainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
-                _lastFrameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
-                _lastFrameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
-                _lastFrameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
+                _lastMainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
+                _lastMainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
+                _lastMainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
+                _lastFrameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
+                _lastFrameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
+                _lastFrameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
 
                 UploadTexturesToShader();
             }

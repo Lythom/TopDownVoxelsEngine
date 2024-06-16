@@ -8,7 +8,7 @@ namespace VoxelsEngine.UI {
         public TextMeshProUGUI Text = null!;
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.PlayerToolSelector, t => Text.text = t.ToString());
+            Subscribe(state.Selectors.PlayerToolSelector, t => Text.text = "<+spread>" + t.ToString());
         }
     }
 }
