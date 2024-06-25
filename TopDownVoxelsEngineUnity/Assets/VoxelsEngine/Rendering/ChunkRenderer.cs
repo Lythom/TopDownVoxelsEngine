@@ -4,14 +4,10 @@ using System.Linq;
 using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
+using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
-    public struct PropPlacement {
-        public Vector3 Position;
-        public Vector3 Angle;
-    }
-
     /// <summary>
     /// Generate a mesh for the chunk ChunkKey of Level.
     /// The renderer game object should be placed at (chX * ChunkData.Size, 0, chY * ChunkData.Size).
@@ -30,14 +26,14 @@ namespace VoxelsEngine {
         private readonly Vector4[] _uvs2 = new Vector4[10000];
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
-        private Dictionary<GameObject, List<PropPlacement>> Props = new();
+        public Dictionary<Mesh, List<Matrix4x4>> Props = new();
         private Transform _propsContainer = null!;
         private Dictionary<BlockId, BlockRendering> _blocksById = null!;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
-            if (Configurator.Instance.GrassProp != null) Props.Add(Configurator.Instance.GrassProp, new List<PropPlacement>());
+            if (Configurator.Instance.GrassPropMesh != null) Props.Add(Configurator.Instance.GrassPropMesh, new List<Matrix4x4>());
             var pc = new GameObject();
             pc.name = "Props";
             pc.transform.parent = transform;
@@ -52,6 +48,8 @@ namespace VoxelsEngine {
             _verticesCount = 0;
             _uvsCount = 0;
             _uvs2Count = 0;
+            foreach (var (_, value) in Props) value.Clear();
+
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
                 var blockPath = blockPathById[cell.Block];
@@ -78,17 +76,17 @@ namespace VoxelsEngine {
                 }
 
                 // TODO: use GPU instancing
-                if (dir == Direction.Up) {
-                    // if (n != null && n.Value.Block == BlockId.Grass) {
-                    //     if (Props.TryGetValue(Configurator.Instance.GrassProp, out var list)) {
-                    //         for (int j = 0; j < 1; j++) {
-                    //             // list.Add(new PropPlacement() {
-                    //             //     Position = new Vector3(x + Random.Range(-0.4f, 0.4f), y + 1.48f, z + Random.Range(-0.4f, 0.4f)),
-                    //             //     Angle = new Vector3(0, Random.Range(0, 359), 0)
-                    //             // });
-                    //         }
-                    //     }
-                    // }
+                Random.InitState(chunkKey.ChX * 17 + chunkKey.ChZ * 23 + cX + cY * 7 + cZ * 13);
+                if (dir == Direction.Up && (n == null || n.Value.Block == BlockId.Air) && blockId == 2 && Configurator.Instance.GrassPropMesh != null) {
+                    if (Props.TryGetValue(Configurator.Instance.GrassPropMesh, out var list)) {
+                        for (int j = 0; j < 1; j++) {
+                            list.Add(Matrix4x4.TRS(
+                                new Vector3(x + Random.Range(-0.4f, 0.4f), y + 0.48f, z + Random.Range(-0.4f, 0.4f)),
+                                Quaternion.Euler(new Vector3(0, Random.Range(0, 359), 0)),
+                                new Vector3(Random.Range(2.5f, 5.5f), Random.Range(2.5f, 4.5f), Random.Range(2.5f, 5.5f))
+                            ));
+                        }
+                    }
                 }
             }
         }
@@ -139,13 +137,9 @@ namespace VoxelsEngine {
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
             _propsContainer.DestroyChildren();
-            foreach (var (obj, placements) in Props) {
-                foreach (var p in placements) {
-                    var i = Instantiate(obj, _propsContainer);
-                    i.transform.position = p.Position;
-                    i.transform.eulerAngles = p.Angle;
-                }
-            }
+        }
+
+        public void Update() {
         }
     }
 }

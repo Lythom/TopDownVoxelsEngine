@@ -44,7 +44,9 @@ namespace VoxelsEngine {
         public SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
         public Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
 
-        public GameObject? GrassProp;
+        public MeshFilter? GrassProp;
+        public Mesh? GrassPropMesh;
+        public Material? GrassMat;
 
         [Button(ButtonSizes.Large)]
         private void RegenerateAtlas() {
@@ -235,6 +237,8 @@ namespace VoxelsEngine {
 
             _instance = this;
             FillLibrary();
+
+            GrassPropMesh = GrassProp?.sharedMesh;
             Logr.Log("Configurator initialized");
         }
 

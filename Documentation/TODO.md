@@ -1,8 +1,10 @@
 TODO:
 
+- Frame change
+  - Hard frame (=frame définie)
+  - Soft frame (=frame constituée du main de la texture adjacente avec frameheight descendant combiné)
 
 - tester les perfs de génération et de rendu sur des plus grands chunks
-  - optimiser "3 quad par voxel + half offset and flip the back"
 
 - varier le rendu : voxels decorations / tesselation
   - 1 définition des textures via un JSON. OK

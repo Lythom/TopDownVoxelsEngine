@@ -9,6 +9,7 @@ using Shared.SideEffects;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
@@ -19,6 +20,8 @@ namespace VoxelsEngine {
         private readonly HashSet<int> _renderedChunks = new();
         private readonly Queue<int> _toBeRendererQueue = new();
         private readonly HashSet<int> _dirtySet = new();
+
+        private List<Matrix4x4> _grass = new();
 
         public string LevelId = "0";
 
@@ -34,6 +37,7 @@ namespace VoxelsEngine {
         }
 
         private Character? _character = null;
+        private Mesh _mesh;
 
         protected override void OnSetup(GameState state) {
             Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
@@ -61,6 +65,11 @@ namespace VoxelsEngine {
         public void Update() {
             if (_level == null || _character == null) return;
             UpdateAroundPlayer(_character.Position, _level.Chunks);
+            // TODO: occlusion culling
+            // TODO: distance scattering (reduce count ie. 1/2 on distance)
+            // TODO: tint variation (perlin)
+            // TODO: wind
+            if (_mesh != null) Graphics.DrawMeshInstanced(_mesh, 0, Configurator.Instance.GrassMat, _grass, null, ShadowCastingMode.Off, true);
         }
 
         private void UpdateAroundPlayer(Shared.Vector3 characterPosition, Chunk[,] levelChunks) {
@@ -108,6 +117,14 @@ namespace VoxelsEngine {
 
                 _dirtySet.Clear();
 
+                _grass.Clear();
+                foreach (var c in ChunkRenderers) {
+                    if (c is null || !c.isActiveAndEnabled) continue;
+                    foreach (var (key, value) in c.Props) {
+                        if (_mesh == null) _mesh = key;
+                        _grass.AddRange(value);
+                    }
+                }
 
                 // dequeue until all is generated
                 while (_toBeRendererQueue.TryDequeue(out int chunkFlatIndex)) {

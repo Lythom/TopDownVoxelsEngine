@@ -153,7 +153,9 @@ MonoBehaviour:
   RemoveFX: {fileID: 893364139256490378, guid: 3f15845c021aae74c9eb27491b787677, type: 3}
   RenderDistance: 4
   OpaqueBlocksMaterial: {fileID: 2100000, guid: 1eb4b6db4a3269941a4cf58822c97b2e, type: 2}
-  GrassProp: {fileID: 3950527112730552662, guid: fb2d519e154b81c4fb973b397eca4148, type: 3}
+  GrassProp: {fileID: 7830681973208421781, guid: dca7fa0765c81ae4f8b0ae29e6914d8b, type: 3}
+  GrassPropMesh: {fileID: 0}
+  GrassMat: {fileID: 2100000, guid: 0799a1e95665ef14f8fe2cbcd4ba3dc4, type: 2}
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0
