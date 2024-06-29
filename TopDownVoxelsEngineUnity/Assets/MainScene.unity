@@ -911,6 +911,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelId: 0
+  Cam: {fileID: 963194227}
   BlockMaterial: {fileID: 2100000, guid: 1eb4b6db4a3269941a4cf58822c97b2e, type: 2}
 --- !u!1 &953415490
 GameObject:
