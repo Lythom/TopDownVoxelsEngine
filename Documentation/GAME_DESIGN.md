@@ -196,3 +196,11 @@ Le stockage est représenté par une pièce "entrepôt" où le joueur place libr
 
 - Le coffre est une pièce.
 - La UI est le plan de la pièce.
+
+# Combat
+
+## Coop
+
+Idée attaque: un joueur donne un bout de filet à un autre joueur, les 2 joueurs doivent s'écarte pour que la cible se prenne dedans
+Idée attaque: un joueur J1 s'apprête à "prendre appui" sur l'attaque d'un autre. 
+  J2 envoi un coup dans J1 qui est propulsé avec une puissance proportionnelle à l'attaque de J2.

@@ -1,5 +1,10 @@
 TODO:
 
+- Rendu végétation
+  - un renderer dédié par chunk
+  - upload des infos de décorations du chunk (positions, rotation, scale d'herbe) en ComputeBuffer
+  - Shader de rendu "indirect"
+
 - Frame change
   - Hard frame (=frame définie)
   - Soft frame (=frame constituée du main de la texture adjacente avec frameheight descendant combiné)

@@ -81,9 +81,9 @@ namespace VoxelsEngine {
                     if (Props.TryGetValue(Configurator.Instance.GrassPropMesh, out var list)) {
                         for (int j = 0; j < 1; j++) {
                             list.Add(Matrix4x4.TRS(
-                                new Vector3(x + Random.Range(-0.4f, 0.4f), y + 0.48f, z + Random.Range(-0.4f, 0.4f)),
+                                new Vector3(x + Random.Range(-0.1f, 0.1f), y + 0.48f, z + Random.Range(-0.1f, 0.1f)),
                                 Quaternion.Euler(new Vector3(0, Random.Range(0, 359), 0)),
-                                new Vector3(Random.Range(2.5f, 5.5f), Random.Range(2.5f, 4.5f), Random.Range(2.5f, 5.5f))
+                                new Vector3(Random.Range(1.5f, 2.5f), Random.Range(0.7f, 1.2f), Random.Range(1.5f, 2.5f))
                             ));
                         }
                     }

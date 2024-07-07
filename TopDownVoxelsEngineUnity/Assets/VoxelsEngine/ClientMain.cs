@@ -150,6 +150,10 @@ namespace VoxelsEngine {
                     );
                 }
 
+                if (!state.Levels.ContainsKey("World")) {
+                    throw new Exception("No world");
+                }
+
                 _engine = gameObject.AddComponent<ClientEngine>();
 
                 // bootup local engine

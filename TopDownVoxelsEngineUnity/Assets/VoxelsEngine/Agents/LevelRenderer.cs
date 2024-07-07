@@ -111,7 +111,7 @@ namespace VoxelsEngine {
                 Plane plane = cameraFrustumPlanes[iPlane];
                 Vector3 normal = plane.normal;
                 float distance = plane.distance;
-                distance += FrustrumTolerance;  // Move the plane outward by the tolerance amount
+                distance += FrustrumTolerance; // Move the plane outward by the tolerance amount
                 cameraFrustumPlanes[iPlane] = new Plane(normal, distance);
             }
         }
