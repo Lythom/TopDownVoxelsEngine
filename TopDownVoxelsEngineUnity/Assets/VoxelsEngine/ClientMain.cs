@@ -7,7 +7,6 @@ using MessagePack;
 using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxelsEngine.UI;
@@ -28,6 +27,7 @@ namespace VoxelsEngine {
         public CharacterAgent CharacterPrefab = null!;
 
         public int ServerPort = 9999;
+        public string ServerHost = "192.168.1.15";
         private ClientEngine? _engine;
         private PlayerCharacterAgent? _agent;
         private readonly PrefabListSynchronizer<CharacterAgent> _otherPlayersAgents = new();
@@ -40,6 +40,12 @@ namespace VoxelsEngine {
             if (ForceLocalPlay) StartLocalPlay().Forget();
             // SideEffectManager.For<CharacterJoinGameEvent>().Start(joinEvent);
             // StartRemotePlay().Forget();
+        }
+
+        // Add this method to receive data from JavaScript
+        public void SetServerDetails(string host, int port) {
+            ServerHost = host;
+            ServerPort = port;
         }
 
         public void HandlePlayerJoin(CharacterJoinGameEvent joinEvent) {
@@ -94,8 +100,10 @@ namespace VoxelsEngine {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
-            await _engine.InitRemote(ServerPort);
+            await _engine.InitRemote(ServerHost, ServerPort);
             Application.runInBackground = true;
+            while (!Configurator.IsInstanceCreatedYet()) await UniTask.Delay(50);
+            _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
         }
 
 

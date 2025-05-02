@@ -131,12 +131,12 @@ namespace VoxelsEngine {
             evt.Apply(State, SideEffectManager);
         }
 
-        public async Task InitRemote(int port) {
+        public async Task InitRemote(string host, int port) {
             try {
                 SocketClient = new SocketClient();
                 SocketClient.OnNetworkMessage += HandleNetMessage;
                 SocketClient.OnConnexionLost += HandleConnexionLost;
-                await SocketClient.Init("192.168.1.157", port);
+                await SocketClient.Init(host, port);
                 LocalState.Instance.Session.Value = SessionStatus.NeedAuthentication;
                 await Task.Delay(500);
                 SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));

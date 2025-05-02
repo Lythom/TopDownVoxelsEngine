@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unity WebGL</title>
+</head>
+<body>
+    <!-- Unity WebGL container -->
+    <div id="unity-container"></div>
+
+    <script>
+        // Function to send data to Unity
+        function sendServerDetailsToUnity(host, port) {
+            // Get the GameInstance
+            const gameInstance = unityInstance;
+            
+            // Call the method in Unity
+            gameInstance.SendMessage('ClientMain', 'SetServerDetails', JSON.stringify({
+                host: host,
+                port: parseInt(port)
+            }));
+        }
+
+        // Example of how to call it
+        function connectToServer() {
+            const host = "192.168.1.15"; // Get this from your form or configuration
+            const port = 9999;           // Get this from your form or configuration
+            sendServerDetailsToUnity(host, port);
+        }
+
+        // Listen for Unity being ready
+        window.addEventListener('UnityLoaded', function() {
+            // Unity is now loaded and ready
+            console.log('Unity WebGL is ready');
+        });
+    </script>
+</body>
+</html>

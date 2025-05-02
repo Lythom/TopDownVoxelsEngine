@@ -22,7 +22,7 @@ General documentation of the Dream Builder project.
 ---
 
 ## Update serialization resolvers (messagepack)
-
+[Server.csproj](../Server/Server.csproj)
 - In Unity, Tools -> Generate MessagePack resolvers
 - In command line, in the Assets folder : `dotnet mpc -i . -o ./Scripts/VoxelsEngine/MessagePackGenerated`
 

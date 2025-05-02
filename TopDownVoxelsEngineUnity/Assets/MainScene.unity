@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -249,6 +250,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!1 &365355828
 GameObject:
   m_ObjectHideFlags: 0
@@ -1695,7 +1697,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 072d190453eb4099a80f8d01ee10b639, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ForceLocalPlay: 1
+  ForceLocalPlay: 0
   Tracker: {fileID: 963194229}
   PlayerCharacterPrefab: {fileID: 20086019324110641, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}

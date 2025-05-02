@@ -32,7 +32,7 @@ TODO:
 - Clarifier la cible ?
 
 Cas:
-- les modifications (ie. pose de blocs) dont identifées par un id uniquement généré par le client. ie. B2 pour le bloc posé par B et A5 pour celui posé par A.
+- les modifications (ie. pose de blocs) sont identifées par un id uniquement généré par le client. ie. B2 pour le bloc posé par B et A5 pour celui posé par A.
 - A pose un Bloc et enregistre localement sa modification dans une liste ordonnée "en attente de validation"
 - B pose un bloc au même endroit en même temps et enregistre localement sa modification dans une liste ordonnée "en attente de validation"
 - le serveur reçoit B puis A et applique dans cet ordre. Le serveur de maintient pas de liste de validation car il applique dans l'ordre d'arrivée.

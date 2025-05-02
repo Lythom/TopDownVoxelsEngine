@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using LoneStoneStudio.Tools;
 using MessagePack;
@@ -13,6 +14,12 @@ namespace Server {
         public static BuildVersion Version;
 
         public static void Main(string[] args) {
+#if DEBUG
+            Console.WriteLine("Running in DEBUG mode");
+#else
+            Console.WriteLine("Running in RELEASE mode");
+#endif
+
             // Read environment variables (if any)
             DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 

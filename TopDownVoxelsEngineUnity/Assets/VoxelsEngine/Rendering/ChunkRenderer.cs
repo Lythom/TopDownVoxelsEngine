@@ -76,18 +76,18 @@ namespace VoxelsEngine {
                 }
 
                 // TODO: use GPU instancing
-                Random.InitState(chunkKey.ChX * 17 + chunkKey.ChZ * 23 + cX + cY * 7 + cZ * 13);
-                if (dir == Direction.Up && (n == null || n.Value.Block == BlockId.Air) && blockId == 2 && Configurator.Instance.GrassPropMesh != null) {
-                    if (Props.TryGetValue(Configurator.Instance.GrassPropMesh, out var list)) {
-                        for (int j = 0; j < 1; j++) {
-                            list.Add(Matrix4x4.TRS(
-                                new Vector3(x + Random.Range(-0.1f, 0.1f), y + 0.48f, z + Random.Range(-0.1f, 0.1f)),
-                                Quaternion.Euler(new Vector3(0, Random.Range(0, 359), 0)),
-                                new Vector3(Random.Range(1.5f, 2.5f), Random.Range(0.7f, 1.2f), Random.Range(1.5f, 2.5f))
-                            ));
-                        }
-                    }
-                }
+                // Random.InitState(chunkKey.ChX * 17 + chunkKey.ChZ * 23 + cX + cY * 7 + cZ * 13);
+                // if (dir == Direction.Up && (n == null || n.Value.Block == BlockId.Air) && blockId == 2 && Configurator.Instance.GrassPropMesh != null) {
+                //     if (Props.TryGetValue(Configurator.Instance.GrassPropMesh, out var list)) {
+                //         for (int j = 0; j < 1; j++) {
+                //             list.Add(Matrix4x4.TRS(
+                //                 new Vector3(x + Random.Range(-0.1f, 0.1f), y + 0.48f, z + Random.Range(-0.1f, 0.1f)),
+                //                 Quaternion.Euler(new Vector3(0, Random.Range(0, 359), 0)),
+                //                 new Vector3(Random.Range(1.5f, 2.5f), Random.Range(0.7f, 1.2f), Random.Range(1.5f, 2.5f))
+                //             ));
+                //         }
+                //     }
+                // }
             }
         }
 

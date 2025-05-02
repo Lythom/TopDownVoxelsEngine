@@ -76,7 +76,7 @@ namespace VoxelsEngine {
         public void Update() {
             if (_level == null || _character == null) return;
             UpdateAroundPlayer(_character.Position, _level.Chunks);
-            DrawVegetation();
+            // DrawVegetation();
         }
 
         private void DrawVegetation() {
@@ -96,8 +96,6 @@ namespace VoxelsEngine {
                     }
                 }
             }
-
-            Debug.Log("Count =" + i);
 
             // TODO: distance scattering (reduce count ie. 1/2 on distance)
             // TODO: tint variation (perlin)
