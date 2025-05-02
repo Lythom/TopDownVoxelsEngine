@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
@@ -23,9 +22,9 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
     [ReadOnly]
     public int tileSize = -1;
 
-    public void Refresh() {
+    public async UniTaskVoid Refresh() {
         if (!File.Exists(InputPath)) return;
-        Input = StreamAssets.FromAbsolutePath(InputPath);
+        Input = await StreamAssets.FromAbsolutePath(InputPath);
 
         tileSize = Input.height / 3;
 

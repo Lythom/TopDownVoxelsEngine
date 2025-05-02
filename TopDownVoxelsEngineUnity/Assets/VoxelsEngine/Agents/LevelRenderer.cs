@@ -7,7 +7,6 @@ using LoneStoneStudio.Tools;
 using Shared;
 using Shared.SideEffects;
 using Sirenix.OdinInspector;
-using Sirenix.Utilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
@@ -65,7 +64,7 @@ namespace VoxelsEngine {
 
         [Button]
         public void ForceRerender() {
-            _dirtySet.AddRange(_renderedChunks);
+            foreach (var r in _renderedChunks) _dirtySet.Add(r);
         }
 
         public void SetDirty(int chX, int chZ) {

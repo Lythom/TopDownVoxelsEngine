@@ -100,6 +100,23 @@ namespace VoxelsEngine {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
+#if UNITY_WEBGL
+            var url = Application.absoluteURL;
+            string[] parameters = url.Split('?')[1].Split('&');
+
+            foreach (string parameter in parameters) {
+                string[] keyValue = parameter.Split('=');
+                if (keyValue.Length == 2) {
+                    string key = keyValue[0];
+                    string value = keyValue[1];
+                    if (key == "host") {
+                        ServerHost = value;
+                    } else if (key == "port") {
+                        ServerPort = int.Parse(value);
+                    }
+                }
+            }
+#endif
             await _engine.InitRemote(ServerHost, ServerPort);
             Application.runInBackground = true;
             while (!Configurator.IsInstanceCreatedYet()) await UniTask.Delay(50);

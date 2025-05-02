@@ -17,6 +17,8 @@ public struct BlockRendering {
     public static BlockRendering Air = new (new BlockConfigJson(), null, null, null);
 
     public BlockRendering(BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
+        // TODO: preload at starting
+        
         Sides = new();
         foreach (var side in blockConfig.Sides) {
             var mainJson = mainTextures.Get(side.MainTextureConfig);
