@@ -1,6 +1,8 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
+
+ARG Configuration=Release
 
 # Copy the project files
 COPY ["Server/.", "Server/"]
@@ -19,7 +21,7 @@ FROM build AS publish
 RUN dotnet publish "Server/Server.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Final stage
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 
 # Copy the published output

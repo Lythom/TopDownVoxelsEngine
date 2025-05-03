@@ -36,8 +36,11 @@ namespace LoneStoneStudio.Tools {
 
             buildVersion.Major = int.Parse(strings[0]);
             buildVersion.Minor = int.Parse(strings[1]);
-            buildVersion.Patch = int.Parse(strings[2]);
-            buildVersion.CommitHash = strings.Length > 3 ? strings[3] : "";
+            var patchNHash = strings[2].Split('+');
+            var patch = patchNHash[0];
+            var hash = patchNHash.Length > 1 ? patchNHash[1] : "dev";
+            buildVersion.Patch = int.Parse(patch);
+            buildVersion.CommitHash = strings.Length > 3 ? strings[3] : hash;
             return buildVersion;
         }
 
