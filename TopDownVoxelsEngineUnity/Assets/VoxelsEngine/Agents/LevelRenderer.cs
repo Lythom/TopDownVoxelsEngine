@@ -8,8 +8,6 @@ using Shared;
 using Shared.SideEffects;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Rendering;
-using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
@@ -17,18 +15,9 @@ namespace VoxelsEngine {
         private LevelMap? _level = null;
         public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
-        public bool DEBUG_DisabledFrustrumCulling = false;
-
         private readonly HashSet<int> _renderedChunks = new();
         private readonly Queue<int> _toBeRendererQueue = new();
         private readonly HashSet<int> _dirtySet = new();
-
-        private List<Matrix4x4> _grass = new();
-        public const int GrassMaxInstances = 1000;
-        private Matrix4x4[] _grassToDisplay = new Matrix4x4[GrassMaxInstances];
-        private Plane[] _cameraFrustumPlanes = new Plane[6];
-        public float GrassProximityThreshold = 100;
-        public float FrustrumTolerance = 0.5f;
 
         public string LevelId = "0";
 
@@ -47,7 +36,6 @@ namespace VoxelsEngine {
         }
 
         private Character? _character = null;
-        private Mesh _mesh;
 
         protected override void OnSetup(GameState state) {
             Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
@@ -76,66 +64,6 @@ namespace VoxelsEngine {
             if (_level == null || _character == null) return;
             UpdateAroundPlayer(_character.Position, _level.Chunks);
             // DrawVegetation();
-        }
-
-        private void DrawVegetation() {
-            // occlusion culling
-            var cameraPosition = Cam.transform.position;
-            CalculateFrustrumPlane(_cameraFrustumPlanes);
-
-            var i = 0;
-            foreach (var m in _grass) {
-                if (i >= GrassMaxInstances) break; // Limit to GrassMaxInstances instances
-                var position = m.GetColumn(3);
-                if (DEBUG_DisabledFrustrumCulling || IsInFrustum(position, _cameraFrustumPlanes)) {
-                    Random.InitState((int) (position.x + position.y + position.z));
-                    if (WithProbabilisticCull(position, cameraPosition, _grass.Count)) {
-                        _grassToDisplay[i] = m;
-                        i++;
-                    }
-                }
-            }
-
-            // TODO: distance scattering (reduce count ie. 1/2 on distance)
-            // TODO: tint variation (perlin)
-            // TODO: wind
-            if (_mesh != null && i > 0) Graphics.DrawMeshInstanced(_mesh, 0, Configurator.Instance.GrassMat, _grassToDisplay, i - 1, null, ShadowCastingMode.Off, true);
-        }
-
-        private void CalculateFrustrumPlane(Plane[] cameraFrustumPlanes) {
-            GeometryUtility.CalculateFrustumPlanes(Cam, cameraFrustumPlanes);
-            for (int iPlane = 0; iPlane < cameraFrustumPlanes.Length; iPlane++) {
-                Plane plane = cameraFrustumPlanes[iPlane];
-                Vector3 normal = plane.normal;
-                float distance = plane.distance;
-                distance += FrustrumTolerance; // Move the plane outward by the tolerance amount
-                cameraFrustumPlanes[iPlane] = new Plane(normal, distance);
-            }
-        }
-
-        private bool WithProbabilisticCull(Vector3 instancePosition, Vector3 cameraPosition, int totalCount) {
-            if (totalCount <= GrassMaxInstances) return true; // always display if less that max elements are to be displayed
-            var distance = (instancePosition - cameraPosition).sqrMagnitude;
-            var percentToShow = (float) GrassMaxInstances / totalCount;
-            var iDistance = percentToShow + Mathf.Clamp01(GrassProximityThreshold / (distance + 0.0000001f));
-
-            return iDistance > Random.value;
-        }
-
-        public float GetSquaredDistanceToCamera(Matrix4x4 matrix, Camera camera) {
-            Vector3 position = matrix.GetColumn(3);
-            Vector3 cameraPosition = camera.transform.position;
-            return (position - cameraPosition).sqrMagnitude;
-        }
-
-        private bool IsInFrustum(Vector3 position, Plane[] frustumPlanes) {
-            foreach (Plane plane in frustumPlanes) {
-                if (plane.GetDistanceToPoint(position) < 0) {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private void UpdateAroundPlayer(Shared.Vector3 characterPosition, Chunk[,] levelChunks) {
@@ -182,15 +110,6 @@ namespace VoxelsEngine {
                 }
 
                 _dirtySet.Clear();
-
-                _grass.Clear();
-                foreach (var c in ChunkRenderers) {
-                    if (c is null || !c.isActiveAndEnabled) continue;
-                    foreach (var (key, value) in c.Props) {
-                        if (_mesh == null) _mesh = key;
-                        _grass.AddRange(value);
-                    }
-                }
 
                 // dequeue until all is generated
                 while (_toBeRendererQueue.TryDequeue(out int chunkFlatIndex)) {

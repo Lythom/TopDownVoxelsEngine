@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
-using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
@@ -26,14 +24,11 @@ namespace VoxelsEngine {
         private readonly Vector4[] _uvs2 = new Vector4[10000];
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
-        public Dictionary<Mesh, List<Matrix4x4>> Props = new();
         private Transform _propsContainer = null!;
-        private Dictionary<BlockId, BlockRendering> _blocksById = null!;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
-            if (Configurator.Instance.GrassPropMesh != null) Props.Add(Configurator.Instance.GrassPropMesh, new List<Matrix4x4>());
             var pc = new GameObject();
             pc.name = "Props";
             pc.transform.parent = transform;
@@ -48,7 +43,6 @@ namespace VoxelsEngine {
             _verticesCount = 0;
             _uvsCount = 0;
             _uvs2Count = 0;
-            foreach (var (_, value) in Props) value.Clear();
 
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
@@ -99,7 +93,7 @@ namespace VoxelsEngine {
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <param name="block"></param>
-        /// <param name="bitMask">positions of the neighbours cells of the same type</param>
+        /// <param name="bitMask">positions of the neighbour cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, BlockRendering block, int bitMask) {
             if (block.Sides.Count == 0) return;
             CubeMeshData.FaceVertices((int) dir - 1, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
@@ -137,9 +131,6 @@ namespace VoxelsEngine {
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
             _propsContainer.DestroyChildren();
-        }
-
-        public void Update() {
         }
     }
 }
