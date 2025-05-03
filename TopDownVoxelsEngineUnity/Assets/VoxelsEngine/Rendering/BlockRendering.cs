@@ -17,9 +17,8 @@ public struct BlockRendering {
 
     public static BlockRendering Air = new(true);
 
-    public static async UniTask<BlockRendering> FromConfigAsync(BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
+    public static async UniTask<BlockRendering> FromConfigAsync(IStreamAssets streamAssets, BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
         var block = new BlockRendering(blockConfig.IgnoreFrameAlbedo) {
-            Sides = new(),
             ItemPreview = null
         };
 
@@ -29,22 +28,23 @@ public struct BlockRendering {
             if (mainJson == null) throw new OperationCanceledException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block.");
             block.Sides.Add(new BlockRenderingSide {
                 Directions = side.Directions,
-                MainAlbedoTexture = await StreamAssets.FromRelativePath(mainJson.MainAlbedoTexture),
-                MainNormalsTexture = await StreamAssets.FromRelativePath(mainJson.MainNormalsTexture),
-                MainHeightsTexture = await StreamAssets.FromRelativePath(mainJson.MainHeightsTexture),
-                FrameAlbedoTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameAlbedoTexture),
-                FrameNormalsTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameNormalsTexture),
-                FrameHeightsTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameHeightsTexture)
+                MainAlbedoTexture = await streamAssets.LoadTexture2DAsync(mainJson.MainAlbedoTexture),
+                MainNormalsTexture = await streamAssets.LoadTexture2DAsync(mainJson.MainNormalsTexture),
+                MainHeightsTexture = await streamAssets.LoadTexture2DAsync(mainJson.MainHeightsTexture),
+                FrameAlbedoTexture = frameJson == null ? null : await streamAssets.LoadTexture2DAsync(frameJson.FrameAlbedoTexture),
+                FrameNormalsTexture = frameJson == null ? null : await streamAssets.LoadTexture2DAsync(frameJson.FrameNormalsTexture),
+                FrameHeightsTexture = frameJson == null ? null : await streamAssets.LoadTexture2DAsync(frameJson.FrameHeightsTexture)
             });
         }
 
         var previewSpritePath = blockConfig.ItemPreviewSprite == null ? null : spritesRegistry.Get(blockConfig.ItemPreviewSprite);
-        block.ItemPreview = previewSpritePath == null ? null : await StreamAssets.FromRelativePath(previewSpritePath);
+        block.ItemPreview = previewSpritePath == null ? null : await streamAssets.LoadTexture2DAsync(previewSpritePath);
         return block;
     }
 
     public BlockRendering(bool ignoreFrameAlbedo) : this() {
         IgnoreFrameAlbedo = ignoreFrameAlbedo;
+        Sides = new();
     }
 }
 

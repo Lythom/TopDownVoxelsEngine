@@ -1,67 +1,110 @@
 ﻿using System;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using Shared;
 using UnityEngine;
 using UnityEngine.Networking;
+using Object = UnityEngine.Object;
 
 namespace VoxelsEngine.Tools {
-    public static class StreamAssets {
-        
-        
-        public static async UniTask<Texture2D> FromRelativePath(string relativePath) {
+    public interface IStreamAssets : ITxtAsset {
+        /// <summary>
+        /// Loads a texture from streaming assets asynchronously
+        /// </summary>
+        /// <param name="relativePath">Relative path to the texture within streaming assets</param>
+        /// <returns>Loaded Texture2D object</returns>
+        /// <exception cref="Exception">Thrown when texture cannot be loaded</exception>
+        UniTask<Texture2D> LoadTexture2DAsync(string relativePath);
+
+        /// <summary>
+        /// Combines the provided path segments with the streaming assets path
+        /// </summary>
+        /// <param name="relativePath">Path segments to combine</param>
+        /// <returns>Full path to the resource</returns>
+        string GetPath(params string[] relativePath);
+    }
+
+    public class StreamAssetsFilesAdapter : IStreamAssets {
+        public UniTask<string> LoadTxtAsync(string path) => StreamAssetsFiles.LoadTxtAsync(path);
+        public UniTask<Texture2D> LoadTexture2DAsync(string relativePath) => StreamAssetsFiles.LoadTexture2DAsync(relativePath);
+        public string GetPath(params string[] relativePath) => StreamAssetsFiles.GetPath(relativePath);
+    }
+
+    public static class StreamAssetsFiles {
+        public static async UniTask<string> LoadTxtAsync(string path) {
+            return await File.ReadAllTextAsync(GetPath(path));
+        }
+
+        /// <summary>
+        /// Textures are expected to be in the StreamingAssets folder
+        /// </summary>
+        /// <param name="relativePath">path from the streamingAssetsPath folder</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static async UniTask<Texture2D> LoadTexture2DAsync(string relativePath) {
             var path = GetPath(relativePath);
-            return await LoadTextureFromPath(path);
-        }
+            if (string.IsNullOrEmpty(relativePath))
+                throw new ArgumentNullException(nameof(relativePath));
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"Image not found at path: {path}", path);
 
-        public static async UniTask<Texture2D> FromAbsolutePath(string absolutePath) {
-            var path = GetPath(absolutePath);
-            return await LoadTextureFromPath(path);
-        }
-
-        private static async UniTask<Texture2D> LoadTextureFromPath(string path) {
-            string uri = Path.Combine(Application.streamingAssetsPath, path);
-
-#if UNITY_WEBGL
-            // In WebGL, we need to use the full URL
-            uri = "StreamingAssets/" + path;
-#endif
-
-            using (UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(uri)) {
-                await webRequest.SendWebRequest();
-
-                if (webRequest.result != UnityWebRequest.Result.Success) {
-                    throw new Exception($"Failed to load texture at {path}: {webRequest.error}");
-                }
-
-                return DownloadHandlerTexture.GetContent(webRequest);
+            Texture2D tex = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+            try {
+                tex.LoadImage(await File.ReadAllBytesAsync(path));
+                return tex;
+            } catch (Exception e) {
+                Object.Destroy(tex); // Prevent memory leak
+                throw new Exception($"Failed to load texture at {path}", e);
             }
-        }
-
-        public static async UniTask ToAbsolutePath(Texture2D t, string absolutePath) {
-#if !UNITY_WEBGL
-            var path = GetPath(absolutePath);
-            if (File.Exists(path)) Logr.LogError("Overriding at " + path);
-            await File.WriteAllBytesAsync(absolutePath, t.EncodeToPNG());
-#else
-            Debug.LogWarning("Saving files is not supported in WebGL builds");
-#endif
         }
 
         public static string GetPath(params string[] paths) {
             string combinedPath = Path.Combine(paths);
-#if !UNITY_WEBGL
             return Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, combinedPath));
-#else
-            return combinedPath.Replace('\\', '/');
-#endif
+        }
+    }
+
+    public class StreamAssetsWeb : IStreamAssets {
+        public async UniTask<string> LoadTxtAsync(string path) {
+            string fullPath = GetPath(path);
+            using var request = UnityWebRequest.Get(fullPath);
+
+            await request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success) {
+                throw new Exception($"Failed to load text file at {fullPath}: {request.error}");
+            }
+
+            return request.downloadHandler.text;
         }
 
-        public static string RelativePath(string path) {
-#if !UNITY_WEBGL
-            return path.Replace(Application.streamingAssetsPath + Path.DirectorySeparatorChar, "");
-#else
-            return path.Replace("StreamingAssets/", "").Replace('\\', '/');
-#endif
+        public async UniTask<Texture2D> LoadTexture2DAsync(string relativePath) {
+            string fullPath = GetPath(relativePath);
+            using var request = UnityWebRequestTexture.GetTexture(fullPath);
+
+            await request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success) {
+                throw new Exception($"Failed to load texture at {fullPath}: {request.error}");
+            }
+
+            return DownloadHandlerTexture.GetContent(request);
+        }
+
+        public string GetPath(params string[] relativePath) {
+            // In WebGL, StreamingAssets are served from a URL
+            // COMMENT: Path.Combine adapted to webgl context?
+            return $"{Application.streamingAssetsPath}/{Path.Combine(relativePath)}";
+        }
+    }
+
+    public static class StreamAssetsFetcherFactory {
+        public static IStreamAssets Create() {
+            if (Application.platform == RuntimePlatform.WebGLPlayer) {
+                return new StreamAssetsWeb();
+            }
+
+            return new StreamAssetsFilesAdapter();
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Cysharp.Threading.Tasks;
+using Shared;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 using VoxelsEngine.Tools;
-using File = UnityEngine.Windows.File;
 
 public class TilesetGeneratorEditor : OdinEditorWindow {
     private List<string> _dirty = new();
@@ -24,7 +25,7 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
 
     public async UniTaskVoid Refresh() {
         if (!File.Exists(InputPath)) return;
-        Input = await StreamAssets.FromAbsolutePath(InputPath);
+        Input = await StreamAssetsFiles.LoadTexture2DAsync(InputPath);
 
         tileSize = Input.height / 3;
 
@@ -35,7 +36,12 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
             }
         }
 
-        StreamAssets.ToAbsolutePath(Output, InputPath.Replace(".png", "_out.png")).Forget();
+        ToAbsolutePath(Output, InputPath.Replace(".png", "_out.png")).Forget();
+    }
+
+    public static async UniTask ToAbsolutePath(Texture2D t, string absolutePath) {
+        if (File.Exists(absolutePath)) Logr.LogError("Overriding at " + absolutePath);
+        await File.WriteAllBytesAsync(absolutePath, t.EncodeToPNG());
     }
 
     [PreviewField(Height = 512, Alignment = ObjectFieldAlignment.Left, FilterMode = FilterMode.Bilinear), ReadOnly, HideLabel]

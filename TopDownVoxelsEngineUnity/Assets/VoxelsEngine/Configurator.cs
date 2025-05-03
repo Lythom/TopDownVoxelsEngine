@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -38,60 +39,75 @@ namespace VoxelsEngine {
         [ShowInInspector]
         public Dictionary<string, BlockRendering> BlocksRenderingLibrary = new();
 
-        public Registry<MainTextureJson> MainTextureRegistry = new(StreamAssets.GetPath("Textures", "Main"), "*.json");
-        public Registry<FrameTextureJson> FrameTextureRegistry = new(StreamAssets.GetPath("Textures", "Frame"), "*.json");
-        public SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
-        public Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
+        public IStreamAssets? StreamAssets;
+        public Registry<MainTextureJson>? MainTextureRegistry;
+        public Registry<FrameTextureJson>? FrameTextureRegistry;
+        public SpriteRegistry? SpriteRegistry;
+        public Registry<BlockConfigJson>? BlockRegistry;
 
         [Button(ButtonSizes.Large)]
-        private async UniTask RegenerateAtlas() {
-            MainTextureRegistry.Reload();
-            FrameTextureRegistry.Reload();
-            SpriteRegistry.Reload();
-            BlockRegistry.Reload();
+        public async UniTask RegenerateAtlas() {
+            try {
+                if (StreamAssets is null) StreamAssets = StreamAssetsFetcherFactory.Create();
 
-            var blockConfigs = BlockRegistry.Get();
+                if (MainTextureRegistry is null) MainTextureRegistry = await Registry<MainTextureJson>.Build(StreamAssets.GetPath("Textures", "Main"), "*.json", StreamAssets);
+                else await MainTextureRegistry.Reload();
 
-            BlocksRenderingLibrary.Clear();
-            BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
-            foreach (var (blockPath, blockConfig) in blockConfigs) {
-                BlocksRenderingLibrary.Add(blockPath, await BlockRendering.FromConfigAsync(blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
-            }
+                if (FrameTextureRegistry is null) FrameTextureRegistry = await Registry<FrameTextureJson>.Build(StreamAssets.GetPath("Textures", "Frame"), "*.json", StreamAssets);
+                else await FrameTextureRegistry.Reload();
 
-            // Generate Main Albedos
-            List<Texture2D> mainAlbedoSources = new();
-            List<Texture2D> mainNormalsSources = new();
-            List<Texture2D> mainHeightsSources = new();
-            List<Texture2D> frameAlbedoSources = new();
-            List<Texture2D> frameNormalsSources = new();
-            List<Texture2D> frameHeightsSources = new();
-            int mainSourceSize = 0;
-            int frameSourceSize = 0;
+                if (BlockRegistry is null) BlockRegistry = await Registry<BlockConfigJson>.Build(StreamAssets.GetPath("Blocks"), "*.json", StreamAssets);
+                else await BlockRegistry.Reload();
 
-            foreach (var br in BlocksRenderingLibrary.Values) {
-                foreach (var side in br.Sides) {
-                    side.MainTextureIndex = TryAddTexture(mainAlbedoSources, ref mainSourceSize, side.MainAlbedoTexture);
-                    TryAddTexture(mainNormalsSources, ref mainSourceSize, side.MainNormalsTexture);
-                    TryAddTexture(mainHeightsSources, ref mainSourceSize, side.MainHeightsTexture);
-                    if (side.FrameAlbedoTexture != null && side.FrameNormalsTexture != null && side.FrameHeightsTexture != null) {
-                        side.FrameTextureIndex = TryAddFramesTexture(frameAlbedoSources, ref frameSourceSize, side.FrameAlbedoTexture);
-                        TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
-                        TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
-                    } else {
-                        side.FrameTextureIndex = -1;
+                if (SpriteRegistry is null) SpriteRegistry = new(Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "Sprites")), "*.png");
+                else SpriteRegistry.Reload();
+
+                var blockConfigs = BlockRegistry.Get();
+
+                BlocksRenderingLibrary.Clear();
+                BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
+                foreach (var (blockPath, blockConfig) in blockConfigs) {
+                    BlocksRenderingLibrary.Add(blockPath, await BlockRendering.FromConfigAsync(StreamAssets, blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
+                }
+
+                // Generate Main Albedos
+                List<Texture2D> mainAlbedoSources = new();
+                List<Texture2D> mainNormalsSources = new();
+                List<Texture2D> mainHeightsSources = new();
+                List<Texture2D> frameAlbedoSources = new();
+                List<Texture2D> frameNormalsSources = new();
+                List<Texture2D> frameHeightsSources = new();
+                int mainSourceSize = 0;
+                int frameSourceSize = 0;
+
+                foreach (var br in BlocksRenderingLibrary.Values) {
+                    foreach (var side in br.Sides) {
+                        side.MainTextureIndex = TryAddTexture(mainAlbedoSources, ref mainSourceSize, side.MainAlbedoTexture);
+                        TryAddTexture(mainNormalsSources, ref mainSourceSize, side.MainNormalsTexture);
+                        TryAddTexture(mainHeightsSources, ref mainSourceSize, side.MainHeightsTexture);
+                        if (side.FrameAlbedoTexture != null && side.FrameNormalsTexture != null && side.FrameHeightsTexture != null) {
+                            side.FrameTextureIndex = TryAddFramesTexture(frameAlbedoSources, ref frameSourceSize, side.FrameAlbedoTexture);
+                            TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
+                            TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
+                        } else {
+                            side.FrameTextureIndex = -1;
+                        }
                     }
                 }
-            }
 
-            if (mainSourceSize > 0) {
-                _lastMainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
-                _lastMainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
-                _lastMainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
-                _lastFrameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
-                _lastFrameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
-                _lastFrameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
+                if (mainSourceSize > 0) {
+                    _lastMainAlbedo = Create2DArrayTexture(mainSourceSize, mainAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedMainAlbedo.asset", TextureFormat.RGB24, true, false);
+                    _lastMainNormals = Create2DArrayTexture(mainSourceSize, mainNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainNormals.asset", TextureFormat.RGB24, true, true);
+                    _lastMainHeights = Create2DArrayTexture(mainSourceSize, mainHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedMainHeights.asset", TextureFormat.R16, true, true);
+                    _lastFrameAlbedo = Create2DArrayFrameTexture(frameSourceSize, frameAlbedoSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameAlbedo.asset", TextureFormat.RGB24, true, false);
+                    _lastFrameNormals = Create2DArrayFrameTexture(frameSourceSize, frameNormalsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameNormals.asset", TextureFormat.RGB24, true, true);
+                    _lastFrameHeights = Create2DArrayFrameTexture(frameSourceSize, frameHeightsSources, "Assets/VoxelsEngine/Blocks/GeneratedFrameHeights.asset", TextureFormat.R16, true, true);
 
-                UploadTexturesToShader();
+                    UploadTexturesToShader();
+                }
+            } catch (Exception e) {
+                Logr.LogException(e);
+                throw;
             }
         }
 
@@ -267,7 +283,6 @@ namespace VoxelsEngine {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Initialize() {
             DisableUnityAnalytics();
-
 
             if (!_serializerRegistered) {
                 try {

@@ -7,7 +7,7 @@ using UnityEngine;
 using VoxelsEngine;
 
 public class BlockConfigEditor : OdinMenuEditorWindow {
-    private List<string> _dirty = new();
+    private readonly List<string> _dirty = new();
     private double _nextAutoSave;
 
     [MenuItem("DreamBuilder/Block Config Editor")]
@@ -20,8 +20,12 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
         SirenixEditorGUI.BeginHorizontalToolbar(MenuTree?.Config?.SearchToolbarHeight ?? 30);
         {
             if (SirenixEditorGUI.ToolbarButton("Rebuild menu")) {
-                Configurator.Instance.BlockRegistry.Reload();
-                ForceMenuTreeRebuild();
+                if (Configurator.Instance.BlockRegistry == null) return;
+                Configurator.Instance.BlockRegistry.Reload().ContinueWith(ForceMenuTreeRebuild);
+            }
+
+            if (SirenixEditorGUI.ToolbarButton("Update indexes")) {
+                RegistryIndexGenerator.GenerateIndexes();
             }
 
             if (SirenixEditorGUI.ToolbarButton("Create new")) {
@@ -64,6 +68,7 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
     }
 
     private async UniTaskVoid CreateNew() {
+        if (Configurator.Instance.BlockRegistry is null) return;
         await UniTask.DelayFrame(1);
         var blockName = EditorInputDialog.Show(
             "Block name", "Name the block.", "", "Create", "Cancel",
@@ -72,13 +77,14 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
         );
         if (blockName != null) {
             if (!blockName.EndsWith(".json")) blockName += ".json";
-            Configurator.Instance.BlockRegistry.SaveToJson(blockName, new BlockConfigJson());
-            Configurator.Instance.BlockRegistry.Reload();
+            Configurator.Instance.BlockRegistry.Editor_SaveToJson(blockName, new BlockConfigJson());
+            await Configurator.Instance.BlockRegistry.Reload();
             ForceMenuTreeRebuild();
         }
     }
 
     private async UniTaskVoid DeleteSelection() {
+        if (Configurator.Instance.BlockRegistry is null) return;
         await UniTask.DelayFrame(1);
         if (MenuTree.Selection.Count <= 0) return;
         var path = MenuTree.Selection[0].Name;
@@ -95,6 +101,7 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
     protected override OdinMenuTree BuildMenuTree() {
         var tree = new OdinMenuTree();
         var registry = Configurator.Instance.BlockRegistry;
+        if (registry is null) return tree;
         foreach (var (path, blockConfigJson) in registry.Get()) {
             tree.Add(path, blockConfigJson);
         }
@@ -103,10 +110,11 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
     }
 
     private void SaveToJson() {
+        if (Configurator.Instance.BlockRegistry is null) return;
         var notifText = "";
         foreach (var selectedItem in MenuTree.MenuItems) {
             if (_dirty.Contains(selectedItem.Name) && selectedItem.Value is BlockConfigJson config) {
-                Configurator.Instance.BlockRegistry.SaveToJson(selectedItem.Name, config);
+                Configurator.Instance.BlockRegistry.Editor_SaveToJson(selectedItem.Name, config);
                 notifText += $"Saved {selectedItem.Name}\n";
             }
         }

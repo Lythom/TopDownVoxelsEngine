@@ -5,43 +5,41 @@ using JetBrains.Annotations;
 using Shared;
 using Sirenix.OdinInspector;
 using UnityEditor;
+using VoxelsEngine;
 using VoxelsEngine.Data;
 using VoxelsEngine.Tools;
 
 namespace VoxelsEngineEditor.Editor {
     public class AssetsHelper : AssetPostprocessor {
-        public static readonly Registry<MainTextureJson> MainTextureRegistry = new(StreamAssets.GetPath("Textures", "Main"), "*.json");
-        public static readonly Registry<FrameTextureJson> FrameTextureRegistry = new(StreamAssets.GetPath("Textures", "Frame"), "*.json");
-        public static readonly SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
-        public static readonly Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
-
-        public static string[] GetMainTextures() {
-            return MainTextureRegistry.Get().Keys.ToArray();
+        public static string[]? GetMainTextures() {
+            return Configurator.Instance.MainTextureRegistry?.Get().Keys.ToArray();
         }
 
         [ItemCanBeNull]
         public static ValueDropdownList<string?> GetFrameTextures() {
             var arr = new ValueDropdownList<string?> {{"", "null"}};
-            foreach (var key in FrameTextureRegistry.Get().Keys) {
+            var keyCollection = Configurator.Instance.FrameTextureRegistry?.Get().Keys;
+            if (keyCollection is null) return arr;
+            foreach (var key in keyCollection) {
                 arr.Add(key, key);
             }
 
             return arr;
         }
 
-        public static string[] GetSpriteTextures() {
-            return SpriteRegistry.Get().Keys.ToArray();
+        public static string[]? GetSpriteTextures() {
+            return Configurator.Instance.SpriteRegistry?.Get().Keys.ToArray();
         }
 
-        public static string[] GetBlocks() {
-            return BlockRegistry.Get().Keys.ToArray();
+        public static string[]? GetBlocks() {
+            return Configurator.Instance.BlockRegistry?.Get().Keys.ToArray();
         }
 
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths) {
-            MainTextureRegistry.Reload();
-            FrameTextureRegistry.Reload();
-            SpriteRegistry.Reload();
-            BlockRegistry.Reload();
+            // Configurator.Instance.MainTextureRegistry?.Reload();
+            // Configurator.Instance.FrameTextureRegistry?.Reload();
+            // Configurator.Instance.SpriteRegistry?.Reload();
+            // Configurator.Instance.BlockRegistry?.Reload();
         }
     }
 }
