@@ -9,6 +9,7 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+      - "9006:9006"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080

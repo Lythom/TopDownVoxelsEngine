@@ -27,6 +27,9 @@ services:
     volumes:
       - asp-dataprotection-keys:/home/appuser/.aspnet/DataProtection-Keys
       - streaming-assets:/app/StreamingAssets
+    ports:
+      - "8080"
+      - "9006"
 
   postgres:
     image: postgres:15-alpine
