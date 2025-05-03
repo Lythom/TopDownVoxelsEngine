@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePack.Resolvers;
 using Shared;
@@ -44,12 +43,8 @@ namespace VoxelsEngine {
         public SpriteRegistry SpriteRegistry = new(StreamAssets.GetPath("Sprites"), "*.png");
         public Registry<BlockConfigJson> BlockRegistry = new(StreamAssets.GetPath("Blocks"), "*.json");
 
-        public MeshFilter? GrassProp;
-        public Mesh? GrassPropMesh;
-        public Material? GrassMat;
-
         [Button(ButtonSizes.Large)]
-        private void RegenerateAtlas() {
+        private async UniTask RegenerateAtlas() {
             MainTextureRegistry.Reload();
             FrameTextureRegistry.Reload();
             SpriteRegistry.Reload();
@@ -60,7 +55,7 @@ namespace VoxelsEngine {
             BlocksRenderingLibrary.Clear();
             BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
             foreach (var (blockPath, blockConfig) in blockConfigs) {
-                BlocksRenderingLibrary.Add(blockPath, new BlockRendering(blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
+                BlocksRenderingLibrary.Add(blockPath, await BlockRendering.FromConfigAsync(blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
             }
 
             // Generate Main Albedos
@@ -213,7 +208,7 @@ namespace VoxelsEngine {
                 // If we're in the editor find a ref in the scene
                 _instance = FindFirstObjectByType<Configurator>();
                 if (_instance != null) {
-                    FillLibrary();
+                    FillLibrary().Forget();
                 }
 
 #endif
@@ -226,25 +221,28 @@ namespace VoxelsEngine {
             }
         }
 
-        private void Awake() {
-            if (_instance != null && _instance.isActiveAndEnabled) {
-                // detroy self if it's not the current instance already
-                if (_instance.gameObject != gameObject) Destroy(gameObject);
-                return;
+        private async void Awake() {
+            try {
+                if (_instance != null && _instance.isActiveAndEnabled) {
+                    // detroy self if it's not the current instance already
+                    if (_instance.gameObject != gameObject) Destroy(gameObject);
+                    return;
+                }
+
+                DontDestroyOnLoad(gameObject);
+
+                _instance = this;
+                await FillLibrary();
+
+                Logr.Log("Configurator initialized");
+            } catch (Exception e) {
+                Logr.LogException(e);
             }
-
-            DontDestroyOnLoad(gameObject);
-
-            _instance = this;
-            FillLibrary();
-
-            GrassPropMesh = GrassProp?.sharedMesh;
-            Logr.Log("Configurator initialized");
         }
 
-        private static void FillLibrary() {
+        private static async UniTask FillLibrary() {
             if (_instance == null) return;
-            _instance.RegenerateAtlas();
+            await _instance.RegenerateAtlas();
         }
 
         static bool _serializerRegistered = false;
@@ -259,14 +257,12 @@ namespace VoxelsEngine {
         private static readonly int FrameTex = Shader.PropertyToID("_frameTex");
         private static readonly int FrameNormals = Shader.PropertyToID("_frameNormals");
         private static readonly int FrameHeights = Shader.PropertyToID("_frameHeights");
-        private static readonly int FrameWithoutAlbedo = Shader.PropertyToID("_frameWithoutAlbedo");
-        private Texture2DArray _lastMainAlbedo;
-        private Texture2DArray _lastMainNormals;
-        private Texture2DArray _lastMainHeights;
-        private Texture2DArray _lastFrameAlbedo;
-        private Texture2DArray _lastFrameNormals;
-        private Texture2DArray _lastFrameHeights;
-        private List<int> _frameIndexesWithoutAlbedo;
+        private Texture2DArray? _lastMainAlbedo;
+        private Texture2DArray? _lastMainNormals;
+        private Texture2DArray? _lastMainHeights;
+        private Texture2DArray? _lastFrameAlbedo;
+        private Texture2DArray? _lastFrameNormals;
+        private Texture2DArray? _lastFrameHeights;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Initialize() {
@@ -287,7 +283,7 @@ namespace VoxelsEngine {
                 _serializerRegistered = true;
             }
 
-            FillLibrary();
+            FillLibrary().Forget();
         }
 
         private static void DisableUnityAnalytics() {

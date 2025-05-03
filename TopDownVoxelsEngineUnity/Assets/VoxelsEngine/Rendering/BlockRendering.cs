@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Shared;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -14,30 +15,36 @@ public struct BlockRendering {
     public Texture? ItemPreview;
     public readonly bool IgnoreFrameAlbedo;
 
-    public static BlockRendering Air = new (new BlockConfigJson(), null, null, null);
+    public static BlockRendering Air = new(true);
 
-    public BlockRendering(BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
-        // TODO: preload at starting
-        
-        Sides = new();
+    public static async UniTask<BlockRendering> FromConfigAsync(BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
+        var block = new BlockRendering(blockConfig.IgnoreFrameAlbedo) {
+            Sides = new(),
+            ItemPreview = null
+        };
+
         foreach (var side in blockConfig.Sides) {
             var mainJson = mainTextures.Get(side.MainTextureConfig);
             var frameJson = side.FrameTextureConfig == null ? null : frameTextures.Get(side.FrameTextureConfig);
             if (mainJson == null) throw new OperationCanceledException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block.");
-            Sides.Add(new BlockRenderingSide {
+            block.Sides.Add(new BlockRenderingSide {
                 Directions = side.Directions,
-                MainAlbedoTexture = StreamAssets.FromRelativePath(mainJson.MainAlbedoTexture),
-                MainNormalsTexture = StreamAssets.FromRelativePath(mainJson.MainNormalsTexture),
-                MainHeightsTexture = StreamAssets.FromRelativePath(mainJson.MainHeightsTexture),
-                FrameAlbedoTexture = frameJson == null ? null : StreamAssets.FromRelativePath(frameJson.FrameAlbedoTexture),
-                FrameNormalsTexture = frameJson == null ? null : StreamAssets.FromRelativePath(frameJson.FrameNormalsTexture),
-                FrameHeightsTexture = frameJson == null ? null : StreamAssets.FromRelativePath(frameJson.FrameHeightsTexture)
+                MainAlbedoTexture = await StreamAssets.FromRelativePath(mainJson.MainAlbedoTexture),
+                MainNormalsTexture = await StreamAssets.FromRelativePath(mainJson.MainNormalsTexture),
+                MainHeightsTexture = await StreamAssets.FromRelativePath(mainJson.MainHeightsTexture),
+                FrameAlbedoTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameAlbedoTexture),
+                FrameNormalsTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameNormalsTexture),
+                FrameHeightsTexture = frameJson == null ? null : await StreamAssets.FromRelativePath(frameJson.FrameHeightsTexture)
             });
         }
 
         var previewSpritePath = blockConfig.ItemPreviewSprite == null ? null : spritesRegistry.Get(blockConfig.ItemPreviewSprite);
-        ItemPreview = previewSpritePath == null ? null : StreamAssets.FromRelativePath(previewSpritePath);
-        IgnoreFrameAlbedo = blockConfig.IgnoreFrameAlbedo;
+        block.ItemPreview = previewSpritePath == null ? null : await StreamAssets.FromRelativePath(previewSpritePath);
+        return block;
+    }
+
+    public BlockRendering(bool ignoreFrameAlbedo) : this() {
+        IgnoreFrameAlbedo = ignoreFrameAlbedo;
     }
 }
 
