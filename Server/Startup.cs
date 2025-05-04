@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.WebSockets;
 using System.Threading;
@@ -12,10 +13,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Server.DbModel;
+using Shared;
 using Shared.Net;
 
 namespace Server {
-    public class Startup : IAsyncDisposable {
+    public class Startup(Registry<BlockConfigJson> blockConfigJsonRegistry) : IAsyncDisposable {
         private Func<UniTask>? _stopServer;
 
         public void ConfigureServices(IServiceCollection services) {
@@ -25,10 +27,13 @@ namespace Server {
                 .AddEntityFrameworkStores<GameSavesContext>()
                 .AddDefaultTokenProviders();
             services.AddDbContext<GameSavesContext>(GameSavesContext.ConfigureOptions);
-            // Warm up StarTeamServer service during startup
             services.AddSingleton<VoxelsEngineServer>(sp => {
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
-                return new VoxelsEngineServer(serviceScopeFactory, new SocketServer());
+                return new VoxelsEngineServer(
+                    serviceScopeFactory,
+                    new SocketServer(),
+                    blockConfigJsonRegistry
+                );
             });
         }
 

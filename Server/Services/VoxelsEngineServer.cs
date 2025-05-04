@@ -23,7 +23,7 @@ namespace Server {
         // Data
         private readonly GameState _state = new(null, null);
         private readonly GameState _stateBackup = new(null, null);
-        private readonly Registry<BlockConfigJson> BlockRegistry = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Blocks"), "*.json");
+        private readonly Registry<BlockConfigJson> _blockRegistry;
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -40,7 +40,13 @@ namespace Server {
         private ServerClock _serverClock;
         private readonly CancellationTokenSource _cts;
 
-        public VoxelsEngineServer(IServiceScopeFactory serviceScopeFactory, SocketServer socketServer) {
+        public VoxelsEngineServer(
+            IServiceScopeFactory serviceScopeFactory,
+            SocketServer socketServer,
+            Registry<BlockConfigJson> blockRegistry
+        ) {
+            _blockRegistry = blockRegistry;
+
             _serviceScopeFactory = serviceScopeFactory;
             try {
                 _cts = new CancellationTokenSource();
@@ -66,7 +72,7 @@ namespace Server {
                 await context.SaveChangesAsync(_cts.Token);
             }
 
-            _state.UpdateBlockMapping(BlockRegistry);
+            _state.UpdateBlockMapping(_blockRegistry);
             InitState(dbSave);
             SubscribeRemoveSessionOnCharacterLeave(_state);
 
@@ -297,6 +303,7 @@ namespace Server {
                         IsGenerated = true
                     };
                 }
+
                 _state.Levels.Add(dbLevel.Name, levelMap);
                 var (chX, chZ) = LevelTools.GetChunkPosition(spawnPosition);
                 _state.LevelGenerator.EnqueueUninitializedChunksAround(levelMap.LevelId, chX, chZ, 6, _state.Levels);

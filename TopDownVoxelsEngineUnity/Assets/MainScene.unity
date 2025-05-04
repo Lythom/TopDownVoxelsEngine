@@ -154,9 +154,6 @@ MonoBehaviour:
   RemoveFX: {fileID: 893364139256490378, guid: 3f15845c021aae74c9eb27491b787677, type: 3}
   RenderDistance: 4
   OpaqueBlocksMaterial: {fileID: 2100000, guid: 1eb4b6db4a3269941a4cf58822c97b2e, type: 2}
-  GrassProp: {fileID: 3908101961011139255, guid: 7420fd6a599cde14da5d2e8b6f83df85, type: 3}
-  GrassPropMesh: {fileID: 0}
-  GrassMat: {fileID: 2100000, guid: 181e20ef0279b8e44a77c2028bae1dde, type: 2}
 --- !u!4 &149498319
 Transform:
   m_ObjectHideFlags: 0
@@ -944,9 +941,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 655f80dcdf984dc998e6fc278744f1b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DEBUG_DisabledFrustrumCulling: 0
-  GrassProximityThreshold: 220
-  FrustrumTolerance: 1
   LevelId: 0
   Cam: {fileID: 963194227}
   BlockMaterial: {fileID: 2100000, guid: 1eb4b6db4a3269941a4cf58822c97b2e, type: 2}
@@ -1701,7 +1695,8 @@ MonoBehaviour:
   Tracker: {fileID: 963194229}
   PlayerCharacterPrefab: {fileID: 20086019324110641, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
-  ServerPort: 9006
+  ServerPort: 32768
+  ServerHost: dreambuilder.freeboxos.fr
 --- !u!1 &1307387711
 GameObject:
   m_ObjectHideFlags: 0

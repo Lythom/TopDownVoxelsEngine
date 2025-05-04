@@ -100,7 +100,7 @@ namespace VoxelsEngine {
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
-#if UNITY_WEBGL
+#if UNITY_WEBGL && !UNITY_EDITOR
             var url = Application.absoluteURL;
             string[] parameters = url.Split('?')[1].Split('&');
 
@@ -119,8 +119,8 @@ namespace VoxelsEngine {
 #endif
             await _engine.InitRemote(ServerHost, ServerPort);
             Application.runInBackground = true;
-            while (!Configurator.IsInstanceCreatedYet()) await UniTask.Delay(50);
-            _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
+            while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
+            _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
         }
 
 
@@ -129,8 +129,8 @@ namespace VoxelsEngine {
             if (File.Exists(LocalSavePath)) {
                 try {
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
-                    while (!Configurator.IsInstanceCreatedYet()) await UniTask.Delay(50);
-                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
+                    while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
+                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
 
                     Logr.Log("Loading existing game", Tags.Standalone);
                 } catch (Exception e) {
@@ -150,9 +150,10 @@ namespace VoxelsEngine {
                 var (spawnPositionChX, spawnPositionChZ) = LevelTools.GetChunkPosition(spawnPosition);
 
                 if (state == null) {
+                    while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
                     Logr.Log("Creating new game", Tags.Standalone);
                     state = new GameState(null, null);
-                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry);
+                    state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
                     var levelMap = new LevelMap("World", spawnPosition);
                     state.Levels.Add("World", levelMap);
                     state.Characters.Add(0,

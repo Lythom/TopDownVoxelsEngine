@@ -15,19 +15,11 @@ namespace VoxelsEngine.Tools {
         /// <returns>Loaded Texture2D object</returns>
         /// <exception cref="Exception">Thrown when texture cannot be loaded</exception>
         UniTask<Texture2D> LoadTexture2DAsync(string relativePath);
-
-        /// <summary>
-        /// Combines the provided path segments with the streaming assets path
-        /// </summary>
-        /// <param name="relativePath">Path segments to combine</param>
-        /// <returns>Full path to the resource</returns>
-        string GetPath(params string[] relativePath);
     }
 
     public class StreamAssetsFilesAdapter : IStreamAssets {
-        public UniTask<string> LoadTxtAsync(string path) => StreamAssetsFiles.LoadTxtAsync(path);
+        public UniTask<string> LoadTxtAsync(string relativePath) => StreamAssetsFiles.LoadTxtAsync(relativePath);
         public UniTask<Texture2D> LoadTexture2DAsync(string relativePath) => StreamAssetsFiles.LoadTexture2DAsync(relativePath);
-        public string GetPath(params string[] relativePath) => StreamAssetsFiles.GetPath(relativePath);
     }
 
     public static class StreamAssetsFiles {
@@ -58,15 +50,15 @@ namespace VoxelsEngine.Tools {
             }
         }
 
-        public static string GetPath(params string[] paths) {
+        private static string GetPath(params string[] paths) {
             string combinedPath = Path.Combine(paths);
             return Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, combinedPath));
         }
     }
 
     public class StreamAssetsWeb : IStreamAssets {
-        public async UniTask<string> LoadTxtAsync(string path) {
-            string fullPath = GetPath(path);
+        public async UniTask<string> LoadTxtAsync(string relativePath) {
+            string fullPath = GetPath(relativePath);
             using var request = UnityWebRequest.Get(fullPath);
 
             await request.SendWebRequest();
@@ -91,9 +83,8 @@ namespace VoxelsEngine.Tools {
             return DownloadHandlerTexture.GetContent(request);
         }
 
-        public string GetPath(params string[] relativePath) {
+        private string GetPath(params string[] relativePath) {
             // In WebGL, StreamingAssets are served from a URL
-            // COMMENT: Path.Combine adapted to webgl context?
             return $"{Application.streamingAssetsPath}/{Path.Combine(relativePath)}";
         }
     }

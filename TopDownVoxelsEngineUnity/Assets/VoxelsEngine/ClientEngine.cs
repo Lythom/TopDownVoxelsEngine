@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using Shared;
 using Shared.Net;
@@ -133,12 +134,15 @@ namespace VoxelsEngine {
 
         public async Task InitRemote(string host, int port) {
             try {
+                Logr.Log("Connecting to " + host + ":" + port, Tags.Client);
                 SocketClient = new SocketClient();
                 SocketClient.OnNetworkMessage += HandleNetMessage;
                 SocketClient.OnConnexionLost += HandleConnexionLost;
                 await SocketClient.Init(host, port);
+                Logr.Log("Connected. Delaying before loading…", Tags.Client);
                 LocalState.Instance.Session.Value = SessionStatus.NeedAuthentication;
-                await Task.Delay(500);
+                await UniTask.Delay(500);
+                Logr.Log("Sending HelloNetworkMessage", Tags.Client);
                 SocketClient.Send(new HelloNetworkMessage(LocalState.Instance.CurrentPlayerName));
             } catch (Exception e) {
                 Logr.LogException(e);

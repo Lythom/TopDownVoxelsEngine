@@ -18,6 +18,7 @@ public static class RegistryIndexGenerator {
         GenerateDirectoryIndex(Path.Combine(Application.streamingAssetsPath, "Blocks"), "*.json");
         GenerateDirectoryIndex(Path.Combine(Application.streamingAssetsPath, "Textures", "Frame"), "*.json");
         GenerateDirectoryIndex(Path.Combine(Application.streamingAssetsPath, "Textures", "Main"), "*.json");
+        GenerateDirectoryIndex(Path.Combine(Application.streamingAssetsPath, "Sprites"), "*.png");
     }
 
     public static void GenerateDirectoryIndex(string directory, string searchPattern) {

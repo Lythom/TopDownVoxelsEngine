@@ -5,21 +5,13 @@ using Cysharp.Threading.Tasks;
 using MessagePack;
 
 namespace Shared {
-    public interface ITxtAsset {
-        /// <summary>
-        /// Loads a text file from streaming assets asynchronously
-        /// </summary>
-        /// <param name="path">Relative path to the text file within streaming assets</param>
-        /// <returns>Content of the text file</returns>
-        /// <exception cref="Exception">Thrown when file cannot be loaded</exception>
-        UniTask<string> LoadTxtAsync(string path);
-    }
-
     /**
      * Maps config files with the corresponding data
      */
-    public class Registry<T> where T : class, new() {
-        public Dictionary<string, T>? _data = null;
+    public class Registry<T> where T : class {
+        private Dictionary<string, T>? _data = null;
+        private bool _isLoaded = false;
+        public bool IsLoaded => _isLoaded;
 
         private readonly string _resourcePath;
         private readonly string _searchPattern;
@@ -27,30 +19,39 @@ namespace Shared {
 
         public string ResourcePath => _resourcePath;
 
-        private Registry(string resourcePath, string searchPattern, ITxtAsset txtAsset) {
+        protected Registry(string resourcePath, string searchPattern, ITxtAsset txtAsset) {
             _searchPattern = searchPattern;
             _txtAsset = txtAsset;
             _resourcePath = resourcePath;
         }
 
-        public static async UniTask<Registry<T>> Build(string resourcePath, string searchPattern, ITxtAsset txtAsset) {
-            var r = new Registry<T>(resourcePath, searchPattern, txtAsset);
+        public static async UniTask<Registry<T>> Build(string relativePath, string searchPattern, ITxtAsset txtAsset) {
+            var r = new Registry<T>(relativePath, searchPattern, txtAsset);
             await r.Load();
             return r;
         }
 
-        private async UniTask Load() {
+        protected async UniTask Load() {
             _data = new Dictionary<string, T>();
 
+            Logr.Log($"Loading registry from {Path.Combine(ResourcePath, "index.txt")}");
             var indexContent = await _txtAsset.LoadTxtAsync(Path.Combine(ResourcePath, "index.txt"));
             var files = indexContent.Split('\n');
             foreach (var file in files) {
                 if (string.IsNullOrWhiteSpace(file)) continue;
-                // Logr.Log($"Found {jsonFile}");
                 var assetPath = file.Replace(ResourcePath + Path.DirectorySeparatorChar, "");
-                var fetchTxtAsync = await _txtAsset.LoadTxtAsync(Path.Combine(ResourcePath, file));
-                _data[assetPath] = MessagePackSerializer.Deserialize<T>(MessagePackSerializer.ConvertFromJson(fetchTxtAsync));
+                var relativePath = Path.Combine(ResourcePath, file);
+                if (file.EndsWith(".json")) {
+                    Logr.Log($"Found file {file}. Loading {Path.Combine(ResourcePath, "index.txt")}");
+                    var fetchTxtAsync = await _txtAsset.LoadTxtAsync(relativePath);
+                    _data[assetPath] = MessagePackSerializer.Deserialize<T>(MessagePackSerializer.ConvertFromJson(fetchTxtAsync));
+                } else if (relativePath is T filePath) {
+                    Logr.Log($"Found file {file}. Adding raw reference to registry.");
+                    _data[assetPath] = filePath;
+                }
             }
+
+            _isLoaded = true;
         }
 
         public Dictionary<string, T> Get() {

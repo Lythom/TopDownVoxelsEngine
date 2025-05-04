@@ -50,16 +50,16 @@ namespace VoxelsEngine {
             try {
                 if (StreamAssets is null) StreamAssets = StreamAssetsFetcherFactory.Create();
 
-                if (MainTextureRegistry is null) MainTextureRegistry = await Registry<MainTextureJson>.Build(StreamAssets.GetPath("Textures", "Main"), "*.json", StreamAssets);
+                if (MainTextureRegistry is null) MainTextureRegistry = await Registry<MainTextureJson>.Build(Path.Combine("Textures", "Main"), "*.json", StreamAssets);
                 else await MainTextureRegistry.Reload();
 
-                if (FrameTextureRegistry is null) FrameTextureRegistry = await Registry<FrameTextureJson>.Build(StreamAssets.GetPath("Textures", "Frame"), "*.json", StreamAssets);
+                if (FrameTextureRegistry is null) FrameTextureRegistry = await Registry<FrameTextureJson>.Build(Path.Combine("Textures", "Frame"), "*.json", StreamAssets);
                 else await FrameTextureRegistry.Reload();
 
-                if (BlockRegistry is null) BlockRegistry = await Registry<BlockConfigJson>.Build(StreamAssets.GetPath("Blocks"), "*.json", StreamAssets);
+                if (BlockRegistry is null) BlockRegistry = await Registry<BlockConfigJson>.Build(Path.Combine("Blocks"), "*.json", StreamAssets);
                 else await BlockRegistry.Reload();
 
-                if (SpriteRegistry is null) SpriteRegistry = new(Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "Sprites")), "*.png");
+                if (SpriteRegistry is null) SpriteRegistry = await SpriteRegistry.Build("Sprites", "*.png", StreamAssets);
                 else SpriteRegistry.Reload();
 
                 var blockConfigs = BlockRegistry.Get();
@@ -212,8 +212,8 @@ namespace VoxelsEngine {
         }
 #endif
 
-        public static bool IsInstanceCreatedYet() {
-            return _instance != null;
+        public static bool IsInstanceReady() {
+            return _instance != null && _instance.BlockRegistry?.IsLoaded == true;
         }
 
         public static Configurator Instance {

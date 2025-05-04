@@ -41,6 +41,7 @@ namespace Server.Tests {
             _userManagerMock = new UserManager<IdentityUser>(_userStoreMock.Object, null, null, null, null, null, null, null, null);
             _contextMock = new Mock<GameSavesContext>();
             _socketServerMock = new Mock<SocketServer>();
+            var blockRegistryMock = new Mock<Registry<BlockConfigJson>>();
 
             var dbChunk0 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 0, ChZ = 0};
             var dbChunk1 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 1, ChZ = 0};
@@ -111,7 +112,7 @@ namespace Server.Tests {
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
 
             // Créez une instance de VoxelsEngineServer à tester
-            _server = new VoxelsEngineServer(serviceScopeFactoryMock.Object, _socketServerMock.Object);
+            _server = new VoxelsEngineServer(serviceScopeFactoryMock.Object, _socketServerMock.Object, blockRegistryMock.Object);
         }
 
         [Test]
@@ -178,7 +179,7 @@ namespace Server.Tests {
             // Check we correctly broadcasted CharacterJoinGameEvent
             _socketServerMock.Verify(q => q.Send(_testShortId, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId2)), Times.Once);
             _socketServerMock.Verify(q => q.Send(_testShortId2, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId2)), Times.Once);
-            
+
             // check we send to the new user the current user list
             _socketServerMock.Verify(q => q.Send(_testShortId2, It.Is<CharacterJoinGameEvent>(e => e.CharacterShortId == _testShortId)), Times.Once);
         }
