@@ -135,7 +135,7 @@ namespace VoxelsEngine {
         public async Task InitRemote(string host, int port) {
             try {
                 Logr.Log("Connecting to " + host + ":" + port, Tags.Client);
-                SocketClient = new SocketClient();
+                SocketClient = new NativeSocketClient();
                 SocketClient.OnNetworkMessage += HandleNetMessage;
                 SocketClient.OnConnexionLost += HandleConnexionLost;
                 await SocketClient.Init(host, port);
@@ -160,9 +160,7 @@ namespace VoxelsEngine {
         }
 
         private void OnDestroy() {
-            if (SocketClient != null) {
-                SocketClient.Close();
-            }
+            SocketClient.Close();
         }
     }
 }

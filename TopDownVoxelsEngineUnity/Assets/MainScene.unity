@@ -1695,8 +1695,8 @@ MonoBehaviour:
   Tracker: {fileID: 963194229}
   PlayerCharacterPrefab: {fileID: 20086019324110641, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
-  ServerPort: 32768
-  ServerHost: dreambuilder.freeboxos.fr
+  ServerPort: 8080
+  ServerHost: localhost
 --- !u!1 &1307387711
 GameObject:
   m_ObjectHideFlags: 0

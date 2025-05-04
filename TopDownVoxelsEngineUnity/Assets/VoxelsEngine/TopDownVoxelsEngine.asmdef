@@ -14,7 +14,8 @@
         "Popcron.Gizmos",
         "UniTask.Linq",
         "Shared",
-        "ObservableCollections"
+        "ObservableCollections",
+        "endel.nativewebsocket"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

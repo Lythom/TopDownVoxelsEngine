@@ -60,7 +60,7 @@ namespace VoxelsEngine {
                 else await BlockRegistry.Reload();
 
                 if (SpriteRegistry is null) SpriteRegistry = await SpriteRegistry.Build("Sprites", "*.png", StreamAssets);
-                else SpriteRegistry.Reload();
+                else await SpriteRegistry.Reload();
 
                 var blockConfigs = BlockRegistry.Get();
 

@@ -79,7 +79,7 @@ namespace Server {
             _socketServer.OnNetworkMessage += HandleMessage;
             _socketServer.OnOpen += NotifyConnection;
             _socketServer.OnClose += NotifyDisconnection;
-            _socketServer.Init(port);
+            // _socketServer.Init(port);
 
             _serverClock = new ServerClock(this);
             _serverClock.StartFixedUpdateAsync(_inbox).Forget();

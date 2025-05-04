@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.WebSockets;
@@ -47,9 +48,8 @@ namespace Server {
                 app.UseDeveloperExceptionPage();
             }
 
-
-            app.UseRouting();
             app.UseWebSockets();
+            app.UseRouting();
 
             app.UseAuthorization();
             app.UseAuthentication();
