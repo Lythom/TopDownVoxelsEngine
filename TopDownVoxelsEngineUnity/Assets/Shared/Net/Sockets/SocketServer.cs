@@ -2,17 +2,15 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 
 namespace Shared.Net {
     public class SocketServer : ISocketManager {
         private CancellationTokenSource? _cts;
-        private TcpListener _listener = null!;
         private const int BufferSize = 1_000_000; // ~1Mo
 
         public Action<ushort, INetworkMessage>? OnNetworkMessage { get; set; }
@@ -21,95 +19,77 @@ namespace Shared.Net {
         public Action<Exception>? OnReconnectionFailed { get; set; }
 
         private readonly Stack<ushort> _shortIdPool = new();
-        private readonly ConcurrentDictionary<ushort, TcpClient> _clients = new();
-        public TcpClient? GetClient(ushort shortId) => _clients.TryGetValue(shortId, out var client) ? client : null;
+        private readonly ConcurrentDictionary<ushort, WebSocket> _clients = new();
+        public WebSocket? GetClient(ushort shortId) => _clients.TryGetValue(shortId, out var client) ? client : null;
 
-        public void Init(int port) {
+        public SocketServer() {
             _cts = new CancellationTokenSource();
             if (_shortIdPool.Count == 0) {
                 for (int i = ushort.MaxValue; i >= 0; i--) _shortIdPool.Push((ushort) i);
             }
-
-            Logr.Log("Starting Tcp Listener on port " + port, Tags.Server);
-            _listener = new TcpListener(IPAddress.Any, port);
-            _listener.Start();
-            AcceptClientAsync().Forget();
         }
 
-        private async UniTask AcceptClientAsync() {
-            Logr.Log("Ready to accept connections", Tags.Server);
-            while (_cts != null && !_cts.Token.IsCancellationRequested) {
-                try {
-                    var client = await _listener.AcceptTcpClientAsync();
-                    HandleClientAsync(client).Forget();
-                } catch (Exception e) {
-                    Logr.LogException(e);
-                }
-            }
-
-            Logr.Log("Not listening anymore", Tags.Server);
-        }
-
-        public async UniTask HandleClientAsync(TcpClient client) {
+        public async ValueTask HandleClientAsync(WebSocket webSocket) {
             if (_cts == null) throw new ApplicationException("Socket server not initialized");
-            var stream = client.GetStream();
-            byte[] lengthBuffer = new byte[4];
-            var buffer = new byte[BufferSize];
 
             ushort shortId = _shortIdPool.Pop();
-            _clients[shortId] = client;
+            _clients[shortId] = webSocket;
 
             OnOpen?.Invoke(shortId);
-
-            Logr.Log("New client ! " + shortId, Tags.Server);
+            Logr.Log("New WebSocket client! " + shortId, Tags.Server);
 
             try {
-                while (!_cts.Token.IsCancellationRequested && client.Connected) {
+                var buffer = new byte[BufferSize];
+                var receiveBuffer = new ArraySegment<byte>(buffer);
+
+                while (!_cts.Token.IsCancellationRequested &&
+                       webSocket.State == WebSocketState.Open) {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                    var bytesRead = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length, _cts.Token);
-                    if (bytesRead == 0) break;
-                    if (bytesRead != lengthBuffer.Length) throw new Exception("Failed to read message length");
+                    var result = await webSocket.ReceiveAsync(receiveBuffer, _cts.Token);
 
-                    var messageLength = BitConverter.ToInt32(lengthBuffer, 0);
-
-                    var readBytesFromMessage = 0;
-                    while (readBytesFromMessage < messageLength) {
-                        if (_cts.IsCancellationRequested) break;
-                        bytesRead = await stream.ReadAsync(buffer, readBytesFromMessage, messageLength - readBytesFromMessage, _cts.Token);
-                        readBytesFromMessage += bytesRead;
+                    if (result.MessageType == WebSocketMessageType.Close) {
+                        break;
                     }
 
-                    if (_cts.IsCancellationRequested) break;
-
-                    var request = MessagePackSerializer.Deserialize<INetworkMessage>(new ReadOnlySequence<byte>(buffer, 0, messageLength));
-                    OnNetworkMessage?.Invoke(shortId, request);
+                    if (result.Count > 0) {
+                        try {
+                            var message = MessagePackSerializer.Deserialize<INetworkMessage>(
+                                new ReadOnlySequence<byte>(buffer, 0, result.Count));
+                            OnNetworkMessage?.Invoke(shortId, message);
+                        } catch (Exception e) {
+                            Logr.LogException(e, "Cannot deserialize message from client. Ensure client only sends INetworkMessage binary messages.");
+                        }
+                    }
                 }
             } catch (Exception e) {
-                if (e is not OperationCanceledException && e is not IOException) Logr.LogException(e);
-            }
+                if (e is not OperationCanceledException) Logr.LogException(e);
+            } finally {
+                if (webSocket.State == WebSocketState.Open) {
+                    await webSocket.CloseAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "Closing",
+                        CancellationToken.None);
+                }
 
-            Logr.Log("Client disconnected " + shortId, Tags.Server);
-            if (client.Connected) client.Close();
-            OnClose?.Invoke(shortId);
-            _clients.TryRemove(shortId, out _);
-            _shortIdPool.Push(shortId);
+                Logr.Log("Client disconnected " + shortId, Tags.Server);
+                OnClose?.Invoke(shortId);
+                _clients.TryRemove(shortId, out _);
+                _shortIdPool.Push(shortId);
+            }
         }
 
-        public virtual async UniTask Send(ushort target, INetworkMessage msg) {
+        public virtual ValueTask Send(ushort target, INetworkMessage msg) {
             var client = GetClient(target);
-            if (client != null && client.Connected) {
-                // if (msg is not CharacterMoveGameEvent) Logr.Log($"→ {target} Start sending… {msg}", Tags.Server);
-                var token = _cts?.Token ?? CancellationToken.None;
+            if (client != null && client.State == WebSocketState.Open) {
                 var buffer = MessagePackSerializer.Serialize(msg);
-                var lengthBuffer = BitConverter.GetBytes(buffer.Length);
-
-                var stream = client.GetStream();
-                await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token); // first write the message length
-                await stream.WriteAsync(buffer, 0, buffer.Length, token);
-                await stream.FlushAsync(token);
-                // if (msg is not CharacterMoveGameEvent && msg is not PlaceBlocksGameEvent) Logr.Log($"→ {target} Sent {msg}", Tags.Server);
+                return client.SendAsync(
+                    new ReadOnlyMemory<byte>(buffer),
+                    WebSocketMessageType.Binary,
+                    true,
+                    _cts?.Token ?? CancellationToken.None);
             } else {
-                Logr.Log($"!! Failed to send  {msg} to {target} because disconnected", Tags.Debug);
+                Logr.Log($"!! Failed to send {msg} to {target} because disconnected", Tags.Debug);
+                return new ValueTask(Task.CompletedTask);
             }
         }
 
@@ -117,20 +97,23 @@ namespace Shared.Net {
             _cts?.Cancel();
         }
 
-        public virtual async UniTask Broadcast(INetworkMessage msg) {
-            // if (msg is not CharacterMoveGameEvent) Logr.Log($"Broadcasted {msg}", Tags.Server);
+        public virtual async ValueTask Broadcast(INetworkMessage msg) {
             var buffer = MessagePackSerializer.Serialize(msg);
-            var lengthBuffer = BitConverter.GetBytes(buffer.Length);
+            var segment = new ReadOnlyMemory<byte>(buffer);
             var token = _cts?.Token ?? CancellationToken.None;
 
             foreach (var (shortId, client) in _clients) {
-                if (client.Connected) {
-                    var stream = client.GetStream();
-                    await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, token); // first write the message length
-                    await stream.WriteAsync(buffer, 0, buffer.Length, token);
-                    await stream.FlushAsync(token);
+                if (client.State == WebSocketState.Open) {
+                    await client.SendAsync(
+                        segment,
+                        WebSocketMessageType.Binary,
+                        true,
+                        token);
                 }
             }
         }
+
+        private byte[] GetBuffer() => ArrayPool<byte>.Shared.Rent(BufferSize);
+        private void ReturnBuffer(byte[] buffer) => ArrayPool<byte>.Shared.Return(buffer);
     }
 }

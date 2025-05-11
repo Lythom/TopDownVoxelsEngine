@@ -33,7 +33,7 @@ namespace Server {
         public GameState State => _state;
         public int Port { get; private set; }
 
-        private readonly SocketServer _socketServer;
+        private readonly ISocketManager _socketServer;
         private readonly ConcurrentQueue<InputMessage> _inbox = new();
         private readonly ConcurrentQueue<OutputMessage> _outbox = new();
         private readonly ConcurrentDictionary<ChunkKey, Chunk> _dirtyChunks = new();
@@ -42,7 +42,7 @@ namespace Server {
 
         public VoxelsEngineServer(
             IServiceScopeFactory serviceScopeFactory,
-            SocketServer socketServer,
+            ISocketManager socketServer,
             Registry<BlockConfigJson> blockRegistry
         ) {
             _blockRegistry = blockRegistry;

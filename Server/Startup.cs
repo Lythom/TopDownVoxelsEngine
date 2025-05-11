@@ -1,12 +1,6 @@
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Net.WebSockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using MessagePack;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -28,11 +22,13 @@ namespace Server {
                 .AddEntityFrameworkStores<GameSavesContext>()
                 .AddDefaultTokenProviders();
             services.AddDbContext<GameSavesContext>(GameSavesContext.ConfigureOptions);
+            services.AddSingleton<ISocketManager>(new SocketServer());
             services.AddSingleton<VoxelsEngineServer>(sp => {
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+                var ss = sp.GetRequiredService<ISocketManager>();
                 return new VoxelsEngineServer(
                     serviceScopeFactory,
-                    new SocketServer(),
+                    ss,
                     blockConfigJsonRegistry
                 );
             });
@@ -48,7 +44,9 @@ namespace Server {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseWebSockets();
+            app.UseWebSockets(new WebSocketOptions {
+                KeepAliveInterval = TimeSpan.FromSeconds(20)
+            });
             app.UseRouting();
 
             app.UseAuthorization();
@@ -57,28 +55,17 @@ namespace Server {
             app.Use(async (context, next) => {
                 if (context.Request.Path == "/ws") {
                     if (context.WebSockets.IsWebSocketRequest) {
-                        using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync()) {
-                            try {
-                                var buffer = MessagePackSerializer.Serialize(new ErrorNetworkMessage("test"));
-                                await webSocket.SendAsync(buffer,
-                                    WebSocketMessageType.Binary,
-                                    WebSocketMessageFlags.EndOfMessage, CancellationToken.None);
-                                Console.WriteLine("Sent bytes : " + buffer.Length);
-                            } catch (Exception e) {
-                                Console.WriteLine(e);
-                                throw;
-                            }
-
-                            // await WebSocketHandler.InitWebSocketAsync(webSocket, context);
-                            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "testClose", CancellationToken.None);
-                        }
+                        var socketServer = context.RequestServices.GetRequiredService<ISocketManager>();
+                        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                        await socketServer.HandleClientAsync(webSocket);
                     } else {
-                        context.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
                     }
                 } else {
                     await next();
                 }
             });
+
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapGet("/", async context => {

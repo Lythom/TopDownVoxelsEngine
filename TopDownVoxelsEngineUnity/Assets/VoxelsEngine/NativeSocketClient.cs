@@ -25,13 +25,22 @@ namespace Shared.Net {
             _socket.OnClose += HandleClose;
             _socket.OnMessage += HandleMessage;
 
-            await _socket.Connect();
+            _socket.Connect().AsUniTask().Forget();
             await UniTask.WaitUntil(() => _socket.State == WebSocketState.Open);
 
-            Thread outThread = new Thread(StartOutboxSendingAsync);
-            outThread.Start();
-
+            StartOutboxSendingAsync().Forget();
+            DispatchLoop().Forget();
             StartInboxAsync().Forget();
+        }
+
+        private async UniTask DispatchLoop() {
+            while (_cts != null && !_cts.Token.IsCancellationRequested &&
+                   _socket!.State is WebSocketState.Connecting or WebSocketState.Open) {
+#if !UNITY_WEBGL || UNITY_EDITOR
+                _socket.DispatchMessageQueue();
+#endif
+                await UniTask.Yield();
+            }
         }
 
         private void HandleMessage(byte[] data) {
@@ -69,7 +78,7 @@ namespace Shared.Net {
             Logr.Log("Websocket Connection opened");
         }
 
-        private async void StartOutboxSendingAsync() {
+        private async UniTask StartOutboxSendingAsync() {
             while (_cts != null
                    && !_cts.Token.IsCancellationRequested
                    && _socket!.State is WebSocketState.Open) {

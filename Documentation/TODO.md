@@ -1,5 +1,10 @@
 TODO:
 
+- Server websocket
+
+- https://dee-dee-r.itch.io/dnd-sdk/devlog/939312/crafting-a-paraboloid-camera-controller
+
+
 - Rendu végétation
   - un renderer dédié par chunk
   - upload des infos de décorations du chunk (positions, rotation, scale d'herbe) en ComputeBuffer
