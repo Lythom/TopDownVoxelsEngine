@@ -1,10 +1,13 @@
 ﻿using System;
 using LoneStoneStudio.Tools;
+using MessagePack;
 using Shared;
+using Shared.Net;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine.UI {
     public class ConnectionModal : MonoBehaviour {
@@ -33,6 +36,18 @@ namespace VoxelsEngine.UI {
                     Logr.LogException(e);
                 }
             });
+
+            try {
+
+                Character c = new Character("Test", Vector3.one, "LevelId");
+                var p = new CharacterJoinGameEvent(0, 0, c, Vector3.one);
+                var s = MessagePackSerializer.Serialize((INetworkMessage) p);
+                Logr.Log(MessagePackSerializer.ConvertToJson(s));
+                var c2 = MessagePackSerializer.Deserialize<INetworkMessage>(s);
+                Logr.Log(c2.GetType().Name);
+            } catch (Exception e) {
+                Logr.LogException(e, "Failed to serialize/deserialize character");
+            }
         }
     }
 }

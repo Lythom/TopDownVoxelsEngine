@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using LoneStoneStudio.Tools;
 using MessagePack;
 using NativeWebSocket;
 
@@ -44,8 +45,21 @@ namespace Shared.Net {
         }
 
         private void HandleMessage(byte[] data) {
-            var msg = MessagePackSerializer.Deserialize<INetworkMessage>(data);
-            _inbox.Enqueue(msg);
+            try {
+                var msg = MessagePackSerializer.Deserialize<INetworkMessage>(data);
+                _inbox.Enqueue(msg);
+            } catch (Exception ex) {
+                Logr.LogException(ex, $"Failed to deserialize message: {ex.Message}. {data.Length} bytes. {BitConverter.ToString(data)}");
+                // Add more detailed logging
+                try {
+                    var rawJson = MessagePackSerializer.ConvertToJson(data);
+                    Logr.Log($"Raw message content: {rawJson}");
+                } catch (Exception jsonEx) {
+                    Logr.LogException(jsonEx, "Failed to convert message to JSON for debugging");
+                }
+
+            }
+
         }
 
         private async UniTask StartInboxAsync() {
@@ -60,8 +74,8 @@ namespace Shared.Net {
                     } else {
                         await UniTask.Yield();
                     }
-                } catch (Exception) {
-                    if (hasMessage) Logr.LogError($"A message {m.GetType().Name} was not sent to server.");
+                } catch (Exception e) {
+                    if (hasMessage) Logr.LogException(e, $"A message {m.GetType().Name} was not received well from server.");
                 }
             }
         }
@@ -90,8 +104,8 @@ namespace Shared.Net {
                     } else {
                         await UniTask.Yield();
                     }
-                } catch (Exception) {
-                    if (hasMessage) Logr.LogError($"A message {m.GetType().Name} was not sent to server.");
+                } catch (Exception e) {
+                    if (hasMessage) Logr.LogException(e, $"A message {m.GetType().Name} was not sent to server.");
                 }
             }
         }

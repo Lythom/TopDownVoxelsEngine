@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="MessagePack">
+    <type fullname="MessagePack.*" preserve="all"/>
+  </assembly>
+</linker>
