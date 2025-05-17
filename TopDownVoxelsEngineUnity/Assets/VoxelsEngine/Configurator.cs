@@ -49,7 +49,11 @@ namespace VoxelsEngine {
         public Registry<BlockConfigJson>? BlockRegistry;
 
         [Button(ButtonSizes.Large)]
-        public async UniTask RegenerateAtlas() {
+        public void RegenerateAtlas() {
+            RegenerateAtlasAsync().Forget();
+        }
+
+        public async UniTask RegenerateAtlasAsync() {
             try {
                 if (StreamAssets is null) StreamAssets = StreamAssetsFetcherFactory.Create();
 
@@ -271,7 +275,7 @@ namespace VoxelsEngine {
 
         private static async UniTask FillLibrary() {
             if (_instance == null) return;
-            await _instance.RegenerateAtlas();
+            await _instance.RegenerateAtlasAsync();
         }
 
         public static MessagePackSerializerOptions MessagePackOptions = MessagePackSerializerOptions.Standard

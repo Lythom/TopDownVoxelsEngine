@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"grass.png","Sides":[{"Directions":16,"MainTextureConfig":"Grass.json","FrameTextureConfig":"Ground.json"},{"Directions":47,"MainTextureConfig":"Ground.json","FrameTextureConfig":"Ground.json"}]}
+{"ItemPreviewSprite":"grass.png","Sides":[{"Directions":16,"MainTextureConfig":"Grass.json","FrameTextureConfig":"Ground.json"},{"Directions":47,"MainTextureConfig":"Ground.json","FrameTextureConfig":"Ground.json"}],"IgnoreFrameAlbedo":true}

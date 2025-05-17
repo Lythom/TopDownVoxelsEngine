@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"Ground_albedo.png","Sides":[{"Directions":63,"MainTextureConfig":"Ground.json","FrameTextureConfig":"Ground.json"}]}
+{"ItemPreviewSprite":"Ground_albedo.png","Sides":[{"Directions":63,"MainTextureConfig":"Ground.json","FrameTextureConfig":null}],"IgnoreFrameAlbedo":true}

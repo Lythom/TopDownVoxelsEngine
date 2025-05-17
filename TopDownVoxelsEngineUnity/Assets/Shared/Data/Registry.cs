@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Cysharp.Threading.Tasks;
 using MessagePack;
+using UnityEngine;
 
 namespace Shared {
     /**
@@ -73,7 +74,7 @@ namespace Shared {
         public bool Editor_SaveToJson(string path, T obj) {
             try {
                 string jsonText = MessagePackSerializer.ConvertToJson(MessagePackSerializer.Serialize(obj));
-                File.WriteAllText(Path.Combine(ResourcePath, path), jsonText);
+                File.WriteAllText(Path.Combine(Application.streamingAssetsPath, ResourcePath, path), jsonText);
                 Get()[path] = obj;
                 return true;
             } catch (Exception e) {
