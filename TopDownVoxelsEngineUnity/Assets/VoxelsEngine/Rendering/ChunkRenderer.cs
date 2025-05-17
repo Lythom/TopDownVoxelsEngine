@@ -14,6 +14,7 @@ namespace VoxelsEngine {
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
         public LevelMap Level = null!;
+        public ChunkGPUSynchronizer ChunkGPUSynchronizer = null!;
 
         private Mesh _mesh = null!;
         private readonly int[] _triangles = new int[20000];
@@ -26,6 +27,11 @@ namespace VoxelsEngine {
         private int _uvs2Count = 0;
         private Transform _propsContainer = null!;
 
+        // used for rendering by ChunkGPUSynchronizer
+        public int GpuSlotID = -1;
+
+        public uint[] BlockData = new uint[Chunk.Size * Chunk.Height * Chunk.Size];
+
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
             if (_mesh == null) throw new Exception("No mesh found on ChunkRenderer");
@@ -35,7 +41,7 @@ namespace VoxelsEngine {
             _propsContainer = pc.transform;
         }
 
-        public bool ReCalculateMesh(LevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
+        public bool UpdateMesh(LevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
             var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
 
@@ -51,10 +57,30 @@ namespace VoxelsEngine {
                     && blockPath != null
                     && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef)) {
                     MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
+                    var mainTextureIndex = (ushort) blockDef.Sides[0].MainTextureIndex;
+                    var frameTextureIndex = (ushort) blockDef.Sides[0].FrameTextureIndex;
+                    uint packedData = ((uint) mainTextureIndex << 16) | frameTextureIndex;
+                    BlockData[GetLocalBlockId(x, y, z)] = packedData;
+                } else {
+                    BlockData[GetLocalBlockId(x, y, z)] = uint.MinValue;
                 }
+
             }
 
+            UpdateMesh();
+            ChunkGPUSynchronizer.UploadChunkData(this);
             return true;
+        }
+
+        private void OnDisable() {
+            ChunkGPUSynchronizer.UnloadChunkData(this);
+        }
+
+        public static int GetLocalBlockId(int cx, int cy, int cz) {
+            // X,Z,Y order
+            return cx +
+                   cz * Chunk.Size +
+                   cy * Chunk.Size * Chunk.Size;
         }
 
         private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRendering blockDef, ushort blockId, LevelMap level) {
@@ -68,20 +94,6 @@ namespace VoxelsEngine {
                     var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockId, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
-
-                // TODO: use GPU instancing
-                // Random.InitState(chunkKey.ChX * 17 + chunkKey.ChZ * 23 + cX + cY * 7 + cZ * 13);
-                // if (dir == Direction.Up && (n == null || n.Value.Block == BlockId.Air) && blockId == 2 && Configurator.Instance.GrassPropMesh != null) {
-                //     if (Props.TryGetValue(Configurator.Instance.GrassPropMesh, out var list)) {
-                //         for (int j = 0; j < 1; j++) {
-                //             list.Add(Matrix4x4.TRS(
-                //                 new Vector3(x + Random.Range(-0.1f, 0.1f), y + 0.48f, z + Random.Range(-0.1f, 0.1f)),
-                //                 Quaternion.Euler(new Vector3(0, Random.Range(0, 359), 0)),
-                //                 new Vector3(Random.Range(1.5f, 2.5f), Random.Range(0.7f, 1.2f), Random.Range(1.5f, 2.5f))
-                //             ));
-                //         }
-                //     }
-                // }
             }
         }
 
@@ -122,7 +134,7 @@ namespace VoxelsEngine {
             _triangles[_trianglesCount++] = _verticesCount - 4 + 3;
         }
 
-        public void UpdateMesh() {
+        private void UpdateMesh() {
             _mesh.Clear();
             _mesh.SetVertices(_vertices, 0, _verticesCount);
             _mesh.SetTriangles(_triangles, 0, _trianglesCount, 0);
@@ -131,6 +143,10 @@ namespace VoxelsEngine {
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
             _propsContainer.DestroyChildren();
+        }
+
+        public int GetFlatIndex() {
+            return Chunk.GetFlatIndex((int) transform.position.x / Chunk.Size, (int) transform.position.z / Chunk.Size);
         }
     }
 }

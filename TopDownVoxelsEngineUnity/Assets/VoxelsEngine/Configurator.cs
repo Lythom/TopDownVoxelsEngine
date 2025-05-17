@@ -57,33 +57,25 @@ namespace VoxelsEngine {
                 var tasks = new List<UniTask>();
 
                 // Main Texture Registry
-                tasks.Add((MainTextureRegistry is null) 
-                    ? Registry<MainTextureJson>.Build(Path.Combine("Textures", "Main"), "*.json", StreamAssets)
-                        .ContinueWith(registry => MainTextureRegistry = registry)
-                    : MainTextureRegistry.Reload());
+                tasks.Add(MainTextureRegistry?.Reload() ?? Registry<MainTextureJson>.Build(Path.Combine("Textures", "Main"), "*.json", StreamAssets)
+                    .ContinueWith(registry => MainTextureRegistry = registry));
 
                 // Frame Texture Registry
-                tasks.Add((FrameTextureRegistry is null)
-                    ? Registry<FrameTextureJson>.Build(Path.Combine("Textures", "Frame"), "*.json", StreamAssets)
-                        .ContinueWith(registry => FrameTextureRegistry = registry)
-                    : FrameTextureRegistry.Reload());
+                tasks.Add(FrameTextureRegistry?.Reload() ?? Registry<FrameTextureJson>.Build(Path.Combine("Textures", "Frame"), "*.json", StreamAssets)
+                    .ContinueWith(registry => FrameTextureRegistry = registry));
 
                 // Block Registry
-                tasks.Add((BlockRegistry is null)
-                    ? Registry<BlockConfigJson>.Build(Path.Combine("Blocks"), "*.json", StreamAssets)
-                        .ContinueWith(registry => BlockRegistry = registry)
-                    : BlockRegistry.Reload());
+                tasks.Add(BlockRegistry?.Reload() ?? Registry<BlockConfigJson>.Build(Path.Combine("Blocks"), "*.json", StreamAssets)
+                    .ContinueWith(registry => BlockRegistry = registry));
 
                 // Sprite Registry
-                tasks.Add((SpriteRegistry is null)
-                    ? SpriteRegistry.Build("Sprites", "*.png", StreamAssets)
-                        .ContinueWith(registry => SpriteRegistry = registry)
-                    : SpriteRegistry.Reload());
+                tasks.Add(SpriteRegistry?.Reload() ?? SpriteRegistry.Build("Sprites", "*.png", StreamAssets)
+                    .ContinueWith(registry => SpriteRegistry = registry));
 
                 // Wait for all tasks to complete
                 await UniTask.WhenAll(tasks);
 
-                var blockConfigs = BlockRegistry.Get();
+                var blockConfigs = BlockRegistry!.Get();
                 BlocksRenderingLibrary.Clear();
                 BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
                 foreach (var (blockPath, blockConfig) in blockConfigs) {

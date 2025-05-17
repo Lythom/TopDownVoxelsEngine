@@ -151,8 +151,8 @@ MonoBehaviour:
   PreviewArrow: {fileID: 6449189871365484725}
   CameraTransform: {fileID: 0}
   VisualSnappingStrength: 2
-  WallCollisionProximity: 1
-  CharacterThickness: 0.42
+  WallCollisionProximity: 0.9
+  CharacterThickness: 0.38
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
@@ -3295,8 +3295,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.87, y: 0.87, z: 0.87}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2756807866529955390}
   - {fileID: 423889510106580634}

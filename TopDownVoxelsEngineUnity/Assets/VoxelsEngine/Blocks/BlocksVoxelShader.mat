@@ -81,6 +81,9 @@ Material:
     - _ShadowScale: -3
     - _ShadowStep: 0.12
     m_Colors:
-    - _ShadowColor: {r: 0.23188858, g: 0.23400857, b: 0.254717, a: 1}
+    - _ChunkDimensions: {r: 0, g: 0, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _WorldChunkCounts: {r: 0, g: 0, b: 0, a: 0}
+    - _positionningOffset: {r: 0.5, g: 0.5, b: 0.5, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

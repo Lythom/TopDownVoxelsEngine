@@ -28,7 +28,7 @@ namespace VoxelsEngine {
 
         [Required]
         public Animator Animator = null!;
-        
+
         [Required]
         public Transform Model = null!;
 
@@ -47,6 +47,8 @@ namespace VoxelsEngine {
         public float WallCollisionProximity = 0.6f;
 
         public float CharacterThickness = 0.42f;
+
+        public float CollisionScale = 0.87f;
 
         [Title("Zoom Configuration")]
         public float CameraHeightOffset = 2.5f;
@@ -305,6 +307,7 @@ namespace VoxelsEngine {
                     while (ClientEngine.State.BlockPathById[prevBlockId] != null) prevBlockId++;
                     prevBlockId--;
                 }
+
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, prevBlockId));
             }
         }
@@ -349,14 +352,14 @@ namespace VoxelsEngine {
             }
 
             var collisionPoints = new (float sideOffset, float yOffset)[] {
-                new(-CharacterThickness, 0.5f), // Feet
-                new(CharacterThickness, 0.5f), // Feet
-                new(-CharacterThickness, 1.5f), // Stomach
-                new(CharacterThickness, 1.5f), // Stomach
-                new(-CharacterThickness, 2.5f), // Shoulder
-                new(CharacterThickness, 2.5f), // Shoulder
-                new(-CharacterThickness, 3.5f), // Head
-                new(CharacterThickness, 3.5f), // Head
+                new(-CharacterThickness, 0.5f * CollisionScale), // Feet
+                new(CharacterThickness, 0.5f * CollisionScale), // Feet
+                new(-CharacterThickness, 1.5f * CollisionScale), // Stomach
+                new(CharacterThickness, 1.5f * CollisionScale), // Stomach
+                new(-CharacterThickness, 2.5f * CollisionScale), // Shoulder
+                new(CharacterThickness, 2.5f * CollisionScale), // Shoulder
+                new(-CharacterThickness, 3.5f * CollisionScale), // Head
+                new(CharacterThickness, 3.5f * CollisionScale), // Head
             };
 
             foreach (var p in collisionPoints) {

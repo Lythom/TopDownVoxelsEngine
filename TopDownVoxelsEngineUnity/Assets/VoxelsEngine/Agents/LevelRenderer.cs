@@ -19,6 +19,9 @@ namespace VoxelsEngine {
         private readonly Queue<int> _toBeRendererQueue = new();
         private readonly HashSet<int> _dirtySet = new();
 
+        private Character? _character = null;
+        private ChunkGPUSynchronizer? _gpuSynchronizer;
+
         public string LevelId = "0";
 
         [Required]
@@ -32,10 +35,9 @@ namespace VoxelsEngine {
 
         private void Awake() {
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
+            _gpuSynchronizer = new ChunkGPUSynchronizer();
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
-
-        private Character? _character = null;
 
         protected override void OnSetup(GameState state) {
             Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
@@ -141,8 +143,7 @@ namespace VoxelsEngine {
             if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
             ChunkRenderer cr = ChunkRenderers[chX, chZ];
             if (cr != null) {
-                cr.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
-                cr.UpdateMesh();
+                cr.UpdateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
             }
         }
 
@@ -168,8 +169,7 @@ namespace VoxelsEngine {
                     }
 
                     chunkRenderer.transform.SetParent(transform, true);
-                    chunkRenderer.ReCalculateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
-                    chunkRenderer.UpdateMesh();
+                    chunkRenderer.UpdateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
                     ChunkRenderers[chX, chZ] = chunkRenderer;
@@ -188,6 +188,7 @@ namespace VoxelsEngine {
             var chunkGen = go.AddComponent<ChunkRenderer>();
             chunkGen.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chY * Chunk.Size);
             chunkGen.Level = _level!;
+            chunkGen.ChunkGPUSynchronizer = _gpuSynchronizer;
             return chunkGen;
         }
     }
