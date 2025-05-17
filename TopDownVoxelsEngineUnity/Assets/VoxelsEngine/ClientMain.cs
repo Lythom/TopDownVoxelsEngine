@@ -32,7 +32,7 @@ namespace VoxelsEngine {
         private PlayerCharacterAgent? _agent;
         private readonly PrefabListSynchronizer<CharacterAgent> _otherPlayersAgents = new();
 
-        private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave.bin");
+        private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave_v3.bin");
 
         private void Start() {
             _otherPlayersAgents.Container = gameObject;
@@ -111,13 +111,11 @@ namespace VoxelsEngine {
                     string value = keyValue[1];
                     if (key == "host") {
                         ServerHost = value;
-                    } else if (key == "port") {
-                        ServerPort = int.Parse(value);
                     }
                 }
             }
 #endif
-            await _engine.InitRemote(ServerHost, ServerPort);
+            await _engine.InitRemote(ServerHost);
             Application.runInBackground = true;
             while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
             _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
@@ -126,6 +124,7 @@ namespace VoxelsEngine {
 
         private async UniTask StartLocalPlay() {
             GameState? state = null;
+            await Configurator.Instance.IsReady();
             if (File.Exists(LocalSavePath)) {
                 try {
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));

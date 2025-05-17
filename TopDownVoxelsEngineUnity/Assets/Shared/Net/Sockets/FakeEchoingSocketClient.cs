@@ -3,7 +3,7 @@ using Cysharp.Threading.Tasks;
 
 namespace Shared.Net {
     public class FakeEchoingSocketClient : ISocketClient {
-        public UniTask Init(string host, int port) => UniTask.CompletedTask;
+        public UniTask Init(string host) => UniTask.CompletedTask;
 
         public void Send(INetworkMessage msg) {
             // Logr.Log("Echoing " + msg, Tags.Standalone);

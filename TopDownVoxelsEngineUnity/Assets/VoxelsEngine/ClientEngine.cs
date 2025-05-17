@@ -132,13 +132,13 @@ namespace VoxelsEngine {
             evt.Apply(State, SideEffectManager);
         }
 
-        public async Task InitRemote(string host, int port) {
+        public async Task InitRemote(string host) {
             try {
-                Logr.Log("Connecting to " + host + ":" + port, Tags.Client);
+                Logr.Log("Connecting to " + host, Tags.Client);
                 SocketClient = new NativeSocketClient();
                 SocketClient.OnNetworkMessage += HandleNetMessage;
                 SocketClient.OnConnexionLost += HandleConnexionLost;
-                await SocketClient.Init(host, port);
+                await SocketClient.Init(host);
                 Logr.Log("Connected. Delaying before loading…", Tags.Client);
                 LocalState.Instance.Session.Value = SessionStatus.NeedAuthentication;
                 await UniTask.Delay(500);

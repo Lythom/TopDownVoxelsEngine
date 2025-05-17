@@ -41,7 +41,7 @@ namespace SocketTest {
                 }
             };
 
-            await _client.Init("localhost", _port);
+            await _client.Init("localhost");
         }
 
         [Test]

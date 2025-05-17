@@ -19,16 +19,16 @@ namespace Shared.Net {
         private readonly ConcurrentQueue<INetworkMessage> _outbox = new();
         private readonly ConcurrentQueue<INetworkMessage> _inbox = new();
 
-        public async UniTask Init(string host, int port) {
+        public async UniTask Init(string host) {
             _cts = new CancellationTokenSource();
 
-            Logr.Log("Connecting Tcp Client on server and port " + port, Tags.Client);
+            Logr.Log("Connecting Tcp Client on server and port ", Tags.Client);
             _client = new TcpClient();
             _client.NoDelay = true;
             var attempts = 5;
             while (!_client.Connected && attempts >= 0) {
                 try {
-                    await _client.ConnectAsync(host, port);
+                    await _client.ConnectAsync(host, 4567);
                 } catch (Exception e) {
                     Logr.LogException(e, "Error while connection to the server");
                     await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken: _cts.Token);

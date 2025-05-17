@@ -15,10 +15,10 @@ namespace Shared.Net {
 
         private readonly ConcurrentQueue<INetworkMessage> _inbox = new();
 
-        public async UniTask Init(string host, int port) {
+        public async UniTask Init(string host) {
             _cts = new CancellationTokenSource();
 
-            var url = "ws://" + host + ":" + port + "/ws";
+            var url = "wss://" + host + "/ws";
             Logr.Log("URL=" + url);
             _socket = new WebSocket(url);
             _socket.OnOpen += HandleOpen;

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePack.Resolvers;
+using MessagePack.Unity;
 using Shared;
 using Sirenix.OdinInspector;
 using UnityEditor;
@@ -16,6 +18,7 @@ namespace VoxelsEngine {
     [Serializable]
     public class Configurator : MonoBehaviour {
         private static Configurator? _instance;
+        private bool _isReady;
 
         [Title("Audio")]
         [Required, AssetsOnly]
@@ -50,20 +53,37 @@ namespace VoxelsEngine {
             try {
                 if (StreamAssets is null) StreamAssets = StreamAssetsFetcherFactory.Create();
 
-                if (MainTextureRegistry is null) MainTextureRegistry = await Registry<MainTextureJson>.Build(Path.Combine("Textures", "Main"), "*.json", StreamAssets);
-                else await MainTextureRegistry.Reload();
+                // Create tasks for all registry loads/reloads
+                var tasks = new List<UniTask>();
 
-                if (FrameTextureRegistry is null) FrameTextureRegistry = await Registry<FrameTextureJson>.Build(Path.Combine("Textures", "Frame"), "*.json", StreamAssets);
-                else await FrameTextureRegistry.Reload();
+                // Main Texture Registry
+                tasks.Add((MainTextureRegistry is null) 
+                    ? Registry<MainTextureJson>.Build(Path.Combine("Textures", "Main"), "*.json", StreamAssets)
+                        .ContinueWith(registry => MainTextureRegistry = registry)
+                    : MainTextureRegistry.Reload());
 
-                if (BlockRegistry is null) BlockRegistry = await Registry<BlockConfigJson>.Build(Path.Combine("Blocks"), "*.json", StreamAssets);
-                else await BlockRegistry.Reload();
+                // Frame Texture Registry
+                tasks.Add((FrameTextureRegistry is null)
+                    ? Registry<FrameTextureJson>.Build(Path.Combine("Textures", "Frame"), "*.json", StreamAssets)
+                        .ContinueWith(registry => FrameTextureRegistry = registry)
+                    : FrameTextureRegistry.Reload());
 
-                if (SpriteRegistry is null) SpriteRegistry = await SpriteRegistry.Build("Sprites", "*.png", StreamAssets);
-                else await SpriteRegistry.Reload();
+                // Block Registry
+                tasks.Add((BlockRegistry is null)
+                    ? Registry<BlockConfigJson>.Build(Path.Combine("Blocks"), "*.json", StreamAssets)
+                        .ContinueWith(registry => BlockRegistry = registry)
+                    : BlockRegistry.Reload());
+
+                // Sprite Registry
+                tasks.Add((SpriteRegistry is null)
+                    ? SpriteRegistry.Build("Sprites", "*.png", StreamAssets)
+                        .ContinueWith(registry => SpriteRegistry = registry)
+                    : SpriteRegistry.Reload());
+
+                // Wait for all tasks to complete
+                await UniTask.WhenAll(tasks);
 
                 var blockConfigs = BlockRegistry.Get();
-
                 BlocksRenderingLibrary.Clear();
                 BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
                 foreach (var (blockPath, blockConfig) in blockConfigs) {
@@ -105,6 +125,8 @@ namespace VoxelsEngine {
 
                     UploadTexturesToShader();
                 }
+
+                _isReady = true;
             } catch (Exception e) {
                 Logr.LogException(e);
                 throw;
@@ -207,7 +229,6 @@ namespace VoxelsEngine {
 
         [Button]
         private void ForceReload() {
-            _serializerRegistered = false;
             Initialize();
         }
 #endif
@@ -261,10 +282,8 @@ namespace VoxelsEngine {
             await _instance.RegenerateAtlas();
         }
 
-        static bool _serializerRegistered = false;
-
         public static MessagePackSerializerOptions MessagePackOptions = MessagePackSerializerOptions.Standard
-            .WithResolver(StaticCompositeResolver.Instance)
+            .WithResolver(UnityResolver.InstanceWithStandardResolver)
             .WithCompression(MessagePackCompression.Lz4BlockArray);
 
         private static readonly int MainTex = Shader.PropertyToID("_mainTex");
@@ -280,24 +299,10 @@ namespace VoxelsEngine {
         private Texture2DArray? _lastFrameNormals;
         private Texture2DArray? _lastFrameHeights;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Initialize() {
             DisableUnityAnalytics();
-
-            if (!_serializerRegistered) {
-                try {
-                    StaticCompositeResolver.Instance.Register(
-                        StandardResolver.Instance,
-                        GeneratedResolver.Instance
-                    );
-                } catch (Exception e) {
-                    Logr.LogException(e);
-                }
-
-                MessagePackSerializer.DefaultOptions = MessagePackOptions;
-                _serializerRegistered = true;
-            }
-
+            MessagePackSerializer.DefaultOptions = MessagePackOptions;
             FillLibrary().Forget();
         }
 
@@ -306,5 +311,7 @@ namespace VoxelsEngine {
             Analytics.deviceStatsEnabled = false;
             PerformanceReporting.enabled = false;
         }
+
+        public UniTask IsReady() => UniTask.WaitUntil(this, e => e._isReady);
     }
 }

@@ -16,6 +16,7 @@ namespace Server {
         private Func<UniTask>? _stopServer;
 
         public void ConfigureServices(IServiceCollection services) {
+            services.AddCors();
             services.AddAuthorization();
             services.AddMemoryCache();
             services.AddIdentity<IdentityUser, IdentityRole>()
@@ -43,6 +44,15 @@ namespace Server {
             if (env.IsDevelopment()) {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseHttpsRedirection();
+
+            // Add CORS before WebSocket middleware
+            app.UseCors(builder => builder
+                .WithOrigins("https://html-classic.itch.zone")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
 
             app.UseWebSockets(new WebSocketOptions {
                 KeepAliveInterval = TimeSpan.FromSeconds(20)

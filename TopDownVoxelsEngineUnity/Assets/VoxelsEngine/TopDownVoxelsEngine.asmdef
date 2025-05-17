@@ -15,7 +15,8 @@
         "UniTask.Linq",
         "Shared",
         "ObservableCollections",
-        "endel.nativewebsocket"
+        "endel.nativewebsocket",
+        "MessagePack.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

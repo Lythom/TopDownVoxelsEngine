@@ -1691,12 +1691,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 072d190453eb4099a80f8d01ee10b639, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ForceLocalPlay: 0
+  ForceLocalPlay: 1
   Tracker: {fileID: 963194229}
   PlayerCharacterPrefab: {fileID: 20086019324110641, guid: 9d64bcb6ba75442499b73927d3a833aa, type: 3}
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
-  ServerPort: 8080
-  ServerHost: localhost
+  ServerPort: 0
+  ServerHost: dreambuilder.sametmagda.fr:32768
 --- !u!1 &1307387711
 GameObject:
   m_ObjectHideFlags: 0

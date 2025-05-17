@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting;
 using Shared;
 #if !DEBUG
@@ -57,7 +59,12 @@ namespace Server {
         public static IHostBuilder CreateHostBuilder(string[] args, Registry<BlockConfigJson> blockConfigJsonRegistry) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder => {
-                    webBuilder.UseStartup(_ => new Startup(blockConfigJsonRegistry));
+                    webBuilder.UseStartup(_ => new Startup(blockConfigJsonRegistry))
+                        .UseKestrel(options => {
+                            options.Listen(IPAddress.Any, 443, listenOptions => {
+                                listenOptions.UseHttps("C:\\Certbot\\live\\dreambuilder.sametmagda.fr\\certificate.pfx", "");
+                            });
+                        });
                 });
     }
 }
