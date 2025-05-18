@@ -205,9 +205,6 @@
             "m_Id": "c9a1cb9177db4d3284aa5592d72b542c"
         },
         {
-            "m_Id": "65a16d40215d4e6b8e4c91c71c4542c4"
-        },
-        {
             "m_Id": "640fa7c69cc74727b8edcd62a893c984"
         },
         {
@@ -421,6 +418,20 @@
                     "m_Id": "d965269340cf4c3baf5a51f510081228"
                 },
                 "m_SlotId": 2
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "1278ee6e44174d989018f2032bf2bc1c"
+                },
+                "m_SlotId": 2
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "ebe1a224b0f3451ba33a6f05b285db1d"
+                },
+                "m_SlotId": 5
             }
         },
         {
@@ -715,20 +726,6 @@
                     "m_Id": "9f398f3b6e09438f964c3a1f604181d6"
                 },
                 "m_SlotId": 2
-            }
-        },
-        {
-            "m_OutputSlot": {
-                "m_Node": {
-                    "m_Id": "65a16d40215d4e6b8e4c91c71c4542c4"
-                },
-                "m_SlotId": 0
-            },
-            "m_InputSlot": {
-                "m_Node": {
-                    "m_Id": "ebe1a224b0f3451ba33a6f05b285db1d"
-                },
-                "m_SlotId": 5
             }
         },
         {
@@ -2614,7 +2611,7 @@
     "m_Title": "MainTextureIndex",
     "m_Position": {
         "x": -2080.000244140625,
-        "y": -192.0
+        "y": -192.0001220703125
     }
 }
 
@@ -2776,8 +2773,8 @@
     "m_ObjectId": "31d512f15ff44d6284ef846250a5056d",
     "m_Title": "Albedo",
     "m_Position": {
-        "x": -1333.599853515625,
-        "y": -284.0
+        "x": -1333.60009765625,
+        "y": -283.9998779296875
     }
 }
 
@@ -3388,7 +3385,7 @@
     "m_Title": "Normals",
     "m_Position": {
         "x": -1341.599853515625,
-        "y": 539.9999389648438
+        "y": 540.0001220703125
     }
 }
 
@@ -3619,8 +3616,8 @@
     "m_ObjectId": "509d6dfd3805463c8e156788e5e317ce",
     "m_Title": "blobIndex",
     "m_Position": {
-        "x": -2072.7998046875,
-        "y": 191.20001220703126
+        "x": -2072.800048828125,
+        "y": 191.2000732421875
     }
 }
 
@@ -3998,31 +3995,6 @@
 
 {
     "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
-    "m_ObjectId": "5ce2e16109664b9c9f5a2f0d5b612f0d",
-    "m_Id": 0,
-    "m_DisplayName": "Out",
-    "m_SlotType": 1,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "Out",
-    "m_StageCapability": 3,
-    "m_Value": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "w": 0.0
-    },
-    "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "w": 0.0
-    },
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.DynamicVectorMaterialSlot",
     "m_ObjectId": "5d82acea8dc44732a07514399abe2139",
     "m_Id": 1,
@@ -4229,44 +4201,6 @@
         "y": 0.0,
         "z": 0.0
     }
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.UVNode",
-    "m_ObjectId": "65a16d40215d4e6b8e4c91c71c4542c4",
-    "m_Group": {
-        "m_Id": ""
-    },
-    "m_Name": "UV",
-    "m_DrawState": {
-        "m_Expanded": true,
-        "m_Position": {
-            "serializedVersion": "2",
-            "x": -2532.000244140625,
-            "y": -357.5999755859375,
-            "width": 145.599853515625,
-            "height": 126.40000915527344
-        }
-    },
-    "m_Slots": [
-        {
-            "m_Id": "5ce2e16109664b9c9f5a2f0d5b612f0d"
-        }
-    ],
-    "synonyms": [
-        "texcoords",
-        "coords",
-        "coordinates"
-    ],
-    "m_Precision": 0,
-    "m_PreviewExpanded": false,
-    "m_DismissedVersion": 0,
-    "m_PreviewMode": 0,
-    "m_CustomColors": {
-        "m_SerializableColors": []
-    },
-    "m_OutputChannel": 0
 }
 
 {
@@ -5142,7 +5076,7 @@
     "m_Title": "UV coordinates",
     "m_Position": {
         "x": -2081.60009765625,
-        "y": -392.0
+        "y": -391.9998779296875
     }
 }
 
@@ -6650,8 +6584,8 @@
     "m_ObjectId": "bf3355d943384c7cad9e0170759d3302",
     "m_Title": "hasFrameAlbedo",
     "m_Position": {
-        "x": -2068.7998046875,
-        "y": 378.40008544921877
+        "x": -2068.800048828125,
+        "y": 378.4000549316406
     }
 }
 
@@ -7485,7 +7419,7 @@
     "m_ObjectId": "e5e6780ae46e417391ad84ad7b574124",
     "m_Title": "heights",
     "m_Position": {
-        "x": -1323.2001953125,
+        "x": -1323.2003173828125,
         "y": -1257.60009765625
     }
 }
@@ -8053,7 +7987,7 @@
     "m_Title": "FrameTextureIndex",
     "m_Position": {
         "x": -2081.60009765625,
-        "y": -5.60009765625
+        "y": -5.599761962890625
     }
 }
 

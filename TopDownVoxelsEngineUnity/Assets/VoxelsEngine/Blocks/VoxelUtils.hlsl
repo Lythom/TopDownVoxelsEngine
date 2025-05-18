@@ -93,9 +93,8 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     hasTexture = (packedData & 1) != 0; // Bit 0
 
     // Depending on the normal direction, select either top or side texture
-    float3 upVector = float3(0, 1, 0);
-    float upDot = dot(queryWorldNormal, upVector);
-    outTexIdx = topTextureIndex;
+    outTexIdx = topTextureIndex; //(queryWorldPos.x % 1 || queryWorldPos.z % 1) > 0.4 ? topTextureIndex : sideTextureIndex;
+    // TODO: fix this + forbid bleed of the same textureIndex
 }
 
 // Main function to get data for blending

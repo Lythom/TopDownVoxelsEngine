@@ -76,7 +76,10 @@ namespace VoxelsEngine {
                     break;
             }
         }
-
+        
+        // TODO: Find how blocks are mapped in save: use a name to index registry.
+        // TODO: Fix side bug (top is displayed instead of side)
+        // TODO: fix this + forbid bleed of the same textureIndex VoxelUtils.hlsl:999
         public void StartLocal() {
             SocketClient.OnNetworkMessage -= HandleNetMessage;
             SocketClient.OnNetworkMessage += HandleNetMessage;
