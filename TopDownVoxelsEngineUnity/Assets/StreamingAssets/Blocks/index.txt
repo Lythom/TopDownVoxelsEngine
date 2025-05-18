@@ -4,5 +4,4 @@ Ground.json
 Sand.json
 Stone.json
 Stone2.json
-StoneWall.json
 Wood.json

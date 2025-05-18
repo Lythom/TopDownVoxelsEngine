@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"sand_albedo.png","Sides":[{"Directions":0,"MainTextureConfig":"Sand2\\sand2.json","FrameTextureConfig":null}],"IgnoreFrameAlbedo":true}
+{"ItemPreviewSprite":"sand_albedo.png","Sides":[{"Directions":0,"MainTextureConfig":"Sand2\\sand2.json","FrameTextureConfig":null}],"HasFrameAlbedo":false}

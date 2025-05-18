@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MessagePack;
-using MessagePack.Resolvers;
 using MessagePack.Unity;
 using Shared;
 using Sirenix.OdinInspector;
@@ -82,9 +80,13 @@ namespace VoxelsEngine {
                 var blockConfigs = BlockRegistry!.Get();
                 BlocksRenderingLibrary.Clear();
                 BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
+                tasks.Clear();
                 foreach (var (blockPath, blockConfig) in blockConfigs) {
-                    BlocksRenderingLibrary.Add(blockPath, await BlockRendering.FromConfigAsync(StreamAssets, blockConfig, MainTextureRegistry, FrameTextureRegistry, SpriteRegistry));
+                    tasks.Add(BlockRendering.FromConfigAsync(StreamAssets, blockConfig, MainTextureRegistry!, FrameTextureRegistry!, SpriteRegistry!)
+                        .ContinueWith(c => BlocksRenderingLibrary.Add(blockPath, c)));
                 }
+
+                await UniTask.WhenAll(tasks);
 
                 // Generate Main Albedos
                 List<Texture2D> mainAlbedoSources = new();
@@ -106,7 +108,7 @@ namespace VoxelsEngine {
                             TryAddFramesTexture(frameNormalsSources, ref frameSourceSize, side.FrameNormalsTexture);
                             TryAddFramesTexture(frameHeightsSources, ref frameSourceSize, side.FrameHeightsTexture);
                         } else {
-                            side.FrameTextureIndex = -1;
+                            side.FrameTextureIndex = 0;
                         }
                     }
                 }
@@ -121,6 +123,8 @@ namespace VoxelsEngine {
 
                     UploadTexturesToShader();
                 }
+                
+                // problème: j'ai besoin d'i
 
                 _isReady = true;
             } catch (Exception e) {
@@ -185,36 +189,36 @@ namespace VoxelsEngine {
             return outputTexture;
         }
 
-        private static int TryAddTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
+        private static ushort TryAddTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
             if (texture != null) {
                 var idx = sourceList.IndexOf(texture);
-                if (idx > -1) return idx;
+                if (idx > 0) return (ushort) idx;
                 sourceList.Add(texture);
                 if (expectedSize == 0) expectedSize = texture.width;
                 if (expectedSize != texture.width || expectedSize != texture.height) {
                     throw new ApplicationException($"Source main textures must be square and have the same size. Texture: {texture}, expected: {expectedSize}, loaded: {texture.width}x{texture.height}. ");
                 }
 
-                return sourceList.Count - 1;
+                return (ushort) (sourceList.Count - 1);
             }
 
-            return -1;
+            return 0;
         }
 
-        private static int TryAddFramesTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
+        private static ushort TryAddFramesTexture(List<Texture2D> sourceList, ref int expectedSize, Texture2D texture) {
             if (texture != null) {
                 var idx = sourceList.IndexOf(texture);
-                if (idx > -1) return idx;
+                if (idx > 0) return (ushort) idx;
                 sourceList.Add(texture);
                 if (expectedSize == 0) expectedSize = texture.width / 11;
                 if (expectedSize != texture.width / 11 || expectedSize != texture.height / 5) {
                     throw new ApplicationException("Source frame textures must be a 11 by 5 grid of the same size");
                 }
 
-                return sourceList.Count - 1;
+                return (ushort) (sourceList.Count - 1);
             }
 
-            return -1;
+            return 0;
         }
 
 #if UNITY_EDITOR

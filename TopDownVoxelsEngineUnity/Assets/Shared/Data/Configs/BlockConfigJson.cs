@@ -12,7 +12,9 @@ public class BlockConfigJson {
     [ListDrawerSettings(ShowFoldout = false)]
     public List<BlockSideJson> Sides;
 
-    public bool IgnoreFrameAlbedo = false;
+    public bool HasFrameAlbedo = false;
+    public bool CanBleed = true;
+    public bool AcceptBleeding = true;
 
     public BlockConfigJson() {
         ItemPreviewSprite = null;

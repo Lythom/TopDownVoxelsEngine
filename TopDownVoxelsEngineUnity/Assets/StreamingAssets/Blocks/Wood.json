@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"handcrafted_planks.png","Sides":[{"Directions":63,"MainTextureConfig":"Handcraftedplanks.json","FrameTextureConfig":"Nailedwood.json"}]}
+{"ItemPreviewSprite":"handcrafted_planks.png","Sides":[{"Directions":63,"MainTextureConfig":"Handcraftedplanks.json","FrameTextureConfig":"Nailedwood.json"}],"HasFrameAlbedo":true,"CanBleed":false,"AcceptBleeding":true}

@@ -85,7 +85,7 @@ namespace Shared {
 
 
         public void Remove(string path) {
-            File.Delete(Path.Combine(ResourcePath, path));
+            File.Delete(Path.Combine(Application.streamingAssetsPath, ResourcePath, path));
             Get().Remove(path);
         }
 #endif

@@ -9,7 +9,9 @@ namespace VoxelsEngine {
         private const int MaxActiveChunks = 1024;
         private const int VoxelsPerChunk = 16 * 64 * 16;
         public Vector3Int WorldDimensionsInChunks = new Vector3Int(128, 1, 128); // Ex: 2048/16, 64/64, 2048/16
-        public Vector3Int ChunkDimensions = new Vector3Int(16, 64, 16); // Taille d'un chunk en blocs
+        public Vector3Int ChunkDimensions = new Vector3Int(16, 64, 16); // Taille d'un chunk en blocs+
+        
+        
 
         // -- GPU Data --
         // Contient les données réelles des blocs des chunks actifs

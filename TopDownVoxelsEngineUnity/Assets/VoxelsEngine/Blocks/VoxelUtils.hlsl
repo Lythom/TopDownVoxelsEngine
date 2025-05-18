@@ -1,6 +1,3 @@
-#ifndef VOXEL_DATA_UTILS_INCLUDED
-#define VOXEL_DATA_UTILS_INCLUDED
-
 // Ces déclarations doivent correspondre aux noms que vous utiliserez
 // avec Material.SetBuffer() en C# et aux noms de référence
 // des propriétés dans le Shader Graph Blackboard.
@@ -14,14 +11,13 @@ float3 _WorldChunkCounts; // Nombre de chunks dans chaque dimension du monde pou
 #define NORMAL_OFFSET_MULTIPLIER 0.001f
 
 // Fonction pour récupérer les données d'un bloc à une worldPos donnée
-// Shader Graph gère mieux les sorties float pour les Vector1. On convertira uint en float.
-void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNormal, out float outMainTexIdx_float, out float outFrameTexIdx_float)
+void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNormal, out float outTexIdx, out bool outCanBleed,
+                                      out bool outAcceptBleeding, out bool outIgnoreFrame, out bool hasTexture)
 {
+    hasTexture = false;
+
     // Apply offset to queryWorldPos to sample *inside* the block if a normal is provided
     float3 effectiveWorldPos = queryWorldPos - queryWorldNormal * NORMAL_OFFSET_MULTIPLIER;
-
-    uint outMainTexIdx_uint = 0; // Default to air/empty
-    uint outFrameTexIdx_uint = 0;
 
     // 1. Calculer les coordonnées du chunk (chunkCoord_wc)
     float3 invChunkDim = float3(1.0 / _ChunkDimensions.x, 1.0 / _ChunkDimensions.y, 1.0 / _ChunkDimensions.z);
@@ -31,8 +27,7 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     // Note: _WorldChunkCounts est un float3, il faut le caster en int3 pour la comparaison.
     if (any(chunkCoord_wc < 0) || any(chunkCoord_wc >= (int3)_WorldChunkCounts))
     {
-        outMainTexIdx_float = 0.0f;
-        outFrameTexIdx_float = 0.0f;
+        outTexIdx = -1;
         return;
     }
 
@@ -48,8 +43,7 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     int maxLinearIndex = (int)_WorldChunkCounts.x * (int)_WorldChunkCounts.y * (int)_WorldChunkCounts.z - 1;
     if (linearChunkIndex < 0 || linearChunkIndex > maxLinearIndex)
     {
-        outMainTexIdx_float = 0.0f; // Should be caught by world bounds check, but good safety.
-        outFrameTexIdx_float = 0.0f;
+        outTexIdx = -1; // Should be caught by world bounds check, but good safety.
         return;
     }
     // Pour une sécurité plus robuste, GetDimensions serait idéal, mais plus complexe à gérer ici.
@@ -60,8 +54,7 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
 
     if (chunkSlotID < 0)
     {
-        outMainTexIdx_float = 0.0f;
-        outFrameTexIdx_float = 0.0f;
+        outTexIdx = -1;
         return;
     }
 
@@ -92,12 +85,17 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
 
     // 8. Récupérer les données packées et les dépacker
     uint packedData = _WorldBlockData[finalSSBOIndex];
+    uint topTextureIndex = (packedData >> 18) & 0x3FFF; // Shift right by 18, mask 14 bits
+    uint sideTextureIndex = (packedData >> 4) & 0x3FFF; // Shift right by 4, mask 14 bits
+    outCanBleed = ((packedData >> 3) & 1) != 0; // Bit 3
+    outAcceptBleeding = ((packedData >> 2) & 1) != 0; // Bit 2
+    outIgnoreFrame = ((packedData >> 1) & 1) != 0; // Bit 1
+    hasTexture = (packedData & 1) != 0; // Bit 0
 
-    outMainTexIdx_uint = packedData >> 16;
-    outFrameTexIdx_uint = packedData & 0xFFFF;
-
-    outMainTexIdx_float = (float)outMainTexIdx_uint;
-    outFrameTexIdx_float = (float)outFrameTexIdx_uint;
+    // Depending on the normal direction, select either top or side texture
+    float3 upVector = float3(0, 1, 0);
+    float upDot = dot(queryWorldNormal, upVector);
+    outTexIdx = topTextureIndex;
 }
 
 // Main function to get data for blending
@@ -106,19 +104,21 @@ void GetVoxelDataForBlending_float(
     float3 hitWorldNormal, // The normal of the surface at hitWorldPos
 
     out float outMainTexId_Current,
-    out float outFrameTexId_Current, // Also return frameTexId for current block
 
     out float outMainTexId_PlaneXSide, // Neighbor along the plane's "X" axis
     out float outMainTexId_PlaneYSide, // Neighbor along the plane's "Y" axis
-    out float outMainTexId_PlaneDiagonal, // Diagonal neighbor on the plane
 
     out float outDistToWorldXFace, // Squared distance from the world X-aligned face of the current voxel
     out float outDistToWorldYFace, // Distance from the world Y-aligned face of the current voxel
-    out float outDistToWorldDiagFace // Distance from the world Diagonal-aligned face of the current voxel
+
+    out bool outCanBleed,
+    out bool outAcceptBleeding,
+    out bool outIgnoreFrame,
+    out bool outHasTexture
 )
 {
     // 1. Get data for the current block (the one whose face was hit)
-    _GetBlockDataAtWorldPos_Internal(hitWorldPos, hitWorldNormal, outMainTexId_Current, outFrameTexId_Current);
+    _GetBlockDataAtWorldPos_Internal(hitWorldPos, hitWorldNormal, outMainTexId_Current, outCanBleed, outAcceptBleeding, outIgnoreFrame, outHasTexture);
 
     // This is the world position *inside* the current block, used for determining its integer coords and fractional position
     float3 currentBlockSamplePos = hitWorldPos - hitWorldNormal * NORMAL_OFFSET_MULTIPLIER;
@@ -137,79 +137,81 @@ void GetVoxelDataForBlending_float(
     float3 plane_axis_x_dir; // Integer offset vector for "X-side" relative to the plane
     float3 plane_axis_y_dir; // Integer offset vector for "Y-side" relative to the plane
 
+    float xDistance;
+    float yDistance;
     if (absNormal.y >= absNormal.x && absNormal.y >= absNormal.z) // Normal is primarily Y (e.g., floor/ceiling)
     {
-        plane_axis_x_dir = float3(frac_pos.x < 0.5 ? -1 : 1, 0, 0); // World X
-        plane_axis_y_dir = float3(0, 0, frac_pos.z < 0.5 ? -1 : 1); // World Z
-        // outDistToWorldXFace = 0.5 - (frac_pos.x < 0.5 ? frac_pos.x : 1.0 - frac_pos.x);
-        outDistToWorldXFace = abs(frac_pos.x - 0.5);
-        outDistToWorldYFace = abs(frac_pos.z - 0.5);
+        plane_axis_x_dir = float3(sign(frac_pos.x - 0.5), 0, 0); // World X
+        plane_axis_y_dir = float3(0, 0, sign(frac_pos.z - 0.5)); // World Z
+        // outDistToWorldXFace = 0.5 - (sign(frac_pos.x - 0.5)os.x : 1.0 - frac_pos.x);
+        xDistance = abs(frac_pos.x - 0.5) * 2;
+        yDistance = abs(frac_pos.z - 0.5) * 2;
     }
     else if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z) // Normal is primarily X (e.g., west/east wall)
     {
-        plane_axis_x_dir = float3(0, 0, frac_pos.z < 0.5 ? -1 : 1); // World Z
-        plane_axis_y_dir = float3(0, frac_pos.y < 0.5 ? -1 : 1, 0); // World Y
-        outDistToWorldXFace = abs(frac_pos.z - 0.5);
-        outDistToWorldYFace = abs(frac_pos.y - 0.5);
+        plane_axis_x_dir = float3(0, 0, sign(frac_pos.z - 0.5)); // World Z
+        plane_axis_y_dir = float3(0, sign(frac_pos.y - 0.5), 0); // World Y
+        xDistance = abs(frac_pos.z - 0.5) * 2;
+        yDistance = abs(frac_pos.y - 0.5) * 2;
     }
     else // Normal is primarily Z (e.g., north/south wall)
     {
-        plane_axis_x_dir = float3(frac_pos.x < 0.5 ? -1 : 1, 0, 0); // World X
-        plane_axis_y_dir = float3(0, frac_pos.y < 0.5 ? -1 : 1, 0); // World Y
-        outDistToWorldXFace = abs(frac_pos.x - 0.5);
-        outDistToWorldYFace = abs(frac_pos.y - 0.5);
+        plane_axis_x_dir = float3(sign(frac_pos.x - 0.5), 0, 0); // World X
+        plane_axis_y_dir = float3(0, sign(frac_pos.y - 0.5), 0); // World Y
+        xDistance = abs(frac_pos.x - 0.5) * 2;
+        yDistance = abs(frac_pos.y - 0.5) * 2;
     }
-    outDistToWorldDiagFace = (outDistToWorldXFace + outDistToWorldYFace) * 1.412f;
-
+    // - saturate(yDistance - 0.6f) is to lower the bleeding near border so the corners look smoother
+    outDistToWorldXFace = xDistance - saturate(yDistance - 0.6f);
+    outDistToWorldYFace = yDistance - saturate(xDistance - 0.6f);
 
     // 3. Get data for neighbor blocks
     // For these lookups, we use (0,0,0) as the normal, so no NORMAL_OFFSET_MULTIPLIER is applied.
     // We are querying by the block's base integer coordinate.
-    float dummyFrameTexId; // We only need mainTexId for neighbors
+    float sideTexId; // We only need mainTexId for neighbors
 
     // Neighbor along the plane's "X" axis
     float3 queryPos_PlaneXSide = (float3)currentBlockIntegerCoords + plane_axis_x_dir;
-    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneXSide, float3(0, 0, 0), outMainTexId_PlaneXSide, dummyFrameTexId);
+    bool canBleed;
+    bool acceptBleeding;
+    bool hasFrame;
+    bool hasTexture;
+    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneXSide, float3(0, 0, 0), outMainTexId_PlaneXSide, canBleed, acceptBleeding, hasFrame, hasTexture);
+
+    // If the neighbor block cannot bleed, discard
+    outDistToWorldXFace = outDistToWorldXFace * canBleed;
 
     // Neighbor along the plane's "Y" axis
     float3 queryPos_PlaneYSide = (float3)currentBlockIntegerCoords + plane_axis_y_dir;
-    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneYSide, float3(0, 0, 0), outMainTexId_PlaneYSide, dummyFrameTexId);
-
-    // Diagonal neighbor on the plane
-    float3 queryPos_PlaneDiagonal = (float3)currentBlockIntegerCoords + plane_axis_x_dir + plane_axis_y_dir;
-    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneDiagonal, float3(0, 0, 0), outMainTexId_PlaneDiagonal, dummyFrameTexId);
+    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneYSide, float3(0, 0, 0), outMainTexId_PlaneYSide, canBleed, acceptBleeding, hasFrame, hasTexture);
+    // If the neighbor block cannot bleed, discard by forcing high weight
+    outDistToWorldYFace = outDistToWorldYFace * canBleed;
 }
 
-void GetHighestIndex_float(UnityTexture2DArray heightmaps, UnitySamplerState samplerState, float4 indexes, float4 weights, float2 uv, out float outHighestTexIdx, out float outHeight)
+
+void GetHighestIndex_float(UnityTexture2DArray heightmaps, UnitySamplerState samplerState, float3 textureIndexes, float3 weights, float2 uv,
+                           out float outHighestTexIdx, out float outHeight)
 {
     float4 samples;
-    samples.x = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, indexes.x).r * (weights.x + 0.5);
-    samples.y = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, indexes.y).r * (weights.y + 0.5);
-    samples.z = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, indexes.z).r * (weights.z - 0.4);
-    samples.w = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, indexes.w).r * weights.w;
+    samples.x = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.x).r * weights.x;
+    samples.y = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.y).r * weights.y;
+    samples.z = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.z).r * weights.z;
 
     outHeight = 0;
-    
-    if (indexes.x > 0 && samples.x >= samples.y && samples.x >= samples.w)
+
+    if (textureIndexes.x > 0 && samples.x >= samples.y && samples.x >= samples.z)
     {
-        outHighestTexIdx = indexes.x;
+        outHighestTexIdx = textureIndexes.x;
         outHeight = samples.x;
     }
-    else if (indexes.y > 0 && samples.y >= samples.x && samples.y >= samples.w)
+    else if (textureIndexes.y > 0 && samples.y >= samples.x && samples.y >= samples.z)
     {
-        outHighestTexIdx = indexes.y;
+        outHighestTexIdx = textureIndexes.y;
         outHeight = samples.y;
-    }
-    else if (indexes.z > 0 && samples.z >= samples.y && samples.z >= samples.w)
-    {
-        outHighestTexIdx = indexes.z;
-        outHeight = samples.z;
     }
     else
     {
-        outHighestTexIdx = indexes.w;
-        outHeight = samples.w;
+        outHighestTexIdx = textureIndexes.z;
+        outHeight = samples.z;
     }
 }
-
-#endif // VOXEL_DATA_UTILS_INCLUDED

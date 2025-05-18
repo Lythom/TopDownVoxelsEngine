@@ -56,15 +56,46 @@ namespace VoxelsEngine {
                 if (cell.Block != BlockId.Air
                     && blockPath != null
                     && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef)) {
+                    if (blockDef.Sides.Count == 0) {
+                        // no texture, the important flag is the last one that indicated it's an air block
+                        BlockData[GetLocalBlockId(x, y, z)] = 0;
+                        continue;
+                    }
+
                     MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
-                    var mainTextureIndex = (ushort) blockDef.Sides[0].MainTextureIndex;
-                    var frameTextureIndex = (ushort) blockDef.Sides[0].FrameTextureIndex;
-                    uint packedData = ((uint) mainTextureIndex << 16) | frameTextureIndex;
+                    BlockRenderingSide? up = null;
+                    BlockRenderingSide? side = null;
+                    foreach (var s in blockDef.Sides) {
+                        if (s.Directions.HasFlagFast(DirectionFlag.Up)) up = s;
+                        if (s.Directions.HasFlagFast(DirectionFlag.North)) side = s;
+                    }
+
+                    if (up is null && side is null) {
+                        up = blockDef.Sides[0];
+                        side = blockDef.Sides[0];
+                    }
+
+                    var mainTopTextureIndex = (uint) (up!.MainTextureIndex & 0x3FFF); // 14 bits
+                    var mainSideTextureIndex = (uint) (side!.MainTextureIndex & 0x3FFF); // 14 bits
+                    if (mainSideTextureIndex == 0) mainSideTextureIndex = mainTopTextureIndex;
+                    var canBleed = blockDef.CanBleed ? 1u : 0u; // 1 bit
+                    var acceptBleeding = blockDef.AcceptBleeding ? 1u : 0u; // 1 bit
+                    var hasFrame = blockDef.HasFrameAlbedo ? 1u : 0u; // 1 bit
+
+                    // Pack into 32 bits:
+                    // [14 bits top texture][14 bits side texture][1 bit canBleed][1 bit acceptBleeding][1 bit hasFrame][1 bit hasTexture]
+                    // 31                18 17                 4 3            2   2                   1   1              0   0
+                    uint packedData =
+                        (mainTopTextureIndex << 18) | // First 14 bits, shifted to top
+                        (mainSideTextureIndex << 4) | // Next 14 bits
+                        (canBleed << 3) | // First extra bit
+                        (acceptBleeding << 2) |
+                        (hasFrame << 1) |
+                        1u; // hasTexture
                     BlockData[GetLocalBlockId(x, y, z)] = packedData;
                 } else {
-                    BlockData[GetLocalBlockId(x, y, z)] = uint.MinValue;
+                    BlockData[GetLocalBlockId(x, y, z)] = 0;
                 }
-
             }
 
             UpdateMesh();
@@ -121,10 +152,10 @@ namespace VoxelsEngine {
             _uvs[_uvsCount++] = new(0, 0, side.MainTextureIndex, side.FrameTextureIndex);
             _uvs[_uvsCount++] = new(0, 1, side.MainTextureIndex, side.FrameTextureIndex);
             _uvs[_uvsCount++] = new(1, 1, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.IgnoreFrameAlbedo ? 1 : 0);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
+            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;

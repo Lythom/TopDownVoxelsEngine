@@ -60,6 +60,7 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
         }
     }
 
+    
     private void Update() {
         if (_dirty.Count > 0 && _nextAutoSave > 0 && _nextAutoSave < EditorApplication.timeSinceStartup) {
             SaveToJson();
