@@ -83,7 +83,7 @@ namespace VoxelsEngine {
                 tasks.Clear();
                 foreach (var (blockPath, blockConfig) in blockConfigs) {
                     tasks.Add(BlockRendering.FromConfigAsync(StreamAssets, blockConfig, MainTextureRegistry!, FrameTextureRegistry!, SpriteRegistry!)
-                        .ContinueWith(c => BlocksRenderingLibrary.Add(blockPath, c)));
+                        .ContinueWith(c => BlocksRenderingLibrary.TryAdd(blockPath, c)));
                 }
 
                 await UniTask.WhenAll(tasks);
@@ -124,7 +124,7 @@ namespace VoxelsEngine {
                     UploadTexturesToShader();
                 }
                 
-                // problème: j'ai besoin d'i
+                await UniTask.Delay(100); // Wait for the textures to be uploaded to the GPU
 
                 _isReady = true;
             } catch (Exception e) {

@@ -32,7 +32,17 @@ namespace VoxelsEngine {
         private PlayerCharacterAgent? _agent;
         private readonly PrefabListSynchronizer<CharacterAgent> _otherPlayersAgents = new();
 
-        private static string LocalSavePath => Path.Join(Application.persistentDataPath, "gamesave_v3.bin");
+        public string SaveName = "gamesave.bin";
+        private string LocalSavePath => Path.Join(Application.persistentDataPath, SaveName);
+
+        [Button]
+        public void OpenSaveFolder() {
+            if (File.Exists(LocalSavePath)) {
+                Application.OpenURL("file://" + Path.GetDirectoryName(LocalSavePath));
+            } else {
+                Logr.Log("No save file found", Tags.Standalone);
+            }
+        }
 
         private void Start() {
             _otherPlayersAgents.Container = gameObject;
@@ -149,9 +159,9 @@ namespace VoxelsEngine {
                 var (spawnPositionChX, spawnPositionChZ) = LevelTools.GetChunkPosition(spawnPosition);
 
                 if (state == null) {
-                    while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
+                    await Configurator.Instance.IsReady();
                     Logr.Log("Creating new game", Tags.Standalone);
-                    state = new GameState(null, null);
+                    state = new GameState(null, null, null);
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
                     var levelMap = new LevelMap("World", spawnPosition);
                     state.Levels.Add("World", levelMap);

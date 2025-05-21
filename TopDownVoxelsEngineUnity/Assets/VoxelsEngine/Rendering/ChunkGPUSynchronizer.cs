@@ -80,8 +80,8 @@ namespace VoxelsEngine {
                     return;
                 }
 
-                Debug.Log($"[SSBO] ({linearChunkIndex}) Getting GpuSlotID={chunk.GpuSlotID}");
                 chunk.GpuSlotID = _freeSlotsInSsbo[^1];
+                // Debug.Log($"[SSBO] ({linearChunkIndex}) Getting GpuSlotID={chunk.GpuSlotID}");
                 _freeSlotsInSsbo.RemoveAt(_freeSlotsInSsbo.Count - 1);
             }
 
@@ -92,14 +92,13 @@ namespace VoxelsEngine {
             // 2. Mettre à jour la table d'indirection
             if (chunk.transform.position.x < 0) return;
             if (chunk.transform.position.x / Chunk.Size >= LevelMap.LevelChunkSize) return;
-            Debug.Log($"[SSBO] ({linearChunkIndex}) Uploading {chunk.BlockData}. SlotId={chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
+           // Debug.Log($"[SSBO] ({linearChunkIndex}) Uploading {chunk.BlockData}. SlotId={chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
             if (linearChunkIndex < _ssboSlotIdByChunkId.Length) {
                 if (_ssboSlotIdByChunkId[linearChunkIndex] != chunk.GpuSlotID) // Si la valeur change réellement
                 {
                     _ssboSlotIdByChunkId[linearChunkIndex] = chunk.GpuSlotID;
                     _ssboSlotIdByChunkIdSsbo.SetData(_ssboSlotIdByChunkId, linearChunkIndex, linearChunkIndex, 1);
-                    Debug.Log($"[SSBO] ({linearChunkIndex}) Data at index {chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
-
+                    //Debug.Log($"[SSBO] ({linearChunkIndex}) Data at index {chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
                 }
             } else {
                 Debug.LogError($"Index de chunk linéaire invalide: {linearChunkIndex} pour coords {chunk.transform.position / Chunk.Size}");

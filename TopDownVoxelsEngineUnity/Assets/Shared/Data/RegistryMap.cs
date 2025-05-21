@@ -1,4 +1,4 @@
-﻿namespace Shared.Data {
+﻿namespace Shared {
     public class RegistryMap {
         
     }

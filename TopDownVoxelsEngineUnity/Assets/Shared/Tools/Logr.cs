@@ -13,6 +13,7 @@ namespace Shared {
         public const string Client = "Client";
         public const string Standalone = "Standalone";
         public const string Server = "Server";
+        public const string PlayerFeedbackRequired = "PlayerFeedbackRequired";
     }
 
     public static class Logr {

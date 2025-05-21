@@ -1697,6 +1697,7 @@ MonoBehaviour:
   CharacterPrefab: {fileID: 8518249221199625689, guid: 0b229733ff384b247a81abc38ff57531, type: 3}
   ServerPort: 0
   ServerHost: dreambuilder.sametmagda.fr:32768
+  SaveName: gamesave.bin
 --- !u!1 &1307387711
 GameObject:
   m_ObjectHideFlags: 0

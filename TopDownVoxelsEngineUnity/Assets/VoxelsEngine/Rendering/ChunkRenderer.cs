@@ -13,6 +13,7 @@ namespace VoxelsEngine {
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
+        public const string MissingBlockPath = "Ground.json";
         public LevelMap Level = null!;
         public ChunkGPUSynchronizer ChunkGPUSynchronizer = null!;
 
@@ -54,45 +55,51 @@ namespace VoxelsEngine {
                 var cell = chunk.Cells[x, y, z];
                 var blockPath = blockPathById[cell.Block];
                 if (cell.Block != BlockId.Air
-                    && blockPath != null
-                    && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef)) {
+                    && blockPath != null) {
+                    var isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef);
+                    if (!isBlockDefLoaded) blockDef = Configurator.Instance.BlocksRenderingLibrary[MissingBlockPath];
                     if (blockDef.Sides.Count == 0) {
                         // no texture, the important flag is the last one that indicated it's an air block
                         BlockData[GetLocalBlockId(x, y, z)] = 0;
                         continue;
                     }
 
-                    MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
-                    BlockRenderingSide? up = null;
-                    BlockRenderingSide? side = null;
-                    foreach (var s in blockDef.Sides) {
-                        if (s.Directions.HasFlagFast(DirectionFlag.Up)) up = s;
-                        if (s.Directions.HasFlagFast(DirectionFlag.North)) side = s;
+                    try {
+                        MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
+                        BlockRenderingSide? up = null;
+                        BlockRenderingSide? side = null;
+                        foreach (var s in blockDef.Sides) {
+                            if (s.Directions.HasFlagFast(DirectionFlag.Up)) up = s;
+                            if (s.Directions.HasFlagFast(DirectionFlag.North)) side = s;
+                        }
+
+                        if (up is null && side is null) {
+                            up = blockDef.Sides[0];
+                            side = blockDef.Sides[0];
+                        }
+
+                        var mainTopTextureIndex = (uint) (up!.MainTextureIndex & 0x3FFF); // 14 bits
+                        var mainSideTextureIndex = (uint) (side!.MainTextureIndex & 0x3FFF); // 14 bits
+                        if (mainSideTextureIndex == 0) mainSideTextureIndex = mainTopTextureIndex;
+                        var canBleed = blockDef.CanBleed ? 1u : 0u; // 1 bit
+                        var acceptBleeding = blockDef.AcceptBleeding ? 1u : 0u; // 1 bit
+                        var hasFrame = blockDef.HasFrameAlbedo ? 1u : 0u; // 1 bit
+
+                        // Pack into 32 bits:
+                        // [14 bits top texture][14 bits side texture][1 bit canBleed][1 bit acceptBleeding][1 bit hasFrame][1 bit hasTexture]
+                        // 31                18 17                 4 3            2   2                   1   1              0   0
+                        uint packedData =
+                            (mainTopTextureIndex << 18) | // First 14 bits, shifted to top
+                            (mainSideTextureIndex << 4) | // Next 14 bits
+                            (canBleed << 3) | // First extra bit
+                            (acceptBleeding << 2) |
+                            (hasFrame << 1) |
+                            1u; // hasTexture
+                        BlockData[GetLocalBlockId(x, y, z)] = packedData;
+                    } catch (Exception e) {
+                        Logr.LogException(e);
+                        BlockData[GetLocalBlockId(x, y, z)] = 0;
                     }
-
-                    if (up is null && side is null) {
-                        up = blockDef.Sides[0];
-                        side = blockDef.Sides[0];
-                    }
-
-                    var mainTopTextureIndex = (uint) (up!.MainTextureIndex & 0x3FFF); // 14 bits
-                    var mainSideTextureIndex = (uint) (side!.MainTextureIndex & 0x3FFF); // 14 bits
-                    if (mainSideTextureIndex == 0) mainSideTextureIndex = mainTopTextureIndex;
-                    var canBleed = blockDef.CanBleed ? 1u : 0u; // 1 bit
-                    var acceptBleeding = blockDef.AcceptBleeding ? 1u : 0u; // 1 bit
-                    var hasFrame = blockDef.HasFrameAlbedo ? 1u : 0u; // 1 bit
-
-                    // Pack into 32 bits:
-                    // [14 bits top texture][14 bits side texture][1 bit canBleed][1 bit acceptBleeding][1 bit hasFrame][1 bit hasTexture]
-                    // 31                18 17                 4 3            2   2                   1   1              0   0
-                    uint packedData =
-                        (mainTopTextureIndex << 18) | // First 14 bits, shifted to top
-                        (mainSideTextureIndex << 4) | // Next 14 bits
-                        (canBleed << 3) | // First extra bit
-                        (acceptBleeding << 2) |
-                        (hasFrame << 1) |
-                        1u; // hasTexture
-                    BlockData[GetLocalBlockId(x, y, z)] = packedData;
                 } else {
                     BlockData[GetLocalBlockId(x, y, z)] = 0;
                 }
@@ -121,7 +128,7 @@ namespace VoxelsEngine {
                 var y = cY;
                 var z = cZ + chunkKey.ChZ * Chunk.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
-                if (n == null || n.Value.Block == BlockId.Air) {
+                if (n == null || n.IsAir()) {
                     var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockId, Level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }

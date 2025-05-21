@@ -32,7 +32,7 @@ namespace Shared.Net {
             character.Position += character.Velocity;
             var groundPosition = (character.Position + Vector3.down).WorldToCell();
             var groundCell = level.TryGetExistingCell(groundPosition);
-            if (!groundCell.HasValue || groundCell.Value.Block == BlockId.Air) {
+            if (!groundCell.HasValue || groundCell.IsAir()) {
                 // fall if no ground under
                 character.Velocity = new Vector3(character.Velocity.X, character.Velocity.Y - gameState.Gravity * DeltaTime, character.Velocity.Z);
                 if (character.Velocity.Y < -0.9f) character.Velocity.Y = -0.9f;

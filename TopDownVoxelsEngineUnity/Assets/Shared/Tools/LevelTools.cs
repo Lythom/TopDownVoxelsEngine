@@ -27,12 +27,17 @@ namespace Shared {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAir(this Cell c) {
-            return c.Block == BlockId.Air;
+            return IsAir(c.Block);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAir(this Cell? c) {
             return c == null || IsAir(c.Value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAir(this BlockId id) {
+            return id == BlockId.Air;
         }
 
         public static (uint cx, uint cy, uint cz) WorldToCellInChunk(int x, int y, int z) {
@@ -41,6 +46,6 @@ namespace Shared {
             var cz = M.Mod(z, Chunk.Size);
             return (cx, cy, cz);
         }
-        
+
     }
 }

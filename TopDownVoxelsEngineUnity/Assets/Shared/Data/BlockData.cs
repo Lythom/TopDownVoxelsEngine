@@ -2,7 +2,6 @@ using System;
 
 namespace Shared
 {
-
     [Serializable]
     public struct BlockData
     {

@@ -20,7 +20,7 @@ namespace Shared {
 
         public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
-        public readonly string?[] BlockPathById = new string?[ushort.MaxValue];
+        public readonly string?[] BlockPathById;
         public readonly Dictionary<string, ushort> BlockIdByPath = new();
 
         public readonly float Gravity = 1.4f;
@@ -41,20 +41,16 @@ namespace Shared {
         [IgnoreMember]
         private bool _isApplyingEvent;
 
-        public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveDictionary<string, LevelMap>? levels) {
+        public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (levels != null) Levels.SynchronizeToTarget(levels);
             Selectors = new Selectors(this);
             LevelGenerator = new LevelGenerator(BlockIdByPath);
+            BlockPathById = blockPathById ?? new string?[ushort.MaxValue];
         }
 
-        public void UpdateBlockMapping(Registry<BlockConfigJson> registry) {
+        public void UpdateBlockMapping(IRegistry<BlockConfigJson> registry) {
             BlockPathById[0] = "Air";
-            foreach (var block in BlockPathById) {
-                if (block != null && block != "Air" && registry.Get(block) == null) {
-                    throw new ApplicationException($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Comportement de suppression de bloc non implémenté.");
-                }
-            }
 
             foreach (var blockPath in registry.Get().Keys) {
                 if (BlockPathById.Contains(blockPath)) continue;
@@ -63,14 +59,25 @@ namespace Shared {
                     throw new InvalidOperationException("Le tableau BlockPathById est plein. Impossible d'ajouter de nouveaux éléments.");
                 }
 
+                // assign a new Id to a block present in registry that was unknown before
                 BlockPathById[nextIdx] = blockPath;
+            }
+
+            foreach (var block in BlockPathById) {
+                if (block != null && block != "Air" && registry.Get(block) == null) {
+                    Logr.Log($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Les instances sont remplacés par des blocks d'air. Si un block nommé {block} est réintroduit plus tard, ils pourront être récupérés.", Tags.PlayerFeedbackRequired);
+                }
+
+                if (block == null) break;
             }
 
             // update inverted lookup
             BlockIdByPath.Clear();
-            for (ushort blockId = 0; blockId < BlockPathById.Length; blockId++) {
+            BlockIdByPath["Air"] = 0;
+            for (ushort blockId = 1; blockId < BlockPathById.Length; blockId++) {
                 var blockPath = BlockPathById[blockId];
-                if (blockPath != null) BlockIdByPath[blockPath] = blockId;
+                if (blockPath != null) BlockIdByPath.TryAdd(blockPath, blockId);
+                else break;
             }
         }
 

@@ -20,7 +20,7 @@ namespace VoxelsEngine {
         public bool IsLocalEngine() => SocketClient is FakeEchoingSocketClient;
 
         [ShowInInspector]
-        public GameState State = new(null, null);
+        public GameState State = new(null, null, null);
 
         public readonly SideEffectManager SideEffectManager = new();
 
@@ -76,8 +76,8 @@ namespace VoxelsEngine {
                     break;
             }
         }
-        
-        // TODO: Find how blocks are mapped in save: use a name to index registry.
+
+        // TODO: Find how blocks are mapped in save: use a name to index registry. => test fix!
         // TODO: Fix side bug (top is displayed instead of side)
         // TODO: fix this + forbid bleed of the same textureIndex VoxelUtils.hlsl:999
         public void StartLocal() {

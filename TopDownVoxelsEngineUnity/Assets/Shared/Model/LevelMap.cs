@@ -64,7 +64,9 @@ namespace Shared {
             var chZ = (int) Math.Floor((double) position.Z / Chunk.Size);
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated) {
-                return chunk.Cells![M.Mod(position.X, Chunk.Size), position.Y, M.Mod(position.Z, Chunk.Size)].Block == referenceBlock;
+                var cell = chunk.Cells![M.Mod(position.X, Chunk.Size), position.Y, M.Mod(position.Z, Chunk.Size)];
+                if (cell.IsAir()) return referenceBlock.IsAir();
+                return cell.Block == referenceBlock;
             }
 
             return false;

@@ -9,7 +9,7 @@ namespace Shared {
     /**
      * Maps config files with the corresponding data
      */
-    public class Registry<T> where T : class {
+    public class Registry<T> : IRegistry<T> where T : class {
         private Dictionary<string, T>? _data = null;
         private bool _isLoaded = false;
         public bool IsLoaded => _isLoaded;
@@ -35,7 +35,7 @@ namespace Shared {
         protected async UniTask Load() {
             _data = new Dictionary<string, T>();
 
-            Logr.Log($"Loading registry from {Path.Combine(ResourcePath, "index.txt")}");
+            Logr.Log($"Loading registry from {Path.Combine(ResourcePath, "index.txt")}", "Registry");
             var indexContent = await _txtAsset.LoadTxtAsync(Path.Combine(ResourcePath, "index.txt"));
             var files = indexContent.Split('\n');
             foreach (var file in files) {
@@ -43,11 +43,11 @@ namespace Shared {
                 var assetPath = file.Replace(ResourcePath + Path.DirectorySeparatorChar, "");
                 var relativePath = Path.Combine(ResourcePath, file);
                 if (file.EndsWith(".json")) {
-                    Logr.Log($"Found file {file}. Loading {Path.Combine(ResourcePath, "index.txt")}");
+                    Logr.Log($"Found file {file}. Loading {Path.Combine(ResourcePath, "index.txt")}", "Registry");
                     var fetchTxtAsync = await _txtAsset.LoadTxtAsync(relativePath);
                     _data[assetPath] = MessagePackSerializer.Deserialize<T>(MessagePackSerializer.ConvertFromJson(fetchTxtAsync));
                 } else if (relativePath is T filePath) {
-                    Logr.Log($"Found file {file}. Adding raw reference to registry.");
+                    Logr.Log($"Found file {file}. Adding raw reference to registry.", "Registry");
                     _data[assetPath] = filePath;
                 }
             }

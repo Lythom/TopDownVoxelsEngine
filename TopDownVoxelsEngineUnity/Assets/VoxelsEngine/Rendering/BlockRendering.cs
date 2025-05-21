@@ -21,7 +21,7 @@ public struct BlockRendering {
     // Adjacent blocks can bleed into this block
     public readonly bool AcceptBleeding;
 
-    public static BlockRendering Air = new(true, false, false);
+    public static BlockRendering Air = new(false, false, false);
 
     public static async UniTask<BlockRendering> FromConfigAsync(IStreamAssets streamAssets, BlockConfigJson blockConfig, Registry<MainTextureJson> mainTextures, Registry<FrameTextureJson> frameTextures, SpriteRegistry spritesRegistry) {
         var block = new BlockRendering(blockConfig.HasFrameAlbedo, blockConfig.CanBleed, blockConfig.AcceptBleeding) {
