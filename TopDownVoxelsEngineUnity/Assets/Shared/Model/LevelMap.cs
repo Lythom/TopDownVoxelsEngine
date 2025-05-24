@@ -78,7 +78,7 @@ namespace Shared {
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated) {
-                var (cx, cy, cz) = LevelTools.WorldToCellInChunk(x, y, z);
+                LevelTools.WorldToCellInChunk(x, y, z, out var cx, out var cy, out var cz);
                 chunk.Cells![cx, cy, cz].Block = block;
                 return true;
             }
@@ -101,7 +101,7 @@ namespace Shared {
 
             var chunk = Chunks[chX, chZ];
             if (chunk.IsGenerated) {
-                (cx, cy, cz) = LevelTools.WorldToCellInChunk(x, y, z);
+                LevelTools.WorldToCellInChunk(x, y, z, out cx, out cy, out cz);
                 return chunk.Cells![cx, cy, cz];
             }
 

@@ -13,10 +13,12 @@ namespace Shared {
             return M.RoundToInt(worldPosition);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (int chX, int chZ) GetChunkPosition(Vector3 worldPosition) {
             return GetChunkPosition(worldPosition.X, worldPosition.Z);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (int chX, int chZ) GetChunkPosition(float wx, float wz) {
             int cX = M.RoundToInt(wx);
             int cZ = M.RoundToInt(wz);
@@ -27,7 +29,7 @@ namespace Shared {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAir(this Cell c) {
-            return IsAir(c.Block);
+            return c.Block == 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -40,11 +42,10 @@ namespace Shared {
             return id == BlockId.Air;
         }
 
-        public static (uint cx, uint cy, uint cz) WorldToCellInChunk(int x, int y, int z) {
-            var cx = M.Mod(x, Chunk.Size);
-            var cy = M.Mod(y, Chunk.Size);
-            var cz = M.Mod(z, Chunk.Size);
-            return (cx, cy, cz);
+        public static void WorldToCellInChunk(int x, int y, int z, out uint cx, out uint cy, out uint cz) {
+            cx = M.Mod(x, Chunk.Size);
+            cy = M.Mod(y, Chunk.Size);
+            cz = M.Mod(z, Chunk.Size);
         }
 
     }

@@ -1,9 +1,12 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
 
 namespace Shared {
     public static class M {
-        public static int RoundToInt(float value) => (int) Math.Round(value, MidpointRounding.AwayFromZero);
-        public static int FloorToInt(float value) => (int) Math.Floor(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int RoundToInt(float value) => (int) (value + 0.5f);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int FloorToInt(float value) => (int) value;
 
         public static Vector3Int RoundToInt(Vector3 value) => new(RoundToInt(value.X), RoundToInt(value.Y), RoundToInt(value.Z));
 

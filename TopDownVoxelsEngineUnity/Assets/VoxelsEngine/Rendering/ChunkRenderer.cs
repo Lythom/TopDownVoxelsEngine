@@ -4,6 +4,8 @@ using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
+using System.Buffers;
+using Random = UnityEngine.Random; // Add this import
 
 namespace VoxelsEngine {
     /// <summary>
@@ -18,19 +20,19 @@ namespace VoxelsEngine {
         public ChunkGPUSynchronizer ChunkGPUSynchronizer = null!;
 
         private Mesh _mesh = null!;
-        private readonly int[] _triangles = new int[60000];
+        private int[]? _triangles;
         private int _trianglesCount = 0;
-        private readonly Vector3[] _vertices = new Vector3[40000];
+        private Vector3[]? _vertices;
         private int _verticesCount = 0;
-        private readonly Vector4[] _uvs = new Vector4[40000];
+        private Vector4[]? _uvs;
         private int _uvsCount = 0;
-        private int _uvs2Count = 0;
         private Transform _propsContainer = null!;
 
         // used for rendering by ChunkGPUSynchronizer
         public int GpuSlotID = -1;
 
         public uint[] BlockData = new uint[Chunk.Size * Chunk.Height * Chunk.Size];
+        private bool _arraysRented;
 
         private void Awake() {
             _mesh = GetComponent<MeshFilter>().mesh;
@@ -41,14 +43,38 @@ namespace VoxelsEngine {
             _propsContainer = pc.transform;
         }
 
+        private void RentArrays() {
+            if (!_arraysRented) {
+                _triangles = ArrayPool<int>.Shared.Rent(60000);
+                _vertices = ArrayPool<Vector3>.Shared.Rent(40000);
+                _uvs = ArrayPool<Vector4>.Shared.Rent(40000);
+                _arraysRented = true;
+            }
+        }
+
+        private void ReturnArrays() {
+            if (_arraysRented) {
+                ArrayPool<int>.Shared.Return(_triangles);
+                ArrayPool<Vector3>.Shared.Return(_vertices);
+                ArrayPool<Vector4>.Shared.Return(_uvs);
+                _arraysRented = false;
+
+                // Set to null to catch potential usage errors
+                _triangles = null!;
+                _vertices = null!;
+                _uvs = null!;
+            }
+        }
+
+
         public bool UpdateMesh(LevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
             var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
+            RentArrays();
 
             _trianglesCount = 0;
             _verticesCount = 0;
             _uvsCount = 0;
-            _uvs2Count = 0;
 
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
@@ -57,6 +83,7 @@ namespace VoxelsEngine {
                     && blockPath != null) {
                     var isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef);
                     if (!isBlockDefLoaded) blockDef = Configurator.Instance.BlocksRenderingLibrary[MissingBlockPath];
+
                     if (blockDef.Sides.Count == 0) {
                         // no texture, the important flag is the last one that indicated it's an air block
                         BlockData[GetLocalBlockId(x, y, z)] = 0;
@@ -106,6 +133,7 @@ namespace VoxelsEngine {
 
             UpdateMesh();
             ChunkGPUSynchronizer.UploadChunkData(this);
+            ReturnArrays();
             return true;
         }
 

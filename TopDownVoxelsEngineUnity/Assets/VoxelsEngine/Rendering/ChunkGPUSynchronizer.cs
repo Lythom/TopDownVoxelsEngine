@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Shared;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Vector3Int = UnityEngine.Vector3Int;
 
 namespace VoxelsEngine {
@@ -10,8 +11,7 @@ namespace VoxelsEngine {
         private const int VoxelsPerChunk = 16 * 64 * 16;
         public Vector3Int WorldDimensionsInChunks = new Vector3Int(128, 1, 128); // Ex: 2048/16, 64/64, 2048/16
         public Vector3Int ChunkDimensions = new Vector3Int(16, 64, 16); // Taille d'un chunk en blocs+
-        
-        
+
 
         // -- GPU Data --
         // Contient les données réelles des blocs des chunks actifs
@@ -71,7 +71,7 @@ namespace VoxelsEngine {
         }
 
         public void UploadChunkData(ChunkRenderer chunk) {
-            int linearChunkIndex = chunk.GetFlatIndex(); 
+            int linearChunkIndex = chunk.GetFlatIndex();
 
             if (chunk.GpuSlotID == -1) {
                 if (_freeSlotsInSsbo.Count == 0) {
@@ -92,7 +92,7 @@ namespace VoxelsEngine {
             // 2. Mettre à jour la table d'indirection
             if (chunk.transform.position.x < 0) return;
             if (chunk.transform.position.x / Chunk.Size >= LevelMap.LevelChunkSize) return;
-           // Debug.Log($"[SSBO] ({linearChunkIndex}) Uploading {chunk.BlockData}. SlotId={chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
+            // Debug.Log($"[SSBO] ({linearChunkIndex}) Uploading {chunk.BlockData}. SlotId={chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk})");
             if (linearChunkIndex < _ssboSlotIdByChunkId.Length) {
                 if (_ssboSlotIdByChunkId[linearChunkIndex] != chunk.GpuSlotID) // Si la valeur change réellement
                 {

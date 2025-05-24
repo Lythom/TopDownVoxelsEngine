@@ -11,7 +11,7 @@ float3 _WorldChunkCounts; // Nombre de chunks dans chaque dimension du monde pou
 #define NORMAL_OFFSET_MULTIPLIER 0.001f
 
 // Fonction pour récupérer les données d'un bloc à une worldPos donnée
-void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNormal, out float outTexIdx, out bool outCanBleed,
+void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNormal, out float outTopTexIdx, out float outSideTexIdx, out bool outCanBleed,
                                       out bool outAcceptBleeding, out bool outHasFrame, out bool hasTexture)
 {
     hasTexture = false;
@@ -27,7 +27,8 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     // Note: _WorldChunkCounts est un float3, il faut le caster en int3 pour la comparaison.
     if (any(chunkCoord_wc < 0) || any(chunkCoord_wc >= (int3)_WorldChunkCounts))
     {
-        outTexIdx = -1;
+        outTopTexIdx = -1;
+        outSideTexIdx = -1;
         return;
     }
 
@@ -43,7 +44,8 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     int maxLinearIndex = (int)_WorldChunkCounts.x * (int)_WorldChunkCounts.y * (int)_WorldChunkCounts.z - 1;
     if (linearChunkIndex < 0 || linearChunkIndex > maxLinearIndex)
     {
-        outTexIdx = -1; // Should be caught by world bounds check, but good safety.
+        outTopTexIdx = -1;
+        outSideTexIdx = -1;
         return;
     }
     // Pour une sécurité plus robuste, GetDimensions serait idéal, mais plus complexe à gérer ici.
@@ -54,7 +56,8 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
 
     if (chunkSlotID < 0)
     {
-        outTexIdx = -1;
+        outTopTexIdx = -1;
+        outSideTexIdx = -1;
         return;
     }
 
@@ -93,8 +96,8 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     hasTexture = (packedData & 1) != 0; // Bit 0
 
     // Depending on the normal direction, select either top or side texture
-    outTexIdx = topTextureIndex; //(queryWorldPos.x % 1 || queryWorldPos.z % 1) > 0.4 ? topTextureIndex : sideTextureIndex;
-    // TODO: fix this + forbid bleed of the same textureIndex
+    outTopTexIdx = topTextureIndex;
+    outSideTexIdx = sideTextureIndex;
 }
 
 // Main function to get data for blending
@@ -117,7 +120,11 @@ void GetVoxelDataForBlending_float(
 )
 {
     // 1. Get data for the current block (the one whose face was hit)
-    _GetBlockDataAtWorldPos_Internal(hitWorldPos, hitWorldNormal, outMainTexId_Current, outCanBleed, outAcceptBleeding, outIgnoreFrame, outHasTexture);
+    uint topTexId;
+    uint sideTexId;
+    _GetBlockDataAtWorldPos_Internal(hitWorldPos, hitWorldNormal, topTexId, sideTexId, outCanBleed, outAcceptBleeding, outIgnoreFrame, outHasTexture);
+    uint mainTopTexId = topTexId;
+    outMainTexId_Current = abs(hitWorldNormal.y) > 0.01 ? topTexId : sideTexId;
 
     // This is the world position *inside* the current block, used for determining its integer coords and fractional position
     float3 currentBlockSamplePos = hitWorldPos - hitWorldNormal * NORMAL_OFFSET_MULTIPLIER;
@@ -138,6 +145,7 @@ void GetVoxelDataForBlending_float(
 
     float xDistance;
     float yDistance;
+    bool useTopTexture = false;
     if (absNormal.y >= absNormal.x && absNormal.y >= absNormal.z) // Normal is primarily Y (e.g., floor/ceiling)
     {
         plane_axis_x_dir = float3(sign(frac_pos.x - 0.5), 0, 0); // World X
@@ -145,6 +153,8 @@ void GetVoxelDataForBlending_float(
         // outDistToWorldXFace = 0.5 - (sign(frac_pos.x - 0.5)os.x : 1.0 - frac_pos.x);
         xDistance = abs(frac_pos.x - 0.5) * 2;
         yDistance = abs(frac_pos.z - 0.5) * 2;
+        outMainTexId_Current = topTexId;
+        useTopTexture = true;
     }
     else if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z) // Normal is primarily X (e.g., west/east wall)
     {
@@ -152,6 +162,7 @@ void GetVoxelDataForBlending_float(
         plane_axis_y_dir = float3(0, sign(frac_pos.y - 0.5), 0); // World Y
         xDistance = abs(frac_pos.z - 0.5) * 2;
         yDistance = abs(frac_pos.y - 0.5) * 2;
+        outMainTexId_Current = sideTexId;
     }
     else // Normal is primarily Z (e.g., north/south wall)
     {
@@ -159,32 +170,42 @@ void GetVoxelDataForBlending_float(
         plane_axis_y_dir = float3(0, sign(frac_pos.y - 0.5), 0); // World Y
         xDistance = abs(frac_pos.x - 0.5) * 2;
         yDistance = abs(frac_pos.y - 0.5) * 2;
+        outMainTexId_Current = sideTexId;
     }
     // - saturate(yDistance - 0.6f) is to lower the bleeding near border so the corners look smoother
     outDistToWorldXFace = xDistance - saturate(yDistance - 0.6f);
     outDistToWorldYFace = yDistance - saturate(xDistance - 0.6f);
 
     // 3. Get data for neighbor blocks
-    // For these lookups, we use (0,0,0) as the normal, so no NORMAL_OFFSET_MULTIPLIER is applied.
-    // We are querying by the block's base integer coordinate.
-    float sideTexId; // We only need mainTexId for neighbors
-
     // Neighbor along the plane's "X" axis
     float3 queryPos_PlaneXSide = (float3)currentBlockIntegerCoords + plane_axis_x_dir;
     bool canBleed;
     bool acceptBleeding;
     bool hasFrame;
     bool hasTexture;
-    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneXSide, float3(0, 0, 0), outMainTexId_PlaneXSide, canBleed, acceptBleeding, hasFrame, hasTexture);
+    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneXSide, float3(0, 0, 0), topTexId, sideTexId, canBleed, acceptBleeding, hasFrame,
+                                     hasTexture);
+    outMainTexId_PlaneXSide = useTopTexture ? topTexId : sideTexId;
 
     // If the neighbor block cannot bleed, discard
     outDistToWorldXFace = outDistToWorldXFace * canBleed;
 
     // Neighbor along the plane's "Y" axis
     float3 queryPos_PlaneYSide = (float3)currentBlockIntegerCoords + plane_axis_y_dir;
-    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneYSide, float3(0, 0, 0), outMainTexId_PlaneYSide, canBleed, acceptBleeding, hasFrame, hasTexture);
+    _GetBlockDataAtWorldPos_Internal(queryPos_PlaneYSide, float3(0, 0, 0), topTexId, sideTexId, canBleed, acceptBleeding, hasFrame,
+                                     hasTexture);
+    outMainTexId_PlaneYSide = useTopTexture ? topTexId : sideTexId;
+
     // If the neighbor block cannot bleed, discard by forcing high weight
-    outDistToWorldYFace = outDistToWorldYFace * canBleed;
+    if (!hasTexture && outCanBleed && frac_pos.y > 0.5)
+    {
+        outMainTexId_PlaneYSide = mainTopTexId;
+        outDistToWorldYFace *= 2;
+    }
+    else
+    {
+        outDistToWorldYFace = outDistToWorldYFace * canBleed;
+    }
 }
 
 

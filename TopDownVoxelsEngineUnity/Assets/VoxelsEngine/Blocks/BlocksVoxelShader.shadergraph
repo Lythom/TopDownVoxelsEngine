@@ -2612,8 +2612,8 @@
     "m_ObjectId": "31d512f15ff44d6284ef846250a5056d",
     "m_Title": "Albedo",
     "m_Position": {
-        "x": -1333.599853515625,
-        "y": -283.9998779296875
+        "x": -1333.60009765625,
+        "y": -283.9999084472656
     }
 }
 
@@ -3263,8 +3263,8 @@
     "m_ObjectId": "4a25d58adb4b447ebecdd7fe293904fc",
     "m_Title": "Normals",
     "m_Position": {
-        "x": -1341.599853515625,
-        "y": 540.0
+        "x": -1341.6002197265625,
+        "y": 540.0001220703125
     }
 }
 
@@ -3481,8 +3481,8 @@
     "m_ObjectId": "509d6dfd3805463c8e156788e5e317ce",
     "m_Title": "blobIndex",
     "m_Position": {
-        "x": -2080.799560546875,
-        "y": -186.4002685546875
+        "x": -2080.800048828125,
+        "y": -186.39990234375
     }
 }
 
@@ -4876,7 +4876,7 @@
     "m_ObjectId": "816ec0182587431cb7751d530c24bc48",
     "m_Title": "UV coordinates",
     "m_Position": {
-        "x": -2081.599853515625,
+        "x": -2081.600341796875,
         "y": -392.0
     }
 }
@@ -5658,7 +5658,7 @@
         "else"
     ],
     "m_Precision": 0,
-    "m_PreviewExpanded": true,
+    "m_PreviewExpanded": false,
     "m_DismissedVersion": 0,
     "m_PreviewMode": 0,
     "m_CustomColors": {
@@ -7157,8 +7157,8 @@
     "m_ObjectId": "e5e6780ae46e417391ad84ad7b574124",
     "m_Title": "heights",
     "m_Position": {
-        "x": -1323.2001953125,
-        "y": -1257.5999755859375
+        "x": -1323.200439453125,
+        "y": -1257.60009765625
     }
 }
 
@@ -7685,8 +7685,8 @@
     "m_ObjectId": "fb14cef70c37403280c6d936c4b21a0a",
     "m_Title": "FrameTextureIndex",
     "m_Position": {
-        "x": -2083.199462890625,
-        "y": 19.199718475341798
+        "x": -2083.199951171875,
+        "y": 19.2000732421875
     }
 }
 

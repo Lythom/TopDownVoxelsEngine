@@ -35,7 +35,7 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
             float minDistance = Vector3.Distance(facingCursorPos.Value, closestPointToRay);
 
             var axis = facingCursorPos.Value - collidingBlockPos.Value;
-            Debug.Log(collidingBlockPos);
+           //  Debug.Log(collidingBlockPos);
 
             for (int i = 0; i < 31; i++) {
                 closestPointToRay = ClosestPointToRay(facingCursorPos.Value + axis, mouseRay);

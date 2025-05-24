@@ -166,7 +166,7 @@ namespace VoxelsEngine {
             DisplayLoading(LoadingStage.Initializing, 0.05f);
 
             GameState? state = null;
-            await Configurator.Instance.IsReady();
+            Configurator.Instance.IsReady().Forget();
 
             DisplayLoading(LoadingStage.LocalCheckingSaveFile, 0.1f);
 
@@ -175,7 +175,8 @@ namespace VoxelsEngine {
                     DisplayLoading(LoadingStage.LocalLoadingGameState, 0.2f);
 
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
-                    while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
+
+                    await Configurator.Instance.IsReady();
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
 
                     Logr.Log("Loading existing game", Tags.Standalone);
@@ -185,6 +186,8 @@ namespace VoxelsEngine {
                     return;
                 }
             }
+
+            await Configurator.Instance.IsReady();
 
             try {
                 // spawn in the middle

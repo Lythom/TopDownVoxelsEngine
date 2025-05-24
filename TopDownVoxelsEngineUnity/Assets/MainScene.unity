@@ -1232,6 +1232,8 @@ MonoBehaviour:
   LevelId: 0
   Cam: {fileID: 963194227}
   BlockMaterial: {fileID: 2100000, guid: 1eb4b6db4a3269941a4cf58822c97b2e, type: 2}
+  _poolWarmupCount: 100
+  _poolMaxSize: 2048
 --- !u!1 &940828625
 GameObject:
   m_ObjectHideFlags: 0

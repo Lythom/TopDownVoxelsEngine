@@ -77,7 +77,7 @@ namespace Shared.Net {
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
             var level = gameState.Characters[CharacterShortId].Level.Value;
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
-            var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
+            LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
             chunk.Cells[cx, cy, cz].Block = Block;
             ChunkDirtySEffect.Trigger(sideEffectManager, level!, chX, chZ, cx, cz);
             sideEffectManager?.Trigger(this);
@@ -90,7 +90,7 @@ namespace Shared.Net {
             if (level.Value == null || !gameState.Levels.ContainsKey(level.Value)) throw new ApplicationException("Unknown level");
             var chunk = gameState.Levels[level.Value].Chunks[chX, chZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Can't set blocks in non ready chunks");
-            var (cx, cy, cz) = LevelTools.WorldToCellInChunk(X, Y, Z);
+            LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
             chunk.Cells![cx, cy, cz].Block = Block;
         }
     }
