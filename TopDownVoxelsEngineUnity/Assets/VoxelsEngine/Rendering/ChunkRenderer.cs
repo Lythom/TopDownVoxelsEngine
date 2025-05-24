@@ -18,12 +18,11 @@ namespace VoxelsEngine {
         public ChunkGPUSynchronizer ChunkGPUSynchronizer = null!;
 
         private Mesh _mesh = null!;
-        private readonly int[] _triangles = new int[20000];
+        private readonly int[] _triangles = new int[60000];
         private int _trianglesCount = 0;
-        private readonly Vector3[] _vertices = new Vector3[10000];
+        private readonly Vector3[] _vertices = new Vector3[40000];
         private int _verticesCount = 0;
-        private readonly Vector4[] _uvs = new Vector4[10000];
-        private readonly Vector4[] _uvs2 = new Vector4[10000];
+        private readonly Vector4[] _uvs = new Vector4[40000];
         private int _uvsCount = 0;
         private int _uvs2Count = 0;
         private Transform _propsContainer = null!;
@@ -153,16 +152,20 @@ namespace VoxelsEngine {
             //     _verticesCount++;
             // }
             int blobIndex = AutoTile48Blob.GetBlobIndex(bitMask);
-            var side = block.Sides.FirstOrDefault(s => s.Directions.HasFlagFast(dir)) ?? block.Sides[0];
+            BlockRenderingSide? first = null;
+            foreach (var s in block.Sides) {
+                if (s.Directions.HasFlagFast(dir)) {
+                    first = s;
+                    break;
+                }
+            }
 
-            _uvs[_uvsCount++] = new(1, 0, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(0, 0, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(0, 1, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs[_uvsCount++] = new(1, 1, side.MainTextureIndex, side.FrameTextureIndex);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
-            _uvs2[_uvs2Count++] = new(blobIndex, block.HasFrameAlbedo ? 0 : 1);
+            var side = first ?? block.Sides[0];
+
+            _uvs[_uvsCount++] = new(1, 0, blobIndex, side.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(0, 0, blobIndex, side.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(0, 1, blobIndex, side.FrameTextureIndex);
+            _uvs[_uvsCount++] = new(1, 1, blobIndex, side.FrameTextureIndex);
 
             _triangles[_trianglesCount++] = _verticesCount - 4;
             _triangles[_trianglesCount++] = _verticesCount - 4 + 1;
@@ -177,7 +180,6 @@ namespace VoxelsEngine {
             _mesh.SetVertices(_vertices, 0, _verticesCount);
             _mesh.SetTriangles(_triangles, 0, _trianglesCount, 0);
             _mesh.SetUVs(0, _uvs, 0, _uvsCount);
-            _mesh.SetUVs(1, _uvs2, 0, _uvs2Count);
             _mesh.RecalculateNormals();
             _mesh.RecalculateTangents();
             _propsContainer.DestroyChildren();

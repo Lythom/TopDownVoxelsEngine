@@ -12,7 +12,7 @@ float3 _WorldChunkCounts; // Nombre de chunks dans chaque dimension du monde pou
 
 // Fonction pour récupérer les données d'un bloc à une worldPos donnée
 void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNormal, out float outTexIdx, out bool outCanBleed,
-                                      out bool outAcceptBleeding, out bool outIgnoreFrame, out bool hasTexture)
+                                      out bool outAcceptBleeding, out bool outHasFrame, out bool hasTexture)
 {
     hasTexture = false;
 
@@ -89,7 +89,7 @@ void _GetBlockDataAtWorldPos_Internal(float3 queryWorldPos, float3 queryWorldNor
     uint sideTextureIndex = (packedData >> 4) & 0x3FFF; // Shift right by 4, mask 14 bits
     outCanBleed = ((packedData >> 3) & 1) != 0; // Bit 3
     outAcceptBleeding = ((packedData >> 2) & 1) != 0; // Bit 2
-    outIgnoreFrame = ((packedData >> 1) & 1) != 0; // Bit 1
+    outHasFrame = ((packedData >> 1) & 1) != 0; // Bit 1
     hasTexture = (packedData & 1) != 0; // Bit 0
 
     // Depending on the normal direction, select either top or side texture

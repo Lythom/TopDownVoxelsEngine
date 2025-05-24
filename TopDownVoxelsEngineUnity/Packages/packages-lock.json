@@ -326,6 +326,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "me.nadako.tinkstate": {
+      "version": "https://github.com/nadako/TinkStateSharp.git?path=src",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "9b2481f7b279b2a1c1b9713d302668c76234c207"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

@@ -7,12 +7,29 @@ using MessagePack;
 using Shared;
 using Shared.Net;
 using Sirenix.OdinInspector;
+using TinkState;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxelsEngine.UI;
 using Vector3 = Shared.Vector3;
 
 namespace VoxelsEngine {
+    // Add to ClientMain.cs
+    public enum LoadingStage {
+        NotStarted,
+        Initializing,
+        LocalCheckingSaveFile,
+        LocalLoadingGameState,
+        LocalCreatingGameState,
+        ClientConnectingToServer,
+        ClientAuthenticatingPlayer,
+        LocalGeneratingChunks,
+        LocalCreatingCharacter,
+        UploadingToGPU,
+        EnteringGame,
+        Complete
+    }
+
     // Drive workflows and game logique at high level
     public class ClientMain : MonoBehaviour {
         public bool ForceLocalPlay = false;
@@ -31,6 +48,10 @@ namespace VoxelsEngine {
         private ClientEngine? _engine;
         private PlayerCharacterAgent? _agent;
         private readonly PrefabListSynchronizer<CharacterAgent> _otherPlayersAgents = new();
+
+        // Observable property to track loading progress
+        public State<LoadingStage> CurrentLoadingStage = Observable.State(LoadingStage.NotStarted);
+        public State<float> LoadingProgress = Observable.State(0f);
 
         public string SaveName = "gamesave.bin";
         private string LocalSavePath => Path.Join(Application.persistentDataPath, SaveName);
@@ -107,13 +128,18 @@ namespace VoxelsEngine {
         }
 
         public async UniTask StartRemotePlay() {
+            DisplayLoading(LoadingStage.Initializing, 0.1f);
+
             _engine = gameObject.AddComponent<ClientEngine>();
             _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
+
+            DisplayLoading(LoadingStage.ClientConnectingToServer, 0.3f);
+
 #if UNITY_WEBGL && !UNITY_EDITOR
             var url = Application.absoluteURL;
             string[] parameters = url.Split('?')[1].Split('&');
-
+        
             foreach (string parameter in parameters) {
                 string[] keyValue = parameter.Split('=');
                 if (keyValue.Length == 2) {
@@ -126,17 +152,28 @@ namespace VoxelsEngine {
             }
 #endif
             await _engine.InitRemote(ServerHost);
+            DisplayLoading(LoadingStage.ClientAuthenticatingPlayer, 0.5f);
+
             Application.runInBackground = true;
-            while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
+            await Configurator.Instance.IsReady();
             _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
+
+            DisplayLoading(LoadingStage.Complete, 1.0f);
         }
 
 
         private async UniTask StartLocalPlay() {
+            DisplayLoading(LoadingStage.Initializing, 0.05f);
+
             GameState? state = null;
             await Configurator.Instance.IsReady();
+
+            DisplayLoading(LoadingStage.LocalCheckingSaveFile, 0.1f);
+
             if (File.Exists(LocalSavePath)) {
                 try {
+                    DisplayLoading(LoadingStage.LocalLoadingGameState, 0.2f);
+
                     state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
                     while (!Configurator.IsInstanceReady()) await UniTask.Delay(50);
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
@@ -159,7 +196,8 @@ namespace VoxelsEngine {
                 var (spawnPositionChX, spawnPositionChZ) = LevelTools.GetChunkPosition(spawnPosition);
 
                 if (state == null) {
-                    await Configurator.Instance.IsReady();
+                    DisplayLoading(LoadingStage.LocalCreatingGameState, 0.2f);
+
                     Logr.Log("Creating new game", Tags.Standalone);
                     state = new GameState(null, null, null);
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
@@ -192,21 +230,35 @@ namespace VoxelsEngine {
                 _engine = gameObject.AddComponent<ClientEngine>();
 
                 // bootup local engine
+                DisplayLoading(LoadingStage.LocalGeneratingChunks, 0.4f);
+
                 _engine.State.UpdateValue(state);
                 state = null;
                 _engine.State.LevelGenerator.EnqueueUninitializedChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
                 _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
 
+                DisplayLoading(LoadingStage.LocalCreatingCharacter, 0.7f);
+
                 await AddPlayerCharacter(spawnPosition, 0);
                 LocalState.Instance.CurrentPlayerId.Value = 0;
                 LocalState.Instance.CurrentPlayerName = "Local";
 
+                DisplayLoading(LoadingStage.EnteringGame, 0.9f);
+
                 _engine.StartLocal();
                 ConnectionModal.Instance.SmartActive(false);
+
+                DisplayLoading(LoadingStage.Complete, 1f);
             } catch (Exception e) {
                 Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
                 return;
             }
+        }
+
+        private void DisplayLoading(LoadingStage stage, float progress) {
+
+            CurrentLoadingStage.Value = stage;
+            LoadingProgress.Value = progress;
         }
 
         public async UniTask AddPlayerCharacter(Vector3 spawnPosition, ushort shortId) {

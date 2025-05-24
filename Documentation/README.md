@@ -21,13 +21,6 @@ General documentation of the Dream Builder project.
 
 ---
 
-## Update serialization resolvers (messagepack)
-[Server.csproj](../Server/Server.csproj)
-- In Unity, Tools -> Generate MessagePack resolvers
-- In command line, in the Assets folder : `dotnet mpc -i . -o ./Scripts/VoxelsEngine/MessagePackGenerated`
-
----
-
 ## Overview
 
 ### Open the projects
@@ -169,3 +162,61 @@ in `$(SolutionDir)SharedBin` so that Unity excludes the server-generated DLL dur
 See https://github.com/dotnet/efcore/issues/23853
 
 ---
+
+## Client behaviour
+
+```mermaid
+graph TD
+%% Client Flow
+A[Start] --> B[Initialize ClientMain]
+B --> C{ForceLocalPlay?}
+
+    %% Local Play Flow
+    C -->|Yes| D[StartLocalPlay]
+    D --> D1[Check for save file]
+    D1 -->|Save exists| D2[Load GameState]
+    D1 -->|No save| D3[Create new GameState]
+    D2 --> D4[Initialize ClientEngine]
+    D3 --> D4
+    D4 --> D5[Generate chunks around spawn]
+    D5 --> D6[Add player character]
+    D6 --> D7[Start local engine]
+    
+    %% Remote Play Flow
+    C -->|No| E[Wait for connection request]
+    E --> F[StartRemotePlay]
+    F --> F1[Create ClientEngine]
+    F1 --> F2[Setup event listeners]
+    F2 --> F3[Connect to server]
+    F3 --> F4[Initialize remote connection]
+    F4 --> F5[Send HelloNetworkMessage]
+    F5 --> F6[Wait for authentication]
+    F6 --> G[Player joins game]
+    
+    %% Common Flow
+    D7 --> G
+    G --> H[HandlePlayerJoin]
+    H --> H1{Is local player?}
+    H1 -->|Yes| H2[AddPlayerCharacter]
+    H1 -->|No| H3[UpdateAgents]
+    H2 --> I[In-game]
+    H3 --> I
+    
+    %% Server Flow (inferred)
+    S1[Server listening] --> S2[Receive client connection]
+    S2 --> S3[Process HelloNetworkMessage]
+    S3 --> S4[Authenticate player]
+    S4 --> S5[Send game state to client]
+    S5 --> S6[Generate CharacterJoinGameEvent]
+    S6 --> S7[Broadcast to all clients]
+    S7 --> S8[Process client events]
+    S8 --> S9[Update game state]
+    S9 --> S10[Send updates to clients]
+    S10 --> S8
+    
+    %% Connection lines
+    F5 -.-> S3
+    S6 -.-> H
+    S10 -.-> ClientUpdates[Client receives updates]
+    ClientUpdates -.-> I
+```

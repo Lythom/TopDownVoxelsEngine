@@ -39,6 +39,10 @@ namespace VoxelsEngine {
         /// <param name="verticesCount">current count of vertices = location where to add the new vertices. Will be updated by this function.</param>
         public static void FaceVertices(int dir, int x, int y, int z, Vector3[] vertices, ref int verticesCount) {
             for (int i = 0; i <= 3; i++) {
+                if (verticesCount >= vertices.Length) {
+                    return;
+                }
+
                 vertices[verticesCount++] = Vertices[FaceTriangles[dir][i]] + new Vector3(x, y, z);
             }
         }

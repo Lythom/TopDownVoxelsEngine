@@ -37,7 +37,7 @@ namespace Shared {
 
                 LevelBuilder.GenerateTestChunk(key.ChX, key.ChZ, key.LevelId, ref levels[key.LevelId].Chunks[key.ChX, key.ChZ], _woodBlockId, _grassBlockId, _groundBlockId);
                 ChunkKeyPool.Return(key);
-                Logr.Log($"Generated {key.ChX}, {key.ChZ}", "LevelGenerator");
+                // Logr.Log($"Generated {key.ChX}, {key.ChZ}", "LevelGenerator");
             }
         }
 

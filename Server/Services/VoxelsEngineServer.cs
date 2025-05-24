@@ -21,8 +21,8 @@ namespace Server {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         // Data
-        private readonly GameState _state = new(null, null);
-        private readonly GameState _stateBackup = new(null, null);
+        private readonly GameState _state = new(null, null, null);
+        private readonly GameState _stateBackup = new(null, null, null);
         private readonly Registry<BlockConfigJson> _blockRegistry;
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
@@ -298,10 +298,17 @@ namespace Server {
                 var spawnPosition = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
                 var levelMap = new LevelMap(dbLevel.Name, spawnPosition);
                 foreach (var dbChunk in dbLevel.Chunks!.Where(c => c.IsGenerated)) {
-                    levelMap.Chunks[dbChunk.ChX, dbChunk.ChZ] = new() {
+                    var c = new Chunk {
                         Cells = MessagePackSerializer.Deserialize<Cell[,,]>(dbChunk.Cells),
                         IsGenerated = true
                     };
+                    if (c.Cells.Length < Chunk.Size * Chunk.Height * Chunk.Size) {
+                        var migrated = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+                        Array.Copy(c.Cells, migrated, c.Cells.Length);
+                        c.Cells = migrated;
+                    }
+
+                    levelMap.Chunks[dbChunk.ChX, dbChunk.ChZ] = c;
                 }
 
                 _state.Levels.Add(dbLevel.Name, levelMap);

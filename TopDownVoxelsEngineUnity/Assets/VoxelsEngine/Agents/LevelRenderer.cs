@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using LoneStoneStudio.Tools;
 using Shared;
 using Shared.SideEffects;
 using Sirenix.OdinInspector;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Pool;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine {
@@ -21,6 +22,9 @@ namespace VoxelsEngine {
 
         private Character? _character = null;
         private ChunkGPUSynchronizer? _gpuSynchronizer;
+        
+        // Object pool for ChunkRenderer instances
+        private ObjectPool<ChunkRenderer>? _chunkRendererPool;
 
         public string LevelId = "0";
 
@@ -30,26 +34,135 @@ namespace VoxelsEngine {
         [Required]
         public Material BlockMaterial = null!;
 
-        private CancellationToken _cancellationTokenOnDestroy;
+        [SerializeField] 
+        private int _poolWarmupCount = 100;
+        
+        [SerializeField]
+        private int _poolMaxSize = 2048;
 
+        private CancellationToken _cancellationTokenOnDestroy;
 
         private void Awake() {
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
             _gpuSynchronizer = new ChunkGPUSynchronizer();
+            
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
         protected override void OnSetup(GameState state) {
             Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
             Subscribe(state.Selectors.LocalPlayerLevelIdSelector, levelId => {
-                _level = null;
                 if (levelId == null) return;
-                _renderedChunks.Clear();
-                transform.DestroyChildren();
+                
+                // Clean up existing renderers
+                CleanupRenderers();
+                
                 _level = state.Levels[levelId];
+                
+                // Initialize the object pool
+                InitializeObjectPool();
             });
 
             SubscribeSideEffect<ChunkDirtySEffect>(cse => SetDirty(cse.ChX, cse.ChZ));
+        }
+        
+        private void InitializeObjectPool()
+        {
+            // Dispose previous pool if exists
+            if (_chunkRendererPool != null)
+            {
+                _chunkRendererPool.Dispose();
+                _chunkRendererPool = null;
+            }
+            
+            if (_level == null) return;
+            
+            // Create a new pool with Unity's built-in ObjectPool
+            _chunkRendererPool = new ObjectPool<ChunkRenderer>(
+                createFunc: CreateChunkRenderer,
+                actionOnGet: OnChunkRendererGet,
+                actionOnRelease: OnChunkRendererRelease,
+                actionOnDestroy: OnChunkRendererDestroy,
+                collectionCheck: true,
+                defaultCapacity: _poolWarmupCount,
+                maxSize: _poolMaxSize
+            );
+            
+            // Warm up the pool
+            var warmupList = new List<ChunkRenderer>(_poolWarmupCount);
+            for (int i = 0; i < _poolWarmupCount; i++)
+            {
+                warmupList.Add(_chunkRendererPool.Get());
+            }
+            
+            // Return all warmed up renderers to the pool
+            foreach (var renderer in warmupList)
+            {
+                _chunkRendererPool.Release(renderer);
+            }
+            
+            Debug.Log($"ChunkRenderer pool warmed up with {_poolWarmupCount} instances");
+        }
+        
+        private ChunkRenderer CreateChunkRenderer()
+        {
+            var go = new GameObject("Pooled Chunk Renderer");
+            go.transform.SetParent(transform);
+            
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.mesh = new Mesh();
+            
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = BlockMaterial;
+            
+            var chunkRenderer = go.AddComponent<ChunkRenderer>();
+            chunkRenderer.Level = _level!;
+            chunkRenderer.ChunkGPUSynchronizer = _gpuSynchronizer;
+            
+            return chunkRenderer;
+        }
+        
+        private void OnChunkRendererGet(ChunkRenderer chunkRenderer)
+        {
+            chunkRenderer.gameObject.SetActive(true);
+        }
+        
+        private void OnChunkRendererRelease(ChunkRenderer chunkRenderer)
+        {
+            chunkRenderer.gameObject.SetActive(false);
+            chunkRenderer.transform.SetParent(transform);
+        }
+        
+        private void OnChunkRendererDestroy(ChunkRenderer chunkRenderer)
+        {
+            if (chunkRenderer != null)
+            {
+                Destroy(chunkRenderer.gameObject);
+            }
+        }
+        
+        private void CleanupRenderers()
+        {
+            // Return all active renderers to the pool if possible
+            if (_chunkRendererPool != null)
+            {
+                for (int x = 0; x < ChunkRenderers.GetLength(0); x++)
+                {
+                    for (int z = 0; z < ChunkRenderers.GetLength(1); z++)
+                    {
+                        if (ChunkRenderers[x, z] != null)
+                        {
+                            _chunkRendererPool.Release(ChunkRenderers[x, z]);
+                            ChunkRenderers[x, z] = null;
+                        }
+                    }
+                }
+            }
+            
+            _renderedChunks.Clear();
+            _toBeRendererQueue.Clear();
+            _dirtySet.Clear();
+            _level = null;
         }
 
         [Button]
@@ -92,7 +205,7 @@ namespace VoxelsEngine {
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             var center = new Vector3(chX * Chunk.Size + Chunk.Size / 2f - 0.5f, 0, chZ * Chunk.Size + Chunk.Size / 2f - 0.5f);
             Gizmos.DrawWireCube(center, new Vector3(Chunk.Size, Chunk.Size, Chunk.Size));
-            UnityEditor.Handles.Label(center, $"({chX}, {chZ})");
+            Handles.Label(center, $"({chX}, {chZ})");
         }
 #endif
 
@@ -103,7 +216,7 @@ namespace VoxelsEngine {
             while (!cancellationToken.IsCancellationRequested) {
                 var renderedThisFrame = 0;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-                if (_level == null || _character == null) continue; // skip while level and character are not ready
+                if (_level == null || _character == null || _chunkRendererPool == null) continue; // skip while level and character are not ready
 
                 // first update visible chunks that requires rerender
                 foreach (var i in _dirtySet) {
@@ -149,26 +262,19 @@ namespace VoxelsEngine {
 
         private void RenderChunk(int chX, int chZ) {
             try {
-                if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
+                if (_level == null || _chunkRendererPool == null || 
+                    chX < 0 || chX >= _level.Chunks.GetLength(0) || 
+                    chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
+                
                 Chunk currentChunk = _level.Chunks[chX, chZ];
-                // preload outbounds chunk content
-                // for (int x = -1; x <= 1; x++) {
-                //     for (int z = -1; z <= 1; z++) {
-                //         if (chX + x < 0 || chX + x >= _level.Chunks.GetLength(0) || chZ + z < 0 || chZ + z >= _level.Chunks.GetLength(1)) continue;
-                //         _level.GetOrGenerateChunk(chX + x, chZ + z);
-                //     }
-                // }
 
                 if (currentChunk.IsGenerated && !_cancellationTokenOnDestroy.IsCancellationRequested) {
-                    // TODO: mettre une mécanique pour empêcher une concurrence d'accès
-                    var chunkRenderer = InstantiateChunkRenderer(chX, chZ);
-                    foreach (Transform child in transform) {
-                        if (child.name == chunkRenderer.gameObject.name) {
-                            Debug.Log("whaaat ?");
-                        }
-                    }
-
+                    // Get a chunk renderer from the pool
+                    var chunkRenderer = _chunkRendererPool.Get();
                     chunkRenderer.transform.SetParent(transform, true);
+                    chunkRenderer.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chZ * Chunk.Size);
+                    chunkRenderer.gameObject.name = $"Chunk Renderer {chX},{chZ}";
+                    
                     chunkRenderer.UpdateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
                     chunkRenderer.transform.localScale = Vector3.zero;
                     chunkRenderer.transform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
@@ -179,17 +285,10 @@ namespace VoxelsEngine {
             }
         }
 
-        private ChunkRenderer InstantiateChunkRenderer(int chX, int chY) {
-            var go = new GameObject("Chunk Renderer " + chX + "," + chY);
-            var f = go.AddComponent<MeshFilter>();
-            f.mesh = new Mesh();
-            var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = BlockMaterial;
-            var chunkGen = go.AddComponent<ChunkRenderer>();
-            chunkGen.transform.localPosition = new Vector3(chX * Chunk.Size, 0, chY * Chunk.Size);
-            chunkGen.Level = _level!;
-            chunkGen.ChunkGPUSynchronizer = _gpuSynchronizer;
-            return chunkGen;
+        private void OnDestroy()
+        {
+            CleanupRenderers();
+            _chunkRendererPool?.Dispose();
         }
     }
 }

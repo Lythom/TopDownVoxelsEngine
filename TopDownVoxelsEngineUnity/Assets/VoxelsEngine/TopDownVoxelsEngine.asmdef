@@ -16,7 +16,9 @@
         "Shared",
         "ObservableCollections",
         "endel.nativewebsocket",
-        "MessagePack.Unity"
+        "MessagePack.Unity",
+        "Nadako.TinkState",
+        "Nadako.TinkState.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
