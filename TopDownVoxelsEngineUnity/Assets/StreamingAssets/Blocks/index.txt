@@ -4,4 +4,9 @@ Ground.json
 Sand.json
 Stone.json
 Stone2.json
+StoneFloor01.json
+StoneFloor02.json
+ThatchedRoof.json
+Tiles01.json
+Tiles02.json
 Wood2.json

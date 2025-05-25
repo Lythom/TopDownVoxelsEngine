@@ -38,6 +38,11 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
             }
 
             SirenixEditorGUI.HorizontalLineSeparator();
+            if (SirenixEditorGUI.ToolbarButton("Edit Code")) {
+                var script = MonoScript.FromScriptableObject(this);
+                AssetDatabase.OpenAsset(script.GetInstanceID(), 0, 0);
+            }
+
             if (SirenixEditorGUI.ToolbarButton("Remove")) {
                 DeleteSelection().Forget();
             }
@@ -60,7 +65,7 @@ public class BlockConfigEditor : OdinMenuEditorWindow {
         }
     }
 
-    
+
     private void Update() {
         if (_dirty.Count > 0 && _nextAutoSave > 0 && _nextAutoSave < EditorApplication.timeSinceStartup) {
             SaveToJson();

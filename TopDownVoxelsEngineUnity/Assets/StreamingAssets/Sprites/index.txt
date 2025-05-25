@@ -3,5 +3,10 @@ grass.png
 Ground_albedo.png
 handcrafted_planks.png
 sand_albedo.png
+StoneFloor2_albedo.png
+StoneFloor_albedo.png
 Stone_basecolor.png
 stone_wall_02_baseColor.png
+ThatchedRoof_Albedo.png
+Tiles01.png
+Tiles02.png

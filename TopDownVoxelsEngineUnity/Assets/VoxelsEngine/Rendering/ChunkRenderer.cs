@@ -82,8 +82,8 @@ namespace VoxelsEngine {
                 if (cell.Block != BlockId.Air
                     && blockPath != null) {
                     var isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef);
-                    if (!isBlockDefLoaded) blockDef = Configurator.Instance.BlocksRenderingLibrary[MissingBlockPath];
-
+                    if (!isBlockDefLoaded) isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(MissingBlockPath, out blockDef);
+                    if (!isBlockDefLoaded) throw new Exception($"Block definition {blockDef} or {MissingBlockPath} not found");
                     if (blockDef.Sides.Count == 0) {
                         // no texture, the important flag is the last one that indicated it's an air block
                         BlockData[GetLocalBlockId(x, y, z)] = 0;

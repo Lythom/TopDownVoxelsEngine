@@ -6,4 +6,9 @@ Cliff\Cliff.json
 Sand\sand.json
 Sand2\sand2.json
 Stone\Stone.json
+StoneFloor01\StoneFloor.json
+StoneFloor02\StoneFloor2.json
 StoneWall\stonewall02baseColor.json
+TatchedRoof\ThatchedRoof.json
+Tiles01\Tiles001.json
+Tiles02\Tiles002.json

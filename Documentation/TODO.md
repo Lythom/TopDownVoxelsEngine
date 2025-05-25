@@ -1,18 +1,6 @@
 TODO:
 
-- Blending + texture from global coordinates
-  - Dans le shader, je dois pouvoir trouver:
-    - L'index de la texture main de la position
-    - L'index de la texture frame de la position
-    - L'index de la texture main du xside
-    - L'index de la texture frame du xside
-    - L'index de la texture main du zside
-    - L'index de la texture frame du zside
-    - L'index de la texture main du diag
-    - L'index de la texture frame du diag
-    - Need: conversion coordinates to index
-  - Au moment de générer un chunk => upload sur GPU des infos des blocks (main+frame)
-
+- Ergonomie outils et blocs
 - https://dee-dee-r.itch.io/dnd-sdk/devlog/939312/crafting-a-paraboloid-camera-controller
 
 

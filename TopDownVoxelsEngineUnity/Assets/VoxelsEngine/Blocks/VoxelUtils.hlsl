@@ -185,16 +185,18 @@ void GetVoxelDataForBlending_float(
     bool hasTexture;
     _GetBlockDataAtWorldPos_Internal(queryPos_PlaneXSide, float3(0, 0, 0), topTexId, sideTexId, canBleed, acceptBleeding, hasFrame,
                                      hasTexture);
-    outMainTexId_PlaneXSide = useTopTexture ? topTexId : sideTexId;
+    // outMainTexId_PlaneXSide = useTopTexture ? topTexId : sideTexId;
+    outMainTexId_PlaneXSide = topTexId;
 
     // If the neighbor block cannot bleed, discard
-    outDistToWorldXFace = outDistToWorldXFace * canBleed;
+    outDistToWorldXFace = outDistToWorldXFace * canBleed * saturate(abs(outMainTexId_PlaneXSide - mainTopTexId));
 
     // Neighbor along the plane's "Y" axis
     float3 queryPos_PlaneYSide = (float3)currentBlockIntegerCoords + plane_axis_y_dir;
     _GetBlockDataAtWorldPos_Internal(queryPos_PlaneYSide, float3(0, 0, 0), topTexId, sideTexId, canBleed, acceptBleeding, hasFrame,
                                      hasTexture);
-    outMainTexId_PlaneYSide = useTopTexture ? topTexId : sideTexId;
+    // outMainTexId_PlaneYSide = useTopTexture ? topTexId : sideTexId;
+    outMainTexId_PlaneYSide = topTexId;
 
     // If the neighbor block cannot bleed, discard by forcing high weight
     if (!hasTexture && outCanBleed && frac_pos.y > 0.5)
@@ -204,7 +206,7 @@ void GetVoxelDataForBlending_float(
     }
     else
     {
-        outDistToWorldYFace = outDistToWorldYFace * canBleed;
+        outDistToWorldYFace = outDistToWorldYFace * canBleed * saturate(abs(outMainTexId_PlaneYSide - mainTopTexId));
     }
 }
 
