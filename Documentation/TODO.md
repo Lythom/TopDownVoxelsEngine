@@ -1,6 +1,13 @@
 TODO:
 
 - Ergonomie outils et blocs
+  - Sélecteurs séparés pour outils et bloc
+    - raccourcis clavier outil A (quick swap entre 2)
+      - Maintenir A pour ouvrir le menu de tous les outils et choisir celui à utiliser. Il prend l'emplacement quickswap.
+      - Si on sélectionne l'outil qui est dans l'aure emplacement quickswap on procède simplement au swap
+    - raccourcis clavier bloc E (quick swap entre 2, 3 ou 4)
+      - Maintenir 2 pour ouvrir le menu de tous les blocs et choisir celui à utiliser. Il prend l'emplacement quickswap.
+
 - https://dee-dee-r.itch.io/dnd-sdk/devlog/939312/crafting-a-paraboloid-camera-controller
 
 
