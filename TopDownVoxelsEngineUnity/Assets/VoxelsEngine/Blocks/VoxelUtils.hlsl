@@ -8,6 +8,8 @@ StructuredBuffer<int> _ChunkIndirectionTable; // Table d'indirection: linearChun
 float3 _ChunkDimensions; // (chunkSizeX, chunkSizeY, chunkSizeZ) ex: (16, 64, 16)
 float3 _WorldChunkCounts; // Nombre de chunks dans chaque dimension du monde pour l'indirection table ex: (128, 1, 128)
 
+#include "../hlsl/Snoise.hlsl"
+
 #define NORMAL_OFFSET_MULTIPLIER 0.001f
 
 // Fonction pour récupérer les données d'un bloc à une worldPos donnée
@@ -211,13 +213,27 @@ void GetVoxelDataForBlending_float(
 }
 
 
+/// 
+/// @param heightmaps Texture2DArray of heightmapTexture by textureIndex
+/// @param samplerState SamplerState
+/// @param textureIndexes TextureIndexers of (XSide, YSide, CurrentFace). XSide and YSide are relative to CurrentFace.
+/// @param weights ponderate weight of (XSide, YSide, CurrentFace). Should depend on distance to side (for fade effect) or be 0 if bleeding is disabled for this side.
+/// @param uv triplanar UV of the texture
+/// @param outHighestTexIdx among the main or bleeding side, the highest texture (according to weighted heightmaps)
+/// @param outHeight the highest height
 void GetHighestIndex_float(UnityTexture2DArray heightmaps, UnitySamplerState samplerState, float3 textureIndexes, float3 weights, float2 uv,
                            out float outHighestTexIdx, out float outHeight)
 {
+    // ±0.5 height
+    float scale = 5;
+    float3 noiseAttenuationX = 1 + (snoise(float3(textureIndexes.x + uv, uv.x + uv.y) / scale) - 0.5) * 0.4;
+    float3 noiseAttenuationY = 1 + (snoise(float3(textureIndexes.y + uv, uv.x + uv.y) / scale) - 0.5) * 0.4;
+    float3 noiseAttenuationMain = 1 + (snoise(float3(textureIndexes.z + uv, uv.x + uv.y) / scale) - 0.5) * 0.4;
+
     float4 samples;
-    samples.x = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.x).r * weights.x;
-    samples.y = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.y).r * weights.y;
-    samples.z = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.z).r * weights.z;
+    samples.x = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.x).r * weights.x * noiseAttenuationX;
+    samples.y = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.y).r * weights.y * noiseAttenuationY;
+    samples.z = SAMPLE_TEXTURE2D_ARRAY(heightmaps, samplerState, uv, textureIndexes.z).r * weights.z * noiseAttenuationMain;
 
     outHeight = 0;
 
