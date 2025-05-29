@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Linq;
+using System.Buffers;
 using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
-using System.Buffers;
-using Random = UnityEngine.Random; // Add this import
 
 namespace VoxelsEngine {
     /// <summary>
@@ -16,8 +14,6 @@ namespace VoxelsEngine {
     [RequireComponent(typeof(MeshFilter))]
     public class ChunkRenderer : MonoBehaviour {
         public const string MissingBlockPath = "Ground.json";
-        public LevelMap Level = null!;
-        public ChunkGPUSynchronizer ChunkGPUSynchronizer = null!;
 
         private Mesh _mesh = null!;
         private int[]? _triangles;
@@ -52,7 +48,7 @@ namespace VoxelsEngine {
             }
         }
 
-        private void ReturnArrays() {
+        private void ReleaseArrays() {
             if (_arraysRented) {
                 ArrayPool<int>.Shared.Return(_triangles);
                 ArrayPool<Vector3>.Shared.Return(_vertices);
@@ -67,9 +63,9 @@ namespace VoxelsEngine {
         }
 
 
-        public bool UpdateMesh(LevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
-            var chunk = Level.Chunks[chunkKey.ChX, chunkKey.ChZ];
-            if (!chunk.IsGenerated) throw new ApplicationException("Ensure Chunk is not null before drawing");
+        public bool UpdateMesh(ILevelMap level, ChunkKey chunkKey, string?[] blockPathById) {
+            var chunk = level.Chunks[chunkKey.ChX, chunkKey.ChZ];
+            if (!chunk.IsGenerated || chunk.Cells == null) throw new ApplicationException("Ensure Chunk is not null before drawing");
             RentArrays();
 
             _trianglesCount = 0;
@@ -132,13 +128,13 @@ namespace VoxelsEngine {
             }
 
             UpdateMesh();
-            ChunkGPUSynchronizer.UploadChunkData(this);
-            ReturnArrays();
+            ChunkGPUSynchronizer.Instance.UploadChunkData(this);
+            ReleaseArrays();
             return true;
         }
 
         private void OnDisable() {
-            ChunkGPUSynchronizer.UnloadChunkData(this);
+            ChunkGPUSynchronizer.Instance.UnloadChunkData(this);
         }
 
         public static int GetLocalBlockId(int cx, int cy, int cz) {
@@ -148,7 +144,7 @@ namespace VoxelsEngine {
                    cy * Chunk.Size * Chunk.Size;
         }
 
-        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRendering blockDef, ushort blockId, LevelMap level) {
+        private void MakeCube(int cX, int cY, int cZ, ChunkKey chunkKey, BlockRendering blockDef, ushort blockId, ILevelMap level) {
             for (int i = 0; i < 6; i++) {
                 var dir = (Direction) (i + 1);
                 var x = cX + chunkKey.ChX * Chunk.Size;
@@ -156,7 +152,7 @@ namespace VoxelsEngine {
                 var z = cZ + chunkKey.ChZ * Chunk.Size;
                 var n = level.GetNeighbor(x, cY, z, dir);
                 if (n == null || n.IsAir()) {
-                    var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockId, Level.CellMatchDefinition);
+                    var bitMask = AutoTile48Blob.Get8SurroundingsBitmask(dir, x, y, z, blockId, level.CellMatchDefinition);
                     MakeFace(dir, x, y, z, blockDef, bitMask);
                 }
             }
@@ -172,7 +168,7 @@ namespace VoxelsEngine {
         /// <param name="block"></param>
         /// <param name="bitMask">positions of the neighbour cells of the same type</param>
         private void MakeFace(Direction dir, int x, int y, int z, BlockRendering block, int bitMask) {
-            if (block.Sides.Count == 0) return;
+            if (block.Sides.Count == 0 || _vertices is null || _uvs is null || _triangles is null) return;
             CubeMeshData.FaceVertices((int) dir - 1, x % Chunk.Size, y, z % Chunk.Size, _vertices, ref _verticesCount);
             //
             // foreach (var faceVertex in CubeMeshData.FaceVertices((int) dir, x % 16 - 8, y, z % 16 - 8)) {
@@ -217,4 +213,5 @@ namespace VoxelsEngine {
             return Chunk.GetFlatIndex((int) transform.position.x / Chunk.Size, (int) transform.position.z / Chunk.Size);
         }
     }
+
 }

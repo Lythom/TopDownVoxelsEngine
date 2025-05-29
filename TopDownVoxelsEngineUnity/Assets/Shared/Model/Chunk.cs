@@ -6,10 +6,10 @@ namespace Shared {
     public struct Chunk {
         public const int Size = 16;
         public const int Height = 64;
-        public Cell[,,] Cells;
+        public Cell[,,]? Cells;
         public bool IsGenerated;
 
-        public IEnumerable<CellPosition> GetCellPositions() {
+        public readonly IEnumerable<CellPosition> GetCellPositions() {
             for (int y = Height - 1; y >= 0; y--) {
                 for (int x = 0; x < Size; x++) {
                     for (int z = 0; z < Size; z++) {

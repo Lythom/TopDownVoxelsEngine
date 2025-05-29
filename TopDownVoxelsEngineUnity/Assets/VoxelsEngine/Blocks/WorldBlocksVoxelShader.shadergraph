@@ -2562,8 +2562,8 @@
     "m_ObjectId": "31d512f15ff44d6284ef846250a5056d",
     "m_Title": "Albedo",
     "m_Position": {
-        "x": -1333.60009765625,
-        "y": -284.0001220703125
+        "x": -1333.599853515625,
+        "y": -283.9999084472656
     }
 }
 
@@ -2919,13 +2919,13 @@
     "m_RefNameGeneratedByDisplayName": "_frameTex",
     "m_DefaultReferenceName": "_frameTex",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -3139,8 +3139,8 @@
     "m_ObjectId": "44e668181d69496aa253500143fd0e20",
     "m_Title": "ScaledTriplanarUV",
     "m_Position": {
-        "x": -3299.2001953125,
-        "y": -1248.8001708984375
+        "x": -3299.199462890625,
+        "y": -1248.7999267578125
     }
 }
 
@@ -3291,8 +3291,8 @@
     "m_ObjectId": "4a25d58adb4b447ebecdd7fe293904fc",
     "m_Title": "Normals",
     "m_Position": {
-        "x": -1330.4000244140625,
-        "y": 465.60003662109377
+        "x": -1330.39990234375,
+        "y": 465.6001281738281
     }
 }
 
@@ -3509,7 +3509,7 @@
     "m_ObjectId": "509d6dfd3805463c8e156788e5e317ce",
     "m_Title": "blobIndex",
     "m_Position": {
-        "x": -2913.600341796875,
+        "x": -2913.599853515625,
         "y": 163.2000732421875
     }
 }
@@ -3657,8 +3657,8 @@
     "m_ObjectId": "52f20b9052614e67a2f65d17e17beb7b",
     "m_Title": "Extract frame index from UVs",
     "m_Position": {
-        "x": -3263.2001953125,
-        "y": -75.9999771118164
+        "x": -3263.199462890625,
+        "y": -76.0
     }
 }
 
@@ -3668,8 +3668,8 @@
     "m_ObjectId": "54251fe7109d4f72a457185e0b8bd612",
     "m_Title": "Find if we should render MainTexture (0) or FrameTexture (1)",
     "m_Position": {
-        "x": -1288.80029296875,
-        "y": -1519.2003173828125
+        "x": -1288.800048828125,
+        "y": -1519.2000732421875
     }
 }
 
@@ -3826,13 +3826,13 @@
     "m_RefNameGeneratedByDisplayName": "_frameHeights",
     "m_DefaultReferenceName": "_frameHeights",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -4849,7 +4849,7 @@
     "m_ObjectId": "816ec0182587431cb7751d530c24bc48",
     "m_Title": "UV coordinates",
     "m_Position": {
-        "x": -2930.400390625,
+        "x": -2930.39990234375,
         "y": -35.2000732421875
     }
 }
@@ -4948,8 +4948,8 @@
     "m_ObjectId": "873ec6083a4447a6a5bc7817d329eead",
     "m_Title": "Find voxel data at world position - Extract highest texture index",
     "m_Position": {
-        "x": -4331.19970703125,
-        "y": -891.2001342773438
+        "x": -4331.19873046875,
+        "y": -891.1997680664063
     }
 }
 
@@ -4965,13 +4965,13 @@
     "m_RefNameGeneratedByDisplayName": "_frameNormals",
     "m_DefaultReferenceName": "_frameNormals",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -5423,13 +5423,13 @@
     "m_RefNameGeneratedByDisplayName": "_mainNormals",
     "m_DefaultReferenceName": "_mainNormals",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -5812,13 +5812,13 @@
     "m_RefNameGeneratedByDisplayName": "_mainTex",
     "m_DefaultReferenceName": "_mainTex",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -7068,13 +7068,13 @@
     "m_RefNameGeneratedByDisplayName": "_mainHeights",
     "m_DefaultReferenceName": "_mainHeights",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
     "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
+    "overrideHLSLDeclaration": true,
+    "hlslDeclarationOverride": 1,
     "m_Hidden": false,
     "m_Value": {
         "m_SerializedTexture": "{\"textureArray\":{\"instanceID\":0}}",
@@ -7573,8 +7573,8 @@
     "m_ObjectId": "fac60eff50b34a7fa852e098841f7461",
     "m_Title": "IgnoreFrame",
     "m_Position": {
-        "x": -2600.00048828125,
-        "y": -616.8001098632813
+        "x": -2600.0,
+        "y": -616.7999267578125
     }
 }
 

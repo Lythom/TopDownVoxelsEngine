@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using LoneStoneStudio.Tools;
 using MessagePack;
 
@@ -20,8 +19,17 @@ namespace Shared {
 
         public readonly ReactiveDictionary<ushort, Character> Characters = new();
         public readonly ReactiveDictionary<string, LevelMap> Levels = new();
-        public readonly string?[] BlockPathById;
-        public readonly Dictionary<string, ushort> BlockIdByPath = new();
+        
+        // Keep the same field name for backward compatibility with existing saves
+        [Key("BlockPathById")]
+        public string?[] BlockPathById => _blockMapping.BlockPathById;
+        
+        [IgnoreMember]
+        private readonly BlockPathMapping _blockMapping;
+        
+        // Redirect to BlockMapping's dictionary
+        [IgnoreMember]
+        public Dictionary<string, ushort> BlockIdByPath => _blockMapping.BlockIdByPath;
 
         public readonly float Gravity = 1.4f;
 
@@ -41,44 +49,20 @@ namespace Shared {
         [IgnoreMember]
         private bool _isApplyingEvent;
 
+        [SerializationConstructor]
         public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (levels != null) Levels.SynchronizeToTarget(levels);
             Selectors = new Selectors(this);
+            _blockMapping = new BlockPathMapping(blockPathById ?? new string?[ushort.MaxValue]);
             LevelGenerator = new LevelGenerator(BlockIdByPath);
-            BlockPathById = blockPathById ?? new string?[ushort.MaxValue];
         }
 
+        // Access the BlockMapping directly if needed
+        public BlockPathMapping BlockMapping => _blockMapping;
+
         public void UpdateBlockMapping(IRegistry<BlockConfigJson> registry) {
-            BlockPathById[0] = "Air";
-
-            foreach (var blockPath in registry.Get().Keys) {
-                if (BlockPathById.Contains(blockPath)) continue;
-                var nextIdx = Array.IndexOf(BlockPathById, null);
-                if (nextIdx == -1) {
-                    throw new InvalidOperationException("Le tableau BlockPathById est plein. Impossible d'ajouter de nouveaux éléments.");
-                }
-
-                // assign a new Id to a block present in registry that was unknown before
-                BlockPathById[nextIdx] = blockPath;
-            }
-
-            foreach (var block in BlockPathById) {
-                if (block != null && block != "Air" && registry.Get(block) == null) {
-                    Logr.Log($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Les instances sont remplacés par des blocks d'air. Si un block nommé {block} est réintroduit plus tard, ils pourront être récupérés.", Tags.PlayerFeedbackRequired);
-                }
-
-                if (block == null) break;
-            }
-
-            // update inverted lookup
-            BlockIdByPath.Clear();
-            BlockIdByPath["Air"] = 0;
-            for (ushort blockId = 1; blockId < BlockPathById.Length; blockId++) {
-                var blockPath = BlockPathById[blockId];
-                if (blockPath != null) BlockIdByPath.TryAdd(blockPath, blockId);
-                else break;
-            }
+            _blockMapping.UpdateBlockMapping(registry);
         }
 
         public void ApplyEvent(Action<GameState, SideEffectManager?> apply, SideEffectManager? sideEffectManager) {
@@ -108,9 +92,7 @@ namespace Shared {
         public void UpdateValue(GameState nextState) {
             Characters.SynchronizeToTarget(nextState.Characters);
             Levels.SynchronizeToTarget(nextState.Levels);
-            for (var i = 0; i < BlockPathById.Length; i++) BlockPathById[i] = nextState.BlockPathById[i];
-            BlockIdByPath.Clear();
-            foreach (var (key, value) in nextState.BlockIdByPath) BlockIdByPath[key] = value;
+            _blockMapping.UpdateValue(nextState.BlockMapping);
         }
     }
 

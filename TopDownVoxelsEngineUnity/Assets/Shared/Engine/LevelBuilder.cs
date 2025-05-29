@@ -8,7 +8,7 @@ namespace Shared {
             var seed = GetChunkSeed(chX, chZ, levelId);
             var rng = new Random(seed);
             // Generate a new chunk
-            if (chunk.Cells == null) {
+            if (chunk.Cells is null) {
                 chunk.Cells = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
                 foreach (var (x, y, z) in chunk.GetCellPositions()) {
                     chunk.Cells[x, y, z] = new Cell(BlockId.Air);

@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"ThatchedRoof_Albedo.png","Sides":[{"Directions":63,"MainTextureConfig":"TatchedRoof\\ThatchedRoof.json","FrameTextureConfig":null}],"HasFrameAlbedo":false,"CanBleed":true,"AcceptBleeding":true}
+{"ItemPreviewSprite":"ThatchedRoof.png","Sides":[{"Directions":63,"MainTextureConfig":"TatchedRoof\\ThatchedRoof.json","FrameTextureConfig":null}],"HasFrameAlbedo":false,"CanBleed":true,"AcceptBleeding":true}

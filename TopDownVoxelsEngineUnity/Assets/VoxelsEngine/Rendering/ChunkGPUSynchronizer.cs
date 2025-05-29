@@ -1,17 +1,31 @@
 ﻿using System.Collections.Generic;
 using Shared;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Vector3Int = UnityEngine.Vector3Int;
 
 namespace VoxelsEngine {
     public class ChunkGPUSynchronizer {
+        private static ChunkGPUSynchronizer? _instance;
+        private static bool _created = false;
+
+        public static ChunkGPUSynchronizer Instance {
+            get {
+                if (!_created) {
+                    _created = true;
+                    _instance = new ChunkGPUSynchronizer();
+                }
+
+                return _instance!;
+            }
+        }
+
         // -- World Configuration --
         private const int MaxActiveChunks = 1024;
         private const int VoxelsPerChunk = 16 * 64 * 16;
-        public Vector3Int WorldDimensionsInChunks = new Vector3Int(128, 1, 128); // Ex: 2048/16, 64/64, 2048/16
-        public Vector3Int ChunkDimensions = new Vector3Int(16, 64, 16); // Taille d'un chunk en blocs+
-
+        public Vector3Int WorldDimensionsInChunks = new(128, 1, 128); // Ex: 2048/16, 64/64, 2048/16
+        public Vector3Int ChunkDimensions = new(16, 64, 16); // Taille d'un chunk en blocs+
 
         // -- GPU Data --
         // Contient les données réelles des blocs des chunks actifs
@@ -25,10 +39,9 @@ namespace VoxelsEngine {
         private HashSet<int> _activeChunks = new();
         private readonly List<int> _freeSlotsInSsbo = new();
         private int[] _ssboSlotIdByChunkId;
-        private int _nextAvailableSlotID = 0;
 
-        public ChunkGPUSynchronizer() {
-            InitializeBuffers();
+        private ChunkGPUSynchronizer() {
+            (_worldBlockDataSsbo, _ssboSlotIdByChunkIdSsbo, _ssboSlotIdByChunkId) = InitializeBuffers();
             SetGlobalShaderProperties();
         }
 
@@ -39,7 +52,7 @@ namespace VoxelsEngine {
         private static readonly int ChunkDimensionsPropID = Shader.PropertyToID("_ChunkDimensions");
         private static readonly int WorldChunkCountsPropID = Shader.PropertyToID("_WorldChunkCounts"); // Pour l'indirection
 
-        void InitializeBuffers() {
+        (ComputeBuffer, ComputeBuffer, int[]) InitializeBuffers() {
             // SSBO pour les données des blocs des chunks actifs
             // Taille : max chunks actifs * voxels par chunk * sizeof(uint)
             _worldBlockDataSsbo = new ComputeBuffer(MaxActiveChunks * VoxelsPerChunk, sizeof(uint), ComputeBufferType.Structured);
@@ -61,6 +74,7 @@ namespace VoxelsEngine {
             }
 
             _freeSlotsInSsbo.Reverse();
+            return (_worldBlockDataSsbo, _ssboSlotIdByChunkIdSsbo, _ssboSlotIdByChunkId);
         }
 
         void SetGlobalShaderProperties() {
@@ -68,10 +82,6 @@ namespace VoxelsEngine {
             Shader.SetGlobalBuffer(ChunkIndirectionTablePropID, _ssboSlotIdByChunkIdSsbo);
             Shader.SetGlobalVector(ChunkDimensionsPropID, new Vector4(ChunkDimensions.x, ChunkDimensions.y, ChunkDimensions.z, 0));
             Shader.SetGlobalVector(WorldChunkCountsPropID, new Vector4(WorldDimensionsInChunks.x, WorldDimensionsInChunks.y, WorldDimensionsInChunks.z, 0));
-        }
-
-        public void UploadRawData(ChunkRenderer chunk) {
-
         }
 
         public void UploadChunkData(ChunkRenderer chunk) {
@@ -139,4 +149,5 @@ namespace VoxelsEngine {
             _ssboSlotIdByChunkIdSsbo?.Release();
         }
     }
+
 }

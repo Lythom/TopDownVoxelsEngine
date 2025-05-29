@@ -18,7 +18,7 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
     }
 
     [Sirenix.OdinInspector.FilePath(Extensions = ".png", AbsolutePath = true, RequireExistingPath = true), OnValueChanged("Refresh")]
-    public string InputPath;
+    public string InputPath = "";
 
     [ReadOnly]
     public int tileSize = -1;
@@ -45,8 +45,8 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
     }
 
     [PreviewField(Height = 512, Alignment = ObjectFieldAlignment.Left, FilterMode = FilterMode.Bilinear), ReadOnly, HideLabel]
-    public Texture2D Input;
+    public Texture2D Input = null!;
 
     [PreviewField(Height = 512, Alignment = ObjectFieldAlignment.Left, FilterMode = FilterMode.Bilinear), ReadOnly, HideLabel]
-    public Texture2D Output;
+    public Texture2D Output = null!;
 }

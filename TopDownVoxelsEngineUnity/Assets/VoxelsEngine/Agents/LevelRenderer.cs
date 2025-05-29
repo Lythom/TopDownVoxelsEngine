@@ -14,14 +14,13 @@ using Vector3 = UnityEngine.Vector3;
 namespace VoxelsEngine {
     public class LevelRenderer : ConnectedBehaviour {
         private LevelMap? _level = null;
-        public readonly ChunkRenderer[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
+        public readonly ChunkRenderer?[,] ChunkRenderers = new ChunkRenderer[LevelMap.LevelChunkSize, LevelMap.LevelChunkSize];
 
         private readonly HashSet<int> _renderedChunks = new();
         private readonly Queue<int> _toBeRendererQueue = new();
         private readonly HashSet<int> _dirtySet = new();
 
         private Character? _character = null;
-        private ChunkGPUSynchronizer? _gpuSynchronizer;
 
         // Object pool for ChunkRenderer instances
         private ObjectPool<ChunkRenderer>? _chunkRendererPool;
@@ -44,8 +43,6 @@ namespace VoxelsEngine {
 
         private void Awake() {
             _cancellationTokenOnDestroy = gameObject.GetCancellationTokenOnDestroy();
-            _gpuSynchronizer = new ChunkGPUSynchronizer();
-
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
@@ -94,8 +91,8 @@ namespace VoxelsEngine {
             }
 
             // Return all warmed up renderers to the pool
-            foreach (var renderer in warmupList) {
-                _chunkRendererPool.Release(renderer);
+            foreach (var r in warmupList) {
+                _chunkRendererPool.Release(r);
             }
 
             var time2 = Time.unscaledTime;
@@ -109,13 +106,10 @@ namespace VoxelsEngine {
             var meshFilter = go.AddComponent<MeshFilter>();
             meshFilter.mesh = new Mesh();
 
-            var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = BlockMaterial;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = BlockMaterial;
 
             var chunkRenderer = go.AddComponent<ChunkRenderer>();
-            chunkRenderer.Level = _level!;
-            chunkRenderer.ChunkGPUSynchronizer = _gpuSynchronizer;
-
             return chunkRenderer;
         }
 
@@ -139,8 +133,9 @@ namespace VoxelsEngine {
             if (_chunkRendererPool != null) {
                 for (int x = 0; x < ChunkRenderers.GetLength(0); x++) {
                     for (int z = 0; z < ChunkRenderers.GetLength(1); z++) {
-                        if (ChunkRenderers[x, z] != null) {
-                            _chunkRendererPool.Release(ChunkRenderers[x, z]);
+                        var chunkRenderer = ChunkRenderers[x, z];
+                        if (chunkRenderer is not null) {
+                            _chunkRendererPool.Release(chunkRenderer);
                             ChunkRenderers[x, z] = null;
                         }
                     }
@@ -192,7 +187,7 @@ namespace VoxelsEngine {
             var playerPos = _character.Position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             var center = new Vector3(chX * Chunk.Size + Chunk.Size / 2f - 0.5f, 0, chZ * Chunk.Size + Chunk.Size / 2f - 0.5f);
-            Gizmos.DrawWireCube(center, new Vector3(Chunk.Size, Chunk.Size, Chunk.Size));
+            Gizmos.DrawWireCube(center, new Vector3(Chunk.Size, Chunk.Height, Chunk.Size));
             Handles.Label(center, $"({chX}, {chZ})");
         }
 #endif
@@ -242,8 +237,8 @@ namespace VoxelsEngine {
 
         public void UpdateChunk(int chX, int chZ) {
             if (_level == null || chX < 0 || chX >= _level.Chunks.GetLength(0) || chZ < 0 || chZ >= _level.Chunks.GetLength(1)) return;
-            ChunkRenderer cr = ChunkRenderers[chX, chZ];
-            if (cr != null) {
+            ChunkRenderer? cr = ChunkRenderers[chX, chZ];
+            if (cr is not null) {
                 cr.UpdateMesh(_level, new ChunkKey(LevelId, chX, chZ), ClientEngine.State.BlockPathById);
             }
         }
@@ -273,7 +268,8 @@ namespace VoxelsEngine {
             }
         }
 
-        private void OnDestroy() {
+        protected override void OnDestroy() {
+            base.OnDestroy();
             CleanupRenderers();
             _chunkRendererPool?.Dispose();
         }

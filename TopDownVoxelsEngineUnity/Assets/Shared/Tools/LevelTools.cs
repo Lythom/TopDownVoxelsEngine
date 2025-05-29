@@ -44,7 +44,7 @@ namespace Shared {
 
         public static void WorldToCellInChunk(int x, int y, int z, out uint cx, out uint cy, out uint cz) {
             cx = M.Mod(x, Chunk.Size);
-            cy = M.Mod(y, Chunk.Size);
+            cy = M.Mod(y, Chunk.Height);
             cz = M.Mod(z, Chunk.Size);
         }
 

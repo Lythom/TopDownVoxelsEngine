@@ -135,12 +135,12 @@ namespace VoxelsEngine {
 
         [Button(ButtonSizes.Large)]
         private void UploadTexturesToShader() {
-            OpaqueBlocksMaterial.SetTexture(MainTex, _lastMainAlbedo);
-            OpaqueBlocksMaterial.SetTexture(MainNormals, _lastMainNormals);
-            OpaqueBlocksMaterial.SetTexture(MainHeights, _lastMainHeights);
-            OpaqueBlocksMaterial.SetTexture(FrameTex, _lastFrameAlbedo);
-            OpaqueBlocksMaterial.SetTexture(FrameNormals, _lastFrameNormals);
-            OpaqueBlocksMaterial.SetTexture(FrameHeights, _lastFrameHeights);
+            Shader.SetGlobalTexture(MainTex, _lastMainAlbedo);
+            Shader.SetGlobalTexture(MainNormals, _lastMainNormals);
+            Shader.SetGlobalTexture(MainHeights, _lastMainHeights);
+            Shader.SetGlobalTexture(FrameTex, _lastFrameAlbedo);
+            Shader.SetGlobalTexture(FrameNormals, _lastFrameNormals);
+            Shader.SetGlobalTexture(FrameHeights, _lastFrameHeights);
         }
 
         private static Texture2DArray Create2DArrayTexture(int size, List<Texture2D> sources, string outputPath, TextureFormat textureFormat, bool mipChain, bool linear) {

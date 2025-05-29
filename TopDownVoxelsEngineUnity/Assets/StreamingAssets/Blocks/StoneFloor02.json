@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"StoneFloor2_albedo.png","Sides":[{"Directions":63,"MainTextureConfig":"StoneFloor02\\StoneFloor2.json","FrameTextureConfig":null}],"HasFrameAlbedo":false,"CanBleed":false,"AcceptBleeding":true}
+{"ItemPreviewSprite":"StoneFloor02.png","Sides":[{"Directions":63,"MainTextureConfig":"StoneFloor02\\StoneFloor2.json","FrameTextureConfig":null}],"HasFrameAlbedo":false,"CanBleed":false,"AcceptBleeding":true}

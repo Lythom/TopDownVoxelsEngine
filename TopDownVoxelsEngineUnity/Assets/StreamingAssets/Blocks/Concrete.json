@@ -1,1 +1,1 @@
-{"ItemPreviewSprite":"Concrete_Albedo.png","Sides":[{"Directions":63,"MainTextureConfig":"Concrete.json","FrameTextureConfig":"Concrete.json"}],"HasFrameAlbedo":true}
+{"ItemPreviewSprite":"Concrete.png","Sides":[{"Directions":63,"MainTextureConfig":"Concrete.json","FrameTextureConfig":"Concrete.json"}],"HasFrameAlbedo":true,"CanBleed":true,"AcceptBleeding":true}

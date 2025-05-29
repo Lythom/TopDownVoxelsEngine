@@ -9,9 +9,10 @@ using MessagePack;
 
 namespace Shared {
     [MessagePackObject(true)]
-    public class LevelMap : IDisposable, IUpdatable<LevelMap> {
+    public class LevelMap : IDisposable, IUpdatable<LevelMap>, ILevelMap {
         public const int LevelChunkSize = 128;
-        public Chunk[,] Chunks = new Chunk[LevelChunkSize, LevelChunkSize];
+        private readonly Chunk[,] _chunks = new Chunk[LevelChunkSize, LevelChunkSize];
+        public Chunk[,] Chunks => _chunks;
         public ReactiveList<NPC> Npcs = new();
         public string LevelId = "";
         public Vector3 SpawnPosition;
@@ -33,7 +34,7 @@ namespace Shared {
         public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
             var offset = dir.GetOffset();
             var yWithOffset = y + offset.y;
-            if (yWithOffset < 0 || yWithOffset >= Chunk.Size) return null;
+            if (yWithOffset < 0 || yWithOffset >= Chunk.Height) return null;
             return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z, out _, out _, out _);
             // return await GetOrCreateCell(x + offset.X, offsetY, z - offset.Z);
         }
@@ -58,11 +59,11 @@ namespace Shared {
         // }
 
         public bool CellMatchDefinition(Vector3Int position, BlockId referenceBlock) {
-            if (position.Y < 0 || position.Y >= Chunk.Size || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
+            if (position.Y < 0 || position.Y >= Chunk.Height || position.X < 0 || position.X >= LevelChunkSize * Chunk.Size || position.Z < 0 ||
                 position.Z >= LevelChunkSize * Chunk.Size) return false;
             var chX = (int) Math.Floor((double) position.X / Chunk.Size);
             var chZ = (int) Math.Floor((double) position.Z / Chunk.Size);
-            var chunk = Chunks[chX, chZ];
+            var chunk = _chunks[chX, chZ];
             if (chunk.IsGenerated) {
                 var cell = chunk.Cells![M.Mod(position.X, Chunk.Size), position.Y, M.Mod(position.Z, Chunk.Size)];
                 if (cell.IsAir()) return referenceBlock.IsAir();
@@ -74,9 +75,9 @@ namespace Shared {
 
 
         public bool TrySetExistingCell(int x, int y, int z, BlockId block) {
-            if (y < 0 || y >= Chunk.Size) return false;
+            if (y < 0 || y >= Chunk.Height) return false;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
-            var chunk = Chunks[chX, chZ];
+            var chunk = _chunks[chX, chZ];
             if (chunk.IsGenerated) {
                 LevelTools.WorldToCellInChunk(x, y, z, out var cx, out var cy, out var cz);
                 chunk.Cells![cx, cy, cz].Block = block;
@@ -84,6 +85,12 @@ namespace Shared {
             }
 
             return false;
+        }
+
+        public void Clear() {
+            foreach (var chunk in _chunks) {
+                Array.Clear(chunk.Cells, 0, chunk.Cells.Length);
+            }
         }
 
         public Cell? TryGetExistingCell(Vector3Int wp) {
@@ -95,11 +102,11 @@ namespace Shared {
             cy = 0;
             cz = 0;
 
-            if (y < 0 || y >= Chunk.Size) return null;
+            if (y < 0 || y >= Chunk.Height) return null;
             var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
-            if (chX < 0 || chX >= Chunks.GetLength(0) || chZ < 0 || chZ >= Chunks.GetLength(1)) return null;
+            if (chX < 0 || chX >= _chunks.GetLength(0) || chZ < 0 || chZ >= _chunks.GetLength(1)) return null;
 
-            var chunk = Chunks[chX, chZ];
+            var chunk = _chunks[chX, chZ];
             if (chunk.IsGenerated) {
                 LevelTools.WorldToCellInChunk(x, y, z, out cx, out cy, out cz);
                 return chunk.Cells![cx, cy, cz];
@@ -115,13 +122,14 @@ namespace Shared {
 
         public void UpdateValue(LevelMap nextState) {
             Npcs.SynchronizeToTarget(nextState.Npcs);
-            var nextStateChunks = nextState.Chunks;
-            for (int i = 0; i < Chunks.GetLength(0); i++) {
-                for (int j = 0; j < Chunks.GetLength(1); j++) {
+            var nextStateChunks = nextState._chunks;
+            for (int i = 0; i < _chunks.GetLength(0); i++) {
+                for (int j = 0; j < _chunks.GetLength(1); j++) {
                     var nextChunk = nextStateChunks[i, j];
-                    if (nextChunk.IsGenerated) Chunks[i, j] = nextChunk;
+                    if (nextChunk.IsGenerated) _chunks[i, j] = nextChunk;
                 }
             }
         }
     }
+
 }
