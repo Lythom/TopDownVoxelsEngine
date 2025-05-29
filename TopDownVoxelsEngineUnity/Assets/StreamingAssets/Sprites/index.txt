@@ -1,5 +1,5 @@
 Concrete.png
-grass.png
+Grass.png
 Ground.png
 Sand.png
 Stone.png
