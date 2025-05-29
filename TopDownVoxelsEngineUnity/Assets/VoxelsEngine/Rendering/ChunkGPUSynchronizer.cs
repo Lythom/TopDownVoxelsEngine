@@ -70,6 +70,10 @@ namespace VoxelsEngine {
             Shader.SetGlobalVector(WorldChunkCountsPropID, new Vector4(WorldDimensionsInChunks.x, WorldDimensionsInChunks.y, WorldDimensionsInChunks.z, 0));
         }
 
+        public void UploadRawData(ChunkRenderer chunk) {
+
+        }
+
         public void UploadChunkData(ChunkRenderer chunk) {
             int linearChunkIndex = chunk.GetFlatIndex();
 
