@@ -94,3 +94,4 @@ bin
 TopDownVoxelsEngineUnity/Assets/Samples
 TopDownVoxelsEngineUnity/Assets/Samples.meta
 .env
+TopDownVoxelsEngineUnity/Assets/VoxelsEngine/Blocks/Generated*.asset
