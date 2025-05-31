@@ -1,5 +1,7 @@
-﻿using Shared;
+﻿using Cysharp.Threading.Tasks;
+using Shared;
 using Sirenix.OdinInspector;
+using TinkState;
 using TMPro;
 
 namespace VoxelsEngine.UI {
@@ -8,7 +10,7 @@ namespace VoxelsEngine.UI {
         public TextMeshProUGUI Text = null!;
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.PlayerToolSelector, t => Text.text = "<+spread>" + t.ToString());
+            Observable.AutoRun(() => Text.text = "<+spread>" + Selectors.SelectedTool).AddTo(ResetToken);
         }
     }
 }

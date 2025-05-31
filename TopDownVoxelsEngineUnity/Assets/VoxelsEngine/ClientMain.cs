@@ -88,7 +88,7 @@ namespace VoxelsEngine {
         }
 
         private void HandlePlayerLeave(CharacterLeaveGameEvent evt) {
-            if (evt.CharacterShortId == LocalState.Instance.CurrentPlayerId) {
+            if (evt.CharacterShortId == LocalState.Instance.CurrentPlayerId.Value) {
                 // disconnect current player
                 if (_engine != null) {
                     _engine.Stop();
@@ -102,7 +102,7 @@ namespace VoxelsEngine {
             if (_engine != null) {
                 _otherPlayersAgents.DisplayInstances(declare => {
                     foreach (var (key, value) in _engine.State.Characters) {
-                        if (key != LocalState.Instance.CurrentPlayerId) {
+                        if (key != LocalState.Instance.CurrentPlayerId.Value) {
                             var agent = declare();
                             agent.CharacterId.Value = key;
                             agent.transform.position = value.Position;

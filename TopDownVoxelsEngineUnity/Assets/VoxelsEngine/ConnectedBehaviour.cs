@@ -78,17 +78,19 @@ namespace VoxelsEngine {
 
         protected ClientEngine ClientEngine {
             get {
-                if (_gameManager == null) _gameManager = GetComponentInParent<ClientEngine>(true);
-                if (_gameManager == null) _gameManager = FindFirstObjectByType<ClientEngine>(FindObjectsInactive.Include);
+                if (_gameManager is null) _gameManager = GetComponentInParent<ClientEngine>(true);
+                if (_gameManager is null) _gameManager = FindFirstObjectByType<ClientEngine>(FindObjectsInactive.Include);
                 return _gameManager;
             }
         }
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        protected ISocketClient? SocketClient => ClientEngine == null ? null : ClientEngine.SocketClient;
+        protected ISocketClient SocketClient => ClientEngine.SocketClient;
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        protected SideEffectManager? SideEffectManager => ClientEngine == null ? null : ClientEngine.SideEffectManager;
+        protected SideEffectManager SideEffectManager => ClientEngine.SideEffectManager;
+        
+        protected Selectors Selectors => ClientEngine.Selectors;
 
         private bool _isSetup;
 
@@ -270,12 +272,10 @@ namespace VoxelsEngine {
         }
 
         protected void SubscribeSideEffect<T>(Action<T> action) {
-            if (SideEffectManager == null) return;
             ResetToken.Register(SideEffectManager.For<T>().StartListening(action));
         }
 
         protected void TriggerSideEffect<T>(T sideEffect) {
-            if (SideEffectManager == null) return;
             SideEffectManager.For<T>().Trigger(sideEffect);
         }
 
@@ -284,39 +284,7 @@ namespace VoxelsEngine {
         protected void OnClick(UIBehaviour component, Action action, Action handleNotInteractive, TimeSpan throttle) =>
             OnClick(component, action, throttle, ResetToken, handleNotInteractive);
 
-        protected async UniTask<INetworkMessage?> SendMessageAsync(INetworkMessage msg, TimeSpan timeout) {
-            if (SocketClient == null) {
-                Logr.Log("Not connected to a server.", Tags.Client);
-                return null;
-            }
-
-            UniTaskCompletionSource<INetworkMessage> answerReceived = new UniTaskCompletionSource<INetworkMessage>();
-
-            // This is a very naive implementation. If another player send the same GameEvent type it will consider it as the answer.
-            // Therefore, there is no need anymore for multiplayer support atm.
-            // Fix by implementing https://linear.app/starteam/issue/ENG-1/transctionnalite-des-game-events
-            void HandleAnswer(INetworkMessage answer) {
-                if (answer.GetType() == msg.GetType()) {
-                    answerReceived.TrySetResult(answer);
-                }
-            }
-
-            SocketClient.OnNetworkMessage += HandleAnswer;
-            SocketClient.Send(msg);
-            await UniTask.WhenAny(
-                answerReceived.Task,
-                UniTask.Delay(timeout, DelayType.Realtime, cancellationToken: ResetToken).SuppressCancellationThrow()
-            );
-            if (SocketClient != null) SocketClient.OnNetworkMessage -= HandleAnswer;
-            return answerReceived.GetStatus(0) == UniTaskStatus.Succeeded ? answerReceived.GetResult(0) : null;
-        }
-
         protected void SendBlindMessageOptimistic(GameEvent msg) {
-            if (SocketClient == null) {
-                Logr.Log("Not connected to a server.", Tags.Client);
-                return;
-            }
-
             ClientEngine.HandleEvent(msg);
             SocketClient.Send(msg);
         }

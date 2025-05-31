@@ -1,6 +1,8 @@
-﻿using LoneStoneStudio.Tools;
+﻿using Cysharp.Threading.Tasks;
+using LoneStoneStudio.Tools;
 using Shared;
 using Sirenix.OdinInspector;
+using TinkState;
 using UnityEngine.UI;
 
 namespace VoxelsEngine.UI {
@@ -9,15 +11,17 @@ namespace VoxelsEngine.UI {
         public RawImage Preview = null!;
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.PlayerBlockSelector, state.Selectors.PlayerToolSelector, (block, tool) => {
+            Observable.AutoRun(() => {
+                var tool = Selectors.SelectedTool.Value;
+                var block = Selectors.SelectedBlock.Value;
                 this.SmartActive(tool == ToolId.PlaceBlock || tool == ToolId.ExchangeBlock);
-                var blockPath = state.BlockPathById[block];
+                var blockPath = block.HasValue ? state.BlockPathById[block.Value.Id] : null;
                 if (blockPath != null && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var b)) {
                     Preview.texture = b.ItemPreview!;
                 } else {
-                    Preview.texture = null!;
+                    Preview.texture = null;
                 }
-            });
+            }).AddTo(ResetToken);
         }
     }
 }

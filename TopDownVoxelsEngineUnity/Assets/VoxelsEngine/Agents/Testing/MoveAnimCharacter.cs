@@ -76,7 +76,6 @@ namespace VoxelsEngine {
         private Character? _character;
 
         private Vector3 _nextPosition;
-        private string? _levelId;
         private bool _isPlacing;
         private Plane? _draggingPlane;
 
@@ -95,13 +94,12 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.LocalPlayerStateSelector, p => {
-                _character = p;
-                if (p == null) return;
-                _position = p.Position;
-                _rotation = Quaternion.Euler(0, Character.UncompressAngle(p.Angle), 0);
+            Selectors.CurrentCharacter.Bind(c => {
+                _character = c;
+                if (c == null) return;
+                _position = c.Position;
+                _rotation = Quaternion.Euler(0, Character.UncompressAngle(c.Angle), 0);
             });
-            Subscribe(state.Selectors.LocalPlayerLevelIdSelector, lId => _levelId = lId);
         }
 
         public void OnDisable() {
@@ -110,8 +108,8 @@ namespace VoxelsEngine {
 
         void Update() {
             if (_character == null) return;
-            if (_levelId == null || !ClientEngine.State.Levels.ContainsKey(_levelId)) return;
-            if (!ClientEngine.State.Levels.TryGetValue(_levelId, out var level)) return;
+            if (Selectors.CurrentLevel.Value == null || !ClientEngine.State.Levels.ContainsKey(Selectors.CurrentLevel.Value)) return;
+            if (!ClientEngine.State.Levels.TryGetValue(Selectors.CurrentLevel.Value, out var level)) return;
 
             var selectedTool = _character.SelectedTool.Value;
             var selectedBlock = _character.SelectedBlock.Value;

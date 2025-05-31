@@ -23,6 +23,48 @@
 
     <ItemGroup>
         <None Remove="**/*.meta" />
+        <None Include="TinkState\Runtime.meta" />
+        <None Include="TinkState\Runtime\AsyncComputeResult.cs.meta" />
+        <None Include="TinkState\Runtime\AsyncComputeTask.cs.meta" />
+        <None Include="TinkState\Runtime\Internal.meta" />
+        <None Include="TinkState\Runtime\Internal\AsyncComputation.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\AsyncComputeTaskBuilder.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\AutoObservable.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\Binding.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\Computation.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ConstObservable.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\DirectScheduler.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\Dispatcher.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\DispatchingObservable.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\NeverEqualityComparer.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\NoopDisposable.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ObservableDictionary.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ObservableDictionary_ObservableOfReadOnlyDictionary.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ObservableList.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ObservableList_ObservableOfReadOnlyList.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\Revision.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\State.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\TransformObservable.cs.meta" />
+        <None Include="TinkState\Runtime\Internal\ValueProvider.cs.meta" />
+        <None Include="TinkState\Runtime\Nadako.TinkState.asmdef.meta" />
+        <None Include="TinkState\Runtime\Observable.cs.meta" />
+        <None Include="TinkState\Runtime\ObservableDictionary.cs.meta" />
+        <None Include="TinkState\Runtime\ObservableList.cs.meta" />
+        <None Include="TinkState\Runtime\Scheduler.cs.meta" />
+        <None Include="TinkState\Runtime\State.cs.meta" />
+        <None Include="TinkState\Tests.meta" />
+        <None Include="TinkState\Tests\BaseTest.cs.meta" />
+        <None Include="TinkState\Tests\Nadako.TinkState.Tests.asmdef.meta" />
+        <None Include="TinkState\Tests\TestAsyncComputeResult.cs.meta" />
+        <None Include="TinkState\Tests\TestAuto.cs.meta" />
+        <None Include="TinkState\Tests\TestAutoAsync.cs.meta" />
+        <None Include="TinkState\Tests\TestBinding.cs.meta" />
+        <None Include="TinkState\Tests\TestConst.cs.meta" />
+        <None Include="TinkState\Tests\TestDictionary.cs.meta" />
+        <None Include="TinkState\Tests\TestList.cs.meta" />
+        <None Include="TinkState\Tests\TestModifyWhileFiring.cs.meta" />
+        <None Include="TinkState\Tests\TestState.cs.meta" />
+        <None Include="TinkState\Tests\TestTriggerBindingFromBinding.cs.meta" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +82,7 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
       <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
       <PackageReference Include="UniTask" Version="2.3.3" />
+      <PackageReference Include="ZLinq" Version="1.4.9" />
     </ItemGroup>
 
 </Project>

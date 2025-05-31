@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
-using Cysharp.Threading.Tasks;
-using LoneStoneStudio.Tools;
 using MessagePack;
+using Shared.Signals;
 
 namespace Shared {
     [MessagePackObject(true)]
@@ -13,7 +9,7 @@ namespace Shared {
         public const int LevelChunkSize = 128;
         private readonly Chunk[,] _chunks = new Chunk[LevelChunkSize, LevelChunkSize];
         public Chunk[,] Chunks => _chunks;
-        public ReactiveList<NPC> Npcs = new();
+        public SignalList<NPC> Npcs = new();
         public string LevelId = "";
         public Vector3 SpawnPosition;
 
@@ -89,6 +85,7 @@ namespace Shared {
 
         public void Clear() {
             foreach (var chunk in _chunks) {
+                if (chunk.Cells is null) continue;
                 Array.Clear(chunk.Cells, 0, chunk.Cells.Length);
             }
         }

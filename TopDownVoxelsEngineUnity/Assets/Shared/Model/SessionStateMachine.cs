@@ -1,9 +1,10 @@
 ﻿using System;
 using LoneStoneStudio.Tools;
+using Shared.Signals;
 
 namespace Shared {
     public class SessionStateMachine {
-        public readonly Reactive<SessionStatus> Status = new(SessionStatus.NeedAuthentication);
+        public readonly Signal<SessionStatus> Status = new(SessionStatus.NeedAuthentication);
 
         public SessionStateMachine() {
             Status.Value = SessionStatus.NeedAuthentication;

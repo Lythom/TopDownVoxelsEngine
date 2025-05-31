@@ -20,8 +20,6 @@ namespace VoxelsEngine {
         private readonly Queue<int> _toBeRendererQueue = new();
         private readonly HashSet<int> _dirtySet = new();
 
-        private Character? _character = null;
-
         // Object pool for ChunkRenderer instances
         private ObjectPool<ChunkRenderer>? _chunkRendererPool;
 
@@ -47,8 +45,7 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.LocalPlayerStateSelector, p => _character = p);
-            Subscribe(state.Selectors.LocalPlayerLevelIdSelector, levelId => {
+            Selectors.CurrentLevel.Bind(levelId => {
                 if (levelId == null) return;
 
                 // Clean up existing renderers
@@ -159,8 +156,8 @@ namespace VoxelsEngine {
         }
 
         public void Update() {
-            if (_level == null || _character == null) return;
-            UpdateAroundPlayer(_character.Position, _level.Chunks);
+            if (_level == null || Selectors.CurrentCharacter.Value == null) return;
+            UpdateAroundPlayer(Selectors.CurrentCharacter.Value.Position, _level.Chunks);
             // DrawVegetation();
         }
 
@@ -183,8 +180,8 @@ namespace VoxelsEngine {
 
 #if UNITY_EDITOR
         private void OnDrawGizmos() {
-            if (_character == null) return;
-            var playerPos = _character.Position;
+            if (Selectors.CurrentCharacter.Value == null) return;
+            var playerPos = Selectors.CurrentCharacter.Value.Position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             var center = new Vector3(chX * Chunk.Size + Chunk.Size / 2f - 0.5f, 0, chZ * Chunk.Size + Chunk.Size / 2f - 0.5f);
             Gizmos.DrawWireCube(center, new Vector3(Chunk.Size, Chunk.Height, Chunk.Size));
@@ -199,7 +196,7 @@ namespace VoxelsEngine {
             while (!cancellationToken.IsCancellationRequested) {
                 var renderedThisFrame = 0;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-                if (_level == null || _character == null || _chunkRendererPool == null) continue; // skip while level and character are not ready
+                if (_level == null || Selectors.CurrentCharacter == null || _chunkRendererPool == null) continue; // skip while level and character are not ready
 
                 // first update visible chunks that requires rerender
                 foreach (var i in _dirtySet) {

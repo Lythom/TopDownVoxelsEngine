@@ -1,6 +1,8 @@
 ﻿using LoneStoneStudio.Tools;
 using Shared;
+using Shared.Signals;
 using Sirenix.OdinInspector;
+using TinkState;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -18,8 +20,8 @@ namespace VoxelsEngine {
         private static readonly int Velocity = Animator.StringToHash("Velocity");
         private static readonly int Altitude = Animator.StringToHash("Altitude");
 
-        public Reactive<ushort> CharacterId = new(0);
-        private Character? _character;
+        public Signal<ushort> CharacterId = new(0);
+        private Observable<Character?>? _character;
         private Vector3 _lastPosition;
         private Vector3 _calculatedPosition;
         public float VisualSnappingStrength = 0.28f;
@@ -36,35 +38,25 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state) {
-            var playerStateSelector = ReactiveHelpers.CreateSelector(
-                state.Characters,
-                CharacterId,
-                (characters, shortId) => characters.Dictionary.TryGetValue(shortId, out var value) ? value : null,
-                null,
-                ResetToken
-            );
-            Reactive<string?> levelIdSelector = new(null);
-            levelIdSelector.BindNestedSelector(playerStateSelector, pss => pss?.Level, ResetToken);
-
-            Subscribe(playerStateSelector, p => _character = p);
-            Subscribe(levelIdSelector, state.Selectors.LocalPlayerLevelIdSelector, (levelId, localLevelId) => {
-                this.SmartActive(levelId == localLevelId);
+            _character = Observable.Auto(() => state.Characters.TryGetValue(CharacterId.Value, out var value) ? value : null);
+            Observable.AutoRun(() => {
+                this.SmartActive(_character.Value?.Level.Value != null && Selectors.CurrentLevel.Value == _character.Value?.Level.Value);
             });
         }
 
         /// <summary>
-        /// In update, read the controls.
-        /// Currently the client is in charge of calculating the speed, so there is no limitation to speeding or teleporting cheats.
+        /// In the update, read the controls.
+        /// Currently, the client is in charge of calculating the speed, so there is no limitation to speeding or teleporting cheats.
         /// </summary>
         private void Update() {
-            if (_character == null) return;
-            var levelId = _character.Level.Value;
+            if (_character?.Value is null) return;
+            var levelId = _character.Value.Level.Value;
             if (levelId == null || !ClientEngine.State.Levels.ContainsKey(levelId)) return;
             if (!ClientEngine.State.Levels.TryGetValue(levelId, out var level)) return;
 
             // update or calculate display position
-            var pos = (Vector3) _character.Position;
-            var vel = (Vector3) _character.Velocity * Time.deltaTime;
+            var pos = (Vector3) _character.Value.Position;
+            var vel = (Vector3) _character.Value.Velocity * Time.deltaTime;
             if (_lastPosition != pos) {
                 _calculatedPosition = pos;
             } else {
@@ -74,11 +66,11 @@ namespace VoxelsEngine {
             // interpolate rendering
             transform.position = Vector3.Lerp(transform.position, _calculatedPosition, VisualSnappingStrength * 50 * Time.deltaTime);
             Vector3 currentRotation = transform.eulerAngles;
-            currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
+            currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Value.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
             transform.eulerAngles = currentRotation;
-            UpdateAnimation(vel, _character.IsInAir);
+            UpdateAnimation(vel, _character.Value.IsInAir);
         }
 
-        public float CurrentSpeed => _character == null ? 0 : ((Vector3) _character.Velocity).magnitude / 5f;
+        public float CurrentSpeed => _character?.Value == null ? 0 : ((Vector3) _character.Value.Velocity).magnitude / 5f;
     }
 }

@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using LoneStoneStudio.Tools;
 using MessagePack;
+using Shared.Signals;
 
 namespace Shared {
     public class LocalState {
-        public static LocalState Instance = new();
-        public readonly Reactive<ushort> CurrentPlayerId = new(ushort.MaxValue);
+        public static readonly LocalState Instance = new();
+        public readonly Signal<ushort> CurrentPlayerId = new(ushort.MaxValue);
         public string CurrentPlayerName = "Lythom2";
-        public Reactive<SessionStatus> Session = new(SessionStatus.Disconnected);
+        public readonly Signal<SessionStatus> Session = new(SessionStatus.Disconnected);
     }
 
     [MessagePackObject(true)]
@@ -17,16 +18,16 @@ namespace Shared {
         [IgnoreMember]
         public bool IsApplyingEvent => _isApplyingEvent;
 
-        public readonly ReactiveDictionary<ushort, Character> Characters = new();
-        public readonly ReactiveDictionary<string, LevelMap> Levels = new();
-        
+        public readonly SignalDictionary<ushort, Character> Characters = new();
+        public readonly SignalDictionary<string, LevelMap> Levels = new();
+
         // Keep the same field name for backward compatibility with existing saves
         [Key("BlockPathById")]
         public string?[] BlockPathById => _blockMapping.BlockPathById;
-        
+
         [IgnoreMember]
         private readonly BlockPathMapping _blockMapping;
-        
+
         // Redirect to BlockMapping's dictionary
         [IgnoreMember]
         public Dictionary<string, ushort> BlockIdByPath => _blockMapping.BlockIdByPath;
@@ -35,9 +36,6 @@ namespace Shared {
 
         [IgnoreMember]
         public object LockObject = new();
-
-        [IgnoreMember]
-        public readonly Selectors Selectors;
 
         // internal or non serialized properties
         [IgnoreMember]
@@ -50,10 +48,9 @@ namespace Shared {
         private bool _isApplyingEvent;
 
         [SerializationConstructor]
-        public GameState(ReactiveDictionary<ushort, Character>? characters, ReactiveDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
+        public GameState(SignalDictionary<ushort, Character>? characters, SignalDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
             if (characters != null) Characters.SynchronizeToTarget(characters);
             if (levels != null) Levels.SynchronizeToTarget(levels);
-            Selectors = new Selectors(this);
             _blockMapping = new BlockPathMapping(blockPathById ?? new string?[ushort.MaxValue]);
             LevelGenerator = new LevelGenerator(BlockIdByPath);
         }

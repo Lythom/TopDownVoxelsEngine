@@ -121,13 +121,12 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state) {
-            Subscribe(state.Selectors.LocalPlayerStateSelector, p => {
-                _character = p;
-                if (p == null) return;
-                _position = p.Position;
-                _rotation = Quaternion.Euler(0, Character.UncompressAngle(p.Angle), 0);
+            Selectors.CurrentCharacter.Bind(c => {
+                _character = c;
+                if (c == null) return;
+                _position = c.Position;
+                _rotation = Quaternion.Euler(0, Character.UncompressAngle(c.Angle), 0);
             });
-            Subscribe(state.Selectors.LocalPlayerLevelIdSelector, lId => _levelId = lId);
 
             SubscribeSideEffect<PlaceBlocksGameEvent>(evt => {
                 if (evt.CharacterShortId == CharacterId) return; // ignore self (optimistic VFX)
@@ -318,6 +317,7 @@ namespace VoxelsEngine {
         /// <param name="level"></param>
         /// <param name="vel"></param>
         /// <param name="isInAir"></param>
+        /// <param name="groundY"></param>
         /// <returns>Velocity and Horizontal direction in which the character moves.</returns>
         private (Vector3, Vector3) UpdateMove(LevelMap level, Vector3 vel, bool isInAir, float groundY) {
             Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();

@@ -23,11 +23,16 @@ namespace VoxelsEngine {
         public GameState State = new(null, null, null);
 
         public readonly SideEffectManager SideEffectManager = new();
+        public readonly Selectors Selectors;
 
         private readonly TickGameEvent _tick = new();
         private PriorityLevel _minLevel = PriorityLevel.All;
         private bool Started => LocalState.Instance.Session.Value == SessionStatus.Ready;
         private bool _receivedAtLeastOneChunkUpdate = false;
+
+        public ClientEngine() {
+            Selectors = new(State);
+        }
 
         private void HandleNetMessage(INetworkMessage msg) {
             if (msg is not CharacterMoveGameEvent) Logr.Log("Received " + msg, Tags.Client);
@@ -113,11 +118,11 @@ namespace VoxelsEngine {
 
                 State.LevelGenerator.GenerateFromQueue(_minLevel, State.Levels);
             } else {
-                var c = State.Characters[LocalState.Instance.CurrentPlayerId];
+                var c = State.Characters[LocalState.Instance.CurrentPlayerId.Value];
                 SocketClient.Send(
                     new CharacterMoveGameEvent(
                         0,
-                        LocalState.Instance.CurrentPlayerId,
+                        LocalState.Instance.CurrentPlayerId.Value,
                         c.Position,
                         c.Velocity,
                         c.Angle,
@@ -163,4 +168,5 @@ namespace VoxelsEngine {
             SocketClient.Close();
         }
     }
+
 }

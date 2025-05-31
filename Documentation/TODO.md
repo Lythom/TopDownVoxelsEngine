@@ -115,21 +115,4 @@ Done:
 
 - Refaire le shader en URP ?
 
-
-Certification
-
-Application name Certbot
-Application description Certbot certification
-
-Application key
-488132ca887151e6
-
-Application secret
-76da7aa3554e2b3fd87a187a9858eaec
-
-Consumer Key
-73a43fbef4312c839cf19486d7fcecf2
-
-C:\Users\samue\AppData\Roaming\Python\Python312\Scripts\certbot certonly --dns-ovh --dns-ovh-credentials "%USERPROFILE%\ovh.ini" -d dreambuilder.sametmagda.fr.
-
-C:\Users\samue\AppData\Roaming\Python\Python312\Scripts\certbot renew
+Certbot instructions in proton pass

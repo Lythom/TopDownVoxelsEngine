@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using LoneStoneStudio.Tools;
 using Priority_Queue;
 
 namespace Shared {
@@ -18,7 +16,7 @@ namespace Shared {
             _blockIdByPath = blockIdByPath;
         }
 
-        public void GenerateFromQueue(PriorityLevel minPriority, ReactiveDictionary<string, LevelMap> levels) {
+        public void GenerateFromQueue(PriorityLevel minPriority, IDictionary<string, LevelMap> levels) {
             _frameStopwatch.Reset();
             int budget = minPriority switch {
                 PriorityLevel.Must => 0,
@@ -41,7 +39,7 @@ namespace Shared {
             }
         }
 
-        public void EnqueueUninitializedChunksAround(string levelId, int chX, int chZ, int range, ReactiveDictionary<string, LevelMap> levels) {
+        public void EnqueueUninitializedChunksAround(string levelId, int chX, int chZ, int range, IDictionary<string, LevelMap> levels) {
             var levelMap = levels[levelId];
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
