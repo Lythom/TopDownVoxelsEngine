@@ -20,7 +20,7 @@ namespace LoneStoneStudio.Tools {
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
     [Serializable, MessagePackObject]
-    public class SignalDictionary<TKey, TValue> : IAsyncReactiveProperty<SignalDictionaryChangeEvent<TKey, TValue>>, TinkState.ObservableDictionary<TKey, TValue>
+    public class SignalDictionary<TKey, TValue> : IAsyncReactiveProperty<SignalDictionaryChangeEvent<TKey, TValue>>, ObservableDictionary<TKey, TValue>
 #if UNITY_2020_3_OR_NEWER
         , UnityEngine.ISerializationCallbackReceiver
 #endif
@@ -279,7 +279,7 @@ namespace LoneStoneStudio.Tools {
     [MessagePackObject]
     public struct SignalDictionaryChangeEvent<TKey, TValue> where TKey : notnull {
         [Key(0)]
-        public ObservableDictionary<TKey, TValue> Dictionary;
+        public IDictionary<TKey, TValue> Dictionary;
 
         [IgnoreMember]
         public NotifySignalDictionaryChangedEventArgs<TKey, TValue> Event;

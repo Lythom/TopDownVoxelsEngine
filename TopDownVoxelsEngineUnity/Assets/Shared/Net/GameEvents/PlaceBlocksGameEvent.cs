@@ -78,7 +78,7 @@ namespace Shared.Net {
             var level = gameState.Characters[CharacterShortId].Level.Value;
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
-            chunk.Cells[cx, cy, cz].Block = Block;
+            chunk.Cells![cx, cy, cz].Block = Block;
             ChunkDirtySEffect.Trigger(sideEffectManager, level!, chX, chZ, cx, cz);
             sideEffectManager?.Trigger(this);
         }

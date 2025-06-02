@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using MessagePack;
 using TinkState;
 
 namespace Shared.Signals {
 
-    [Serializable]
+    [Serializable, MessagePackObject]
     public class Signal<T> : State<T>
 #if UNITY_2020_3_OR_NEWER
         , UnityEngine.ISerializationCallbackReceiver
@@ -22,6 +23,7 @@ namespace Shared.Signals {
             _v = initialValue; // use _v to serialize the value
         }
 
+        [Key(0)]
         public T Value {
             get => _state.Value;
             set => SetValue(value);
@@ -34,11 +36,11 @@ namespace Shared.Signals {
         }
 
         public override string ToString() {
-            return _state.ToString();
+            return _state.Value?.ToString() ?? "null";
         }
 
         public IDisposable Bind(Action<T> callback, IEqualityComparer<T>? comparer = null, Scheduler? scheduler = null) {
-            return _state.Bind(callback, comparer!, scheduler);
+            return _state.Bind(callback, comparer!, scheduler!);
         }
 
         public Observable<TOut> Map<TOut>(Func<T, TOut> transform, IEqualityComparer<TOut>? comparer = null) {
@@ -50,7 +52,7 @@ namespace Shared.Signals {
         }
 
         public void OnAfterDeserialize() {
-            Value = _v; // On unity deserialize hook, initialise the State object with the serialized value
+            Value = _v; // On unity deserialize hook, initialize the State object with the serialized value
         }
     }
 }

@@ -4,20 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using MessagePack;
 using TinkState;
-using UnityEngine;
 
 namespace Shared.Signals {
 
     [Serializable, MessagePackObject]
     public class SignalList<T> : ObservableList<T>
 #if UNITY_2020_3_OR_NEWER
-        , ISerializationCallbackReceiver
+        , UnityEngine.ISerializationCallbackReceiver
 #endif
         where T : notnull {
         private ObservableList<T> _list;
 
 #if UNITY_2020_3_OR_NEWER
-        [SerializeField]
+        [UnityEngine.SerializeField]
 #endif
         private List<T>? _serialized = null;
 
