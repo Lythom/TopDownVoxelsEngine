@@ -127,7 +127,7 @@ namespace Tests {
             return _blocks;
         }
 
-        public BlockConfigJson Get(string path) {
+        public BlockConfigJson? Get(string path) {
             if (_blocks.TryGetValue(path, out var block)) {
                 return block;
             }

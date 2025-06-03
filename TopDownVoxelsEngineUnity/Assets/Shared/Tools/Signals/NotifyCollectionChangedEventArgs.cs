@@ -30,7 +30,7 @@ namespace Shared
         public readonly int NewStartingIndex;
         public readonly int OldStartingIndex;
 
-        public NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction action, bool isSingleItem, T newItem = default, T oldItem = default, ReadOnlySpan<T> newItems = default, ReadOnlySpan<T> oldItems = default, int newStartingIndex = -1, int oldStartingIndex = -1)
+        public NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction action, bool isSingleItem, T newItem = default!, T oldItem = default!, ReadOnlySpan<T> newItems = default, ReadOnlySpan<T> oldItems = default, int newStartingIndex = -1, int oldStartingIndex = -1)
         {
             Action = action;
             IsSingleItem = isSingleItem;

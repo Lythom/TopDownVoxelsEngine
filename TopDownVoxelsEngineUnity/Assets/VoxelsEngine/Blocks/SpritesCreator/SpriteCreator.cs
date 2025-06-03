@@ -31,6 +31,7 @@ namespace VoxelsEngine {
 
                 // Ensure the configurator and block registry are loaded
                 await Configurator.Instance.IsReady();
+                await UniTask.WaitUntil(this, t => t._readyForCapture, cancellationToken: _cancellationTokenOnDestroy);
 
                 if (Configurator.Instance.BlockRegistry == null) {
                     Debug.LogError("Block registry is not loaded!");
@@ -143,7 +144,6 @@ namespace VoxelsEngine {
             }
 
             _chunkRenderer.UpdateMesh(_level, new ChunkKey("0", 0, 0), _blockMapping.BlockPathById);
-            BlockMaterial.SetFloat("forceRefresh", 1f);
         }
 
         private ChunkRenderer CreateChunkRenderer() {
@@ -172,6 +172,7 @@ namespace VoxelsEngine {
                     pixels[i].b = Mathf.LinearToGammaSpace(pixels[i].b);
                     // Alpha remains unchanged
                 }
+
                 texture.SetPixels(pixels);
                 texture.Apply();
             }
