@@ -10,7 +10,7 @@ namespace VoxelsEngine.UI {
         public TextMeshProUGUI Text = null!;
 
         protected override void OnSetup(GameState state) {
-            Observable.AutoRun(() => Text.text = "<+spread>" + Selectors.SelectedTool).AddTo(ResetToken);
+            Observable.AutoRun(() => Text.text = $"<+spread>{Selectors.SelectedTool.Value}").AddTo(ResetToken);
         }
     }
 }

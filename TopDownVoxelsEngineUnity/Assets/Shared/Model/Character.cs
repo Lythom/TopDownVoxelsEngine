@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using LoneStoneStudio.Tools;
 using MessagePack;
@@ -14,7 +15,7 @@ namespace Shared {
 
         // Input from the CharacterAgent (via local or via network)
         public Vector3 Velocity;
-        
+
         public bool IsInAir;
 
         // 0 is forward on the z axis. Clockwise = positive, CounterClockwise = negative
@@ -94,6 +95,23 @@ namespace Shared {
             ToolReplaceBlockLevel.Value = nextState.ToolReplaceBlockLevel.Value;
             BlocsInventory.SynchronizeToTarget(nextState.BlocsInventory);
             KnownTemplates.SynchronizeToTarget(nextState.KnownTemplates);
+        }
+    }
+
+    public class CharacterEqualityComparer : IEqualityComparer<Character?> {
+
+        public static readonly CharacterEqualityComparer Instance = new();
+
+        public bool Equals(Character? x, Character? y) {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null) return false;
+            if (y is null) return false;
+            if (x.GetType() != y.GetType()) return false;
+            return x.Name == y.Name;
+        }
+
+        public int GetHashCode(Character? obj) {
+            return obj?.Name.GetHashCode() ?? -1;
         }
     }
 }

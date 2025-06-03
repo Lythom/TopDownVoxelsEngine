@@ -249,9 +249,8 @@ namespace VoxelsEngine {
                 DisplayLoading(LoadingStage.EnteringGame, 0.9f);
 
                 _engine.StartLocal();
-                ConnectionModal.Instance.SmartActive(false);
-
                 DisplayLoading(LoadingStage.Complete, 1f);
+                ConnectionModal.Instance.SmartActive(false);
             } catch (Exception e) {
                 Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
                 return;

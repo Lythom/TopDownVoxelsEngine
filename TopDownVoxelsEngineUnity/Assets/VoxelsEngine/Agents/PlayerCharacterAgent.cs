@@ -156,8 +156,9 @@ namespace VoxelsEngine {
         void Update() {
             if (!_initialized) return;
             if (_character == null) return;
-            if (_levelId == null || !ClientEngine.State.Levels.ContainsKey(_levelId)) return;
-            if (!ClientEngine.State.Levels.TryGetValue(_levelId, out var level)) return;
+            var _currentLevel = ClientEngine.Selectors.CurrentLevel.Value;
+            if (_currentLevel == null) return;
+            if (!ClientEngine.State.Levels.TryGetValue(_currentLevel, out var level)) return;
 
             var selectedTool = _character.SelectedTool.Value;
             var selectedBlock = _character.SelectedBlock.Value;

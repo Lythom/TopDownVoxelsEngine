@@ -9,10 +9,10 @@ namespace VoxelsEngine {
         public readonly Observable<string?> CurrentLevel;
 
         public Selectors(GameState state) {
-            CurrentCharacter = LocalState.Instance.CurrentPlayerId.Map(id => state.Characters.TryGetValue(id, out var c) ? c : null);
-            SelectedBlock = CurrentCharacter.Map(c => c?.SelectedBlock.Value);
-            SelectedTool = CurrentCharacter.Map(c => c?.SelectedTool.Value);
-            CurrentLevel = CurrentCharacter.Map(c => c?.Level.Value);
+            CurrentCharacter = Observable.Auto(() => state.Characters.TryGetValue(LocalState.Instance.CurrentPlayerId.Value, out var c) ? c : null, CharacterEqualityComparer.Instance);
+            SelectedBlock = Observable.Auto(() => CurrentCharacter.Value?.SelectedBlock.Value);
+            SelectedTool = Observable.Auto(() => CurrentCharacter.Value?.SelectedTool.Value);
+            CurrentLevel = Observable.Auto(() => CurrentCharacter.Value?.Level.Value);
         }
     }
 }
