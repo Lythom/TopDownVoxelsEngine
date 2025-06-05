@@ -40,11 +40,15 @@ namespace VoxelsEngine {
         [ShowInInspector]
         public Dictionary<string, BlockRendering> BlocksRenderingLibrary = new();
 
+        [ShowInInspector]
+        public Dictionary<string, PlayerTool> PlayerTools = new();
+
         public IStreamAssets? StreamAssets;
         public Registry<MainTextureJson>? MainTextureRegistry;
         public Registry<FrameTextureJson>? FrameTextureRegistry;
         public SpriteRegistry? SpriteRegistry;
         public Registry<BlockConfigJson>? BlockRegistry;
+        public Registry<PlayerToolJson>? PlayerToolRegistry;
 
         [Button(ButtonSizes.Large)]
         public void RegenerateAtlas() {
@@ -74,13 +78,26 @@ namespace VoxelsEngine {
                 tasks.Add(SpriteRegistry?.Reload() ?? SpriteRegistry.Build("Sprites", "*.png", StreamAssets)
                     .ContinueWith(registry => SpriteRegistry = registry));
 
+                // Tools Registry
+                tasks.Add(PlayerToolRegistry?.Reload() ?? Registry<PlayerToolJson>.Build(Path.Combine("PlayerTools"), "*.json", StreamAssets)
+                    .ContinueWith(registry => PlayerToolRegistry = registry));
+
                 // Wait for all tasks to complete
                 await UniTask.WhenAll(tasks);
+
+                var toolsConfigs = PlayerToolRegistry!.Get();
+                PlayerTools.Clear();
+                tasks.Clear();
+                foreach (var playerToolJson in toolsConfigs) {
+                    if (string.IsNullOrEmpty(playerToolJson.Value.ToolSpritePath)) Debug.LogException(new Exception($"Tool {playerToolJson.Value.Name} has no sprite path. This must be fixed"));
+                    tasks.Add(StreamAssets.LoadTexture2DAsync(playerToolJson.Value.ToolSpritePath).ContinueWith(texture => {
+                        PlayerTools.Add(playerToolJson.Value.Name, new PlayerTool(playerToolJson.Value.Name, texture));
+                    }));
+                }
 
                 var blockConfigs = BlockRegistry!.Get();
                 BlocksRenderingLibrary.Clear();
                 BlocksRenderingLibrary.Add("Air", BlockRendering.Air);
-                tasks.Clear();
                 foreach (var (blockPath, blockConfig) in blockConfigs) {
                     tasks.Add(BlockRendering.FromConfigAsync(StreamAssets, blockConfig, MainTextureRegistry!, FrameTextureRegistry!, SpriteRegistry!)
                         .ContinueWith(c => BlocksRenderingLibrary.TryAdd(blockPath, c)));
@@ -123,7 +140,7 @@ namespace VoxelsEngine {
 
                     UploadTexturesToShader();
                 }
-                
+
                 await UniTask.Delay(100); // Wait for the textures to be uploaded to the GPU
 
                 _isReady = true;

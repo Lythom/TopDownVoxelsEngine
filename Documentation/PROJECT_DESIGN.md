@@ -4,10 +4,10 @@ Informations about the project:
 
 - A game using unity engine, using voxels as world data and rendering
 - The player can move around, jump, place block
-- The project uses MessagePack for C# with AOT Code Generation for serialization / deserialization. Version 2.5.108
-- The project uses UniTask for Task management and async operations. Version 2.3.3
+- The project uses MessagePack for C# with AOT Code Generation for serialization / deserialization.
+- The project uses UniTask for Task management and async operations.
 - The game support networked multiplayer using the networking strategy described
-  at https://gafferongames.com/post/state_synchronization/
+  at https://gafferongames.com/post/state_synchronization/ / [Backup](Images/State%20Synchronization%20_%20Gaffer%20On%20Games.html)
 
 ## Code architecture
 

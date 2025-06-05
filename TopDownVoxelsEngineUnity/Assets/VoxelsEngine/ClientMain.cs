@@ -162,7 +162,7 @@ namespace VoxelsEngine {
         }
 
 
-        private async UniTask StartLocalPlay() {
+        public async UniTask StartLocalPlay() {
             DisplayLoading(LoadingStage.Initializing, 0.05f);
 
             GameState? state = null;

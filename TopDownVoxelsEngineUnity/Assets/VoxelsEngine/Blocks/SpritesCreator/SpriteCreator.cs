@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace VoxelsEngine {
     public class SpriteCreator : MonoBehaviour {
-
+#if UNITY_EDITOR
         [Required]
         public Camera Cam = null!;
 
@@ -177,5 +177,6 @@ namespace VoxelsEngine {
                 texture.Apply();
             }
         }
+#endif
     }
 }

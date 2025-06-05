@@ -85,10 +85,10 @@ namespace Shared.Net {
 
         public override void AssertApplicationConditions(in GameState gameState) {
             var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
-            if (!gameState.Characters.ContainsKey(CharacterShortId)) throw new ApplicationException("Unknown level");
-            var level = gameState.Characters[CharacterShortId].Level;
-            if (level.Value == null || !gameState.Levels.ContainsKey(level.Value)) throw new ApplicationException("Unknown level");
-            var chunk = gameState.Levels[level.Value].Chunks[chX, chZ];
+            if (!gameState.Characters.TryGetValue(CharacterShortId, out var character)) throw new ApplicationException("Unknown level");
+            var level = character.Level;
+            if (level.Value == null || !gameState.Levels.TryGetValue(level.Value, out var stateLevel)) throw new ApplicationException("Unknown level");
+            var chunk = stateLevel.Chunks[chX, chZ];
             if (!chunk.IsGenerated) throw new ApplicationException("Can't set blocks in non ready chunks");
             LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
             chunk.Cells![cx, cy, cz].Block = Block;

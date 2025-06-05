@@ -75,6 +75,7 @@ namespace Shared {
                 string jsonText = MessagePackSerializer.ConvertToJson(MessagePackSerializer.Serialize(obj));
                 File.WriteAllText(Path.Combine(UnityEngine.Application.streamingAssetsPath, ResourcePath, path), jsonText);
                 Get()[path] = obj;
+                UnityEditor.AssetDatabase.Refresh();
                 return true;
             } catch (Exception e) {
                 Logr.LogException(e);

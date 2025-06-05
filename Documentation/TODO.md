@@ -12,7 +12,6 @@ TODO:
   - [ ] Place tool icon
   - [ ] Replace tool icon
   - [ ] Remove tool icon
-  - [ ] Block 3D sprite creator → runtime + cache?
   - [ ] UI Container
   - [ ] keyboard key container icon
   - [ ] Input System + Dynamic key display viz (see Neoproxima)

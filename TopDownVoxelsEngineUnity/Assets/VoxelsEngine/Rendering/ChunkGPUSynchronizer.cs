@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using Shared;
-using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Vector3Int = UnityEngine.Vector3Int;
 
 namespace VoxelsEngine {

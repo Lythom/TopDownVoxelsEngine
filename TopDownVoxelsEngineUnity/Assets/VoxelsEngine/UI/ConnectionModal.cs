@@ -1,13 +1,10 @@
 ﻿using System;
 using LoneStoneStudio.Tools;
-using MessagePack;
 using Shared;
-using Shared.Net;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine.UI {
     public class ConnectionModal : MonoBehaviour {
@@ -18,6 +15,9 @@ namespace VoxelsEngine.UI {
 
         [Required]
         public Button PlayButton = null!;
+
+        [Required]
+        public Button PlayOfflineButton = null!;
 
         [Required]
         public TMP_InputField NameInputField = null!;
@@ -32,6 +32,16 @@ namespace VoxelsEngine.UI {
                     LocalState.Instance.CurrentPlayerName = NameInputField.text;
                     await Main.StartRemotePlay();
                     this.SmartActive(false);
+                } catch (Exception e) {
+                    Logr.LogException(e);
+                }
+            });
+
+            PlayOfflineButton.onClick.RemoveAllListeners();
+            // ReSharper disable once AsyncVoidLambda - Try catch OK
+            PlayOfflineButton.onClick.AddListener(async () => {
+                try {
+                    await Main.StartLocalPlay();
                 } catch (Exception e) {
                     Logr.LogException(e);
                 }

@@ -1,4 +1,12 @@
-# Voxel Engine - Le jeu derrière Dream Builder
+# Dream Builder
+
+## L'univers
+
+Dans Dream Builder les personnages joueurs ont un pouvoir particulier: ils peuvent matérialiser les rêves. 
+
+Les thèmes des rêves et cauchemars sont au cœur du jeu.
+
+Le principe de progression est le suivant: on construit son monde en explorant les rêves et en y puisant les ressources dont on a besoin.
 
 ## Construction : La Pose
 

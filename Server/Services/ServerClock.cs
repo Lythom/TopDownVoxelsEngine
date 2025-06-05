@@ -40,7 +40,7 @@ namespace Server {
             _cancellationTokenSource.Cancel(false);
         }
 
-        public async UniTaskVoid StartFixedUpdateAsync(ConcurrentQueue<InputMessage> inbox) {
+        public async UniTask StartFixedUpdateAsync(ConcurrentQueue<InputMessage> inbox) {
             SideEffectManager sideEffectManager = new SideEffectManager();
             sideEffectManager.For<PriorityLevel>().StartListening(UpdatePriorityLevel);
             try {

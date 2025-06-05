@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
 using MessagePack;
@@ -82,8 +83,8 @@ namespace Server {
             // _socketServer.Init(port);
 
             _serverClock = new ServerClock(this);
-            _serverClock.StartFixedUpdateAsync(_inbox).Forget();
-            StartNetworkSendingAsync().Forget();
+            UniTask.Create(() => _serverClock.StartFixedUpdateAsync(_inbox));
+            UniTask.Create(StartNetworkSendingAsync);
 
             _isReady = true;
             Logr.Log("Server ready!");
@@ -111,6 +112,8 @@ namespace Server {
 
         public static ushort id = 0;
 
+        private static readonly UniTask.YieldAwaitable yield = UniTask.Yield();
+
         private async UniTask StartNetworkSendingAsync() {
             while (!_cts.Token.IsCancellationRequested) {
                 bool hasMessage = false;
@@ -123,7 +126,7 @@ namespace Server {
                             await _socketServer.Send(m.RecipientId, m.Message);
                         }
                     } else {
-                        await UniTask.Yield();
+                        await yield;
                     }
                 } catch (Exception) {
                     if (hasMessage) Logr.LogError($"A message {m.Message.GetType().Name} was not sent to {m.RecipientId}");
@@ -179,13 +182,13 @@ namespace Server {
                         try {
                             await context.SaveChangesAsync();
                             await transaction.CommitAsync();
-                            Logr.Log("chunks updated");
+                            // Logr.Log("chunks updated");
                         } catch (Exception ex) {
                             await transaction.RollbackAsync();
                             Logr.LogError($"transaction failed. Exception: {ex.Message}");
                         }
                     } else {
-                        await UniTask.Yield();
+                        await yield;
                     }
                 } catch (Exception ex) {
                     Logr.LogError($"Could not persist {_dirtyChunks.Count} chunks. Exception: {ex.Message}");
@@ -317,7 +320,7 @@ namespace Server {
             }
 
             _state.LevelGenerator.GenerateFromQueue(PriorityLevel.All, _state.Levels);
-            StartPersistingAsync(currentDbSave).Forget();
+            UniTask.Create(() => StartPersistingAsync(currentDbSave));
         }
 
         [SuppressMessage("ReSharper", "PossibleLossOfFraction", Justification = "Manipulate only powers of 2.")]
