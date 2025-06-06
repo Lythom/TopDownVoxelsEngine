@@ -41,7 +41,7 @@ namespace VoxelsEngine {
         public Dictionary<string, BlockRendering> BlocksRenderingLibrary = new();
 
         [ShowInInspector]
-        public Dictionary<string, PlayerTool> PlayerTools = new();
+        public List<PlayerTool> PlayerTools = new();
 
         public IStreamAssets? StreamAssets;
         public Registry<MainTextureJson>? MainTextureRegistry;
@@ -89,10 +89,15 @@ namespace VoxelsEngine {
                 PlayerTools.Clear();
                 tasks.Clear();
                 foreach (var playerToolJson in toolsConfigs) {
-                    if (string.IsNullOrEmpty(playerToolJson.Value.ToolSpritePath)) Debug.LogException(new Exception($"Tool {playerToolJson.Value.Name} has no sprite path. This must be fixed"));
-                    tasks.Add(StreamAssets.LoadTexture2DAsync(playerToolJson.Value.ToolSpritePath).ContinueWith(texture => {
-                        PlayerTools.Add(playerToolJson.Value.Name, new PlayerTool(playerToolJson.Value.Name, texture));
-                    }));
+                    var ptj = playerToolJson.Value;
+                    if (string.IsNullOrEmpty(ptj.ToolSpritePath)) Debug.LogException(new Exception($"Tool {ptj.Name} has no sprite path. This must be fixed"));
+                    var path = SpriteRegistry!.Get(ptj.ToolSpritePath);
+                    if (string.IsNullOrEmpty(path)) Debug.LogException(new Exception($"Tool {ptj.Name} sprite is not loaded in registry at {path}. This must be fixed"));
+                    else {
+                        tasks.Add(StreamAssets.LoadTexture2DAsync(path).ContinueWith(texture => {
+                            PlayerTools.Add(new PlayerTool(ptj.Name, ptj.SortOrder, ptj.Placement, ptj.Purpose, texture));
+                        }));
+                    }
                 }
 
                 var blockConfigs = BlockRegistry!.Get();
@@ -104,6 +109,7 @@ namespace VoxelsEngine {
                 }
 
                 await UniTask.WhenAll(tasks);
+                PlayerTools.Sort((a, b) => a.SortOrder.CompareTo(b.SortOrder));
 
                 // Generate Main Albedos
                 List<Texture2D> mainAlbedoSources = new();
@@ -331,4 +337,5 @@ namespace VoxelsEngine {
 
         public UniTask IsReady() => UniTask.WaitUntil(this, e => e._isReady);
     }
+
 }

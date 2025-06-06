@@ -14,7 +14,7 @@ namespace VoxelsEngine.UI {
             Observable.AutoRun(() => {
                 var tool = Selectors.SelectedTool.Value;
                 var block = Selectors.SelectedBlock.Value;
-                this.SmartActive(tool == ToolId.PlaceBlock || tool == ToolId.ExchangeBlock);
+                this.SmartActive(tool?.Purpose is PlayerToolPurpose.PlaceBlock);
                 var blockPath = block.HasValue ? state.BlockPathById[block.Value.Id] : null;
                 if (blockPath != null && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var b)) {
                     Preview.texture = b.ItemPreview!;

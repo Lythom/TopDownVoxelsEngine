@@ -12,11 +12,11 @@ namespace Shared.Net {
         public ushort CharacterId;
 
         [Key(2)]
-        public ToolId Tool;
+        public byte Tool;
 
         public override int GetId() => Id;
 
-        public ChangeToolGameEvent(int id, ushort characterId, ToolId tool) {
+        public ChangeToolGameEvent(int id, ushort characterId, byte tool) {
             Id = id;
             CharacterId = characterId;
             Tool = tool;

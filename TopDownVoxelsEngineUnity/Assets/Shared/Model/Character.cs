@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using LoneStoneStudio.Tools;
 using MessagePack;
 using Shared.Signals;
-using TinkState;
 
 namespace Shared {
     [MessagePackObject(true)]
@@ -23,7 +22,7 @@ namespace Shared {
         public byte Angle = 0;
 
         public readonly Signal<string?> Level = new(null);
-        public readonly Signal<ToolId> SelectedTool = new(ToolId.None);
+        public readonly Signal<byte> SelectedTool = new(0);
         public readonly Signal<BlockId> SelectedBlock = new(1);
         public readonly Signal<TemplateId> SelectedTemplate = new(TemplateId.None);
         public readonly Signal<byte> ToolRemoveBlockLevel = new(0);
@@ -54,7 +53,7 @@ namespace Shared {
             Vector3 velocity,
             byte angle,
             Signal<string?>? level,
-            Signal<ToolId>? selectedTool,
+            Signal<byte>? selectedTool,
             Signal<BlockId>? selectedBlock,
             Signal<TemplateId>? selectedTemplate,
             Signal<byte>? toolRemoveBlockLevel,
@@ -69,7 +68,7 @@ namespace Shared {
             Velocity = velocity;
             Angle = angle;
             Level.Value = level?.Value;
-            SelectedTool.Value = selectedTool?.Value ?? ToolId.None;
+            SelectedTool.Value = selectedTool?.Value ?? 0;
             SelectedBlock.Value = selectedBlock?.Value ?? BlockId.Air;
             SelectedTemplate.Value = selectedTemplate?.Value ?? TemplateId.None;
             ToolRemoveBlockLevel.Value = toolRemoveBlockLevel?.Value ?? 0;

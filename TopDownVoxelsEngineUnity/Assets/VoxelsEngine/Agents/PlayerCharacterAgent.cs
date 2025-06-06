@@ -160,10 +160,13 @@ namespace VoxelsEngine {
             if (_currentLevel == null) return;
             if (!ClientEngine.State.Levels.TryGetValue(_currentLevel, out var level)) return;
 
-            var selectedTool = _character.SelectedTool.Value;
+            var selectedToolIdx = _character.SelectedTool.Value;
+            var playerTools = Configurator.Instance.PlayerTools;
+            var selectedTool = playerTools[0];
+            if (selectedToolIdx < playerTools.Count) selectedTool = playerTools[selectedToolIdx];
             var selectedBlock = _character.SelectedBlock.Value;
 
-            UpdateTools(selectedTool, selectedBlock);
+            UpdateTools(selectedToolIdx, selectedBlock);
             var groundPosition = new Shared.Vector3(_position.x + CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
             var groundCell = level.TryGetExistingCell(groundPosition);
             var groundPosition2 = new Shared.Vector3(_position.x - CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
@@ -175,7 +178,7 @@ namespace VoxelsEngine {
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
             var isPlanar = Keyboard.current.altKey.isPressed;
-            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar, selectedTool);
+            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar);
 
             PreviewPlane.SmartActive(isPlanar);
             if (collidingBlockPos != null && facingCursorPos != null) {
@@ -220,7 +223,7 @@ namespace VoxelsEngine {
             FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
-        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar, ToolId selectedTool) {
+        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar) {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
             if (_isPlacing && _draggingPlane.HasValue && _draggingStartPosition.HasValue) {
@@ -241,12 +244,11 @@ namespace VoxelsEngine {
             return (collidingBlockPos, facingCursorPos);
         }
 
-        private void UpdateAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, ToolId selectedTool, BlockId selectedBlock) {
+        private void UpdateAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, PlayerTool selectedTool, BlockId selectedBlock) {
             if (facingCursorPos != null && collidingBlockPos != null) {
-                var target = selectedTool switch {
-                    ToolId.PlaceBlock => facingCursorPos.Value,
-                    ToolId.PlaceFurniture => facingCursorPos.Value,
-                    _ => collidingBlockPos.Value
+                var target = selectedTool.Placement switch {
+                    PlacementMode.FacingBlock => facingCursorPos.Value,
+                    PlacementMode.CollidingBlock => collidingBlockPos.Value
                 };
                 BCubeDrawer.Cube(
                     target,
@@ -255,28 +257,23 @@ namespace VoxelsEngine {
                 );
 
                 if (_controls.Gameplay.Place.IsPressed()) {
-                    var blockToSet = selectedTool switch {
-                        ToolId.PlaceBlock => selectedBlock,
-                        ToolId.ExchangeBlock => selectedBlock,
-                        _ => BlockId.Air
+                    var blockToSet = selectedTool.Purpose switch {
+                        PlayerToolPurpose.None => BlockId.Air,
+                        PlayerToolPurpose.PlaceBlock => selectedBlock,
+                        PlayerToolPurpose.RemoveBlock => BlockId.Air,
                     };
-                    switch (selectedTool) {
-                        case ToolId.PlaceBlock:
-                        case ToolId.ExchangeBlock:
-                        case ToolId.RemoveBlock:
-                            _isPlacing = true;
-                            var succeeded = level.CanSet(target, blockToSet);
-                            if (succeeded) {
-                                var (x, y, z) = target;
-                                SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
-                                if (blockToSet == BlockId.Air) {
-                                    DoFXRemove(target);
-                                } else {
-                                    DoFXPlace(target);
-                                }
+                    if (selectedTool.Purpose is PlayerToolPurpose.PlaceBlock or PlayerToolPurpose.RemoveBlock) {
+                        _isPlacing = true;
+                        var succeeded = level.CanSet(target, blockToSet);
+                        if (succeeded) {
+                            var (x, y, z) = target;
+                            SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
+                            if (blockToSet == BlockId.Air) {
+                                DoFXRemove(target);
+                            } else {
+                                DoFXPlace(target);
                             }
-
-                            break;
+                        }
                     }
                 }
 
@@ -286,14 +283,14 @@ namespace VoxelsEngine {
             }
         }
 
-        private void UpdateTools(ToolId selectedTool, BlockId selectedBlock) {
+        private void UpdateTools(byte selectedTool, BlockId selectedBlock) {
             Vector2 scrollDelta = _controls.Gameplay.SelectTool.ReadValue<Vector2>();
             if (scrollDelta.y > 0) {
-                ToolId nextToolId = (ToolId) M.Mod((int) selectedTool + 1, Enum.GetNames(typeof(ToolId)).Length);
-                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, nextToolId));
+                byte nextToolIdx = (byte) M.Mod(selectedTool + 1, Configurator.Instance.PlayerTools.Count);
+                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, nextToolIdx));
             } else if (scrollDelta.y < 0) {
-                ToolId prevToolId = (ToolId) M.Mod((int) selectedTool - 1, Enum.GetNames(typeof(ToolId)).Length);
-                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolId));
+                byte prevToolIdx = (byte) M.Mod(selectedTool - 1, Configurator.Instance.PlayerTools.Count);
+                SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolIdx));
             }
 
             if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
