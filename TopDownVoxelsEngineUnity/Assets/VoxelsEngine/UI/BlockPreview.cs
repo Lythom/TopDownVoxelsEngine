@@ -10,7 +10,7 @@ namespace VoxelsEngine.UI {
         [Required]
         public RawImage Preview = null!;
 
-        protected override void OnSetup(GameState state) {
+        protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
             Observable.AutoRun(() => {
                 var tool = Selectors.SelectedTool.Value;
                 var block = Selectors.SelectedBlock.Value;

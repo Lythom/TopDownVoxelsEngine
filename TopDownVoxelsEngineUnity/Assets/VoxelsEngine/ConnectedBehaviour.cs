@@ -48,7 +48,7 @@ namespace VoxelsEngine {
         protected abstract void OnSet(GameState state, T element);
 
         // Disable OnSetup, only OnSet will be used so that it provides additional data
-        protected override void OnSetup(GameState state) {
+        protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
         }
     }
 
@@ -61,7 +61,7 @@ namespace VoxelsEngine {
         private void ForceRefresh() {
             _resetSource?.Cancel(false);
             _resetSource = new CancellationTokenSource();
-            OnSetup(ClientEngine.State);
+            OnSetup(ClientEngine.State, ClientEngine.Selectors);
         }
 
         protected CancellationToken ResetToken {
@@ -89,7 +89,7 @@ namespace VoxelsEngine {
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         protected SideEffectManager SideEffectManager => ClientEngine.SideEffectManager;
-        
+
         protected Selectors Selectors => ClientEngine.Selectors;
 
         private bool _isSetup;
@@ -107,7 +107,7 @@ namespace VoxelsEngine {
                 _isSetup = true;
                 _resetSource?.Cancel(false);
                 _resetSource = new CancellationTokenSource();
-                OnSetup(ClientEngine!.State);
+                OnSetup(ClientEngine!.State, ClientEngine.Selectors);
             }
         }
 
@@ -134,7 +134,8 @@ namespace VoxelsEngine {
         /// During gameplay, state shape is immutable and only reactive value can change.
         /// </summary>
         /// <param name="state"></param>
-        protected abstract void OnSetup(GameState state);
+        /// <param name="clientEngineSelectors"></param>
+        protected abstract void OnSetup(GameState state, Selectors selectors);
 
         protected void Subscribe<TSource, TSource2>(IUniTaskAsyncEnumerable<TSource> source, IUniTaskAsyncEnumerable<TSource2> source2, Action<TSource, TSource2> action) {
             Subscribe(

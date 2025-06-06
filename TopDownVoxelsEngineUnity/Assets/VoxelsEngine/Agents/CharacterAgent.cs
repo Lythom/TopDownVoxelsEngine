@@ -37,7 +37,7 @@ namespace VoxelsEngine {
             FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
-        protected override void OnSetup(GameState state) {
+        protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
             _character = Observable.Auto(() => state.Characters.TryGetValue(CharacterId.Value, out var value) ? value : null);
             Observable.AutoRun(() => {
                 this.SmartActive(_character.Value?.Level.Value != null && Selectors.CurrentLevel.Value == _character.Value?.Level.Value);

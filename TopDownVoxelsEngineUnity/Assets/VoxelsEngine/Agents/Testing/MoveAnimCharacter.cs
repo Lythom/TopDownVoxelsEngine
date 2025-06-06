@@ -93,7 +93,7 @@ namespace VoxelsEngine {
             _vel = Vector3.zero;
         }
 
-        protected override void OnSetup(GameState state) {
+        protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
             Selectors.CurrentCharacter.Bind(c => {
                 _character = c;
                 if (c == null) return;

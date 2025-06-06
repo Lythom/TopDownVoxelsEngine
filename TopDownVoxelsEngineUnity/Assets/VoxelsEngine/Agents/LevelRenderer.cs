@@ -44,7 +44,7 @@ namespace VoxelsEngine {
             RenderChunksFromQueue(_cancellationTokenOnDestroy).Forget();
         }
 
-        protected override void OnSetup(GameState state) {
+        protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
             Selectors.CurrentLevel.Bind(levelId => {
                 if (levelId == null) return;
 
