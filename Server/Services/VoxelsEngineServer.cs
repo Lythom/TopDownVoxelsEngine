@@ -21,6 +21,10 @@ namespace Server {
     public class VoxelsEngineServer {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
+        // Configuration
+        PeriodicTimer networkingTime = new(TimeSpan.FromMilliseconds(1));
+        PeriodicTimer backupTimer = new(TimeSpan.FromSeconds(5));
+
         // Data
         private readonly GameState _state = new(null, null, null);
         private readonly GameState _stateBackup = new(null, null, null);
@@ -83,11 +87,11 @@ namespace Server {
             // _socketServer.Init(port);
 
             _serverClock = new ServerClock(this);
-            UniTask.Create(() => _serverClock.StartFixedUpdateAsync(_inbox));
-            UniTask.Create(StartNetworkSendingAsync);
-
             _isReady = true;
             Logr.Log("Server ready!");
+            var fixedUpdateTask = _serverClock.StartFixedUpdateAsync(_inbox);
+            var networkSendingTask = StartNetworkSendingAsync();
+            await UniTask.WhenAny(fixedUpdateTask, networkSendingTask);
         }
 
         private void SubscribeRemoveSessionOnCharacterLeave(GameState gameState) {
@@ -112,10 +116,8 @@ namespace Server {
 
         public static ushort id = 0;
 
-        private static readonly UniTask.YieldAwaitable yield = UniTask.Yield();
-
         private async UniTask StartNetworkSendingAsync() {
-            while (!_cts.Token.IsCancellationRequested) {
+            while (await networkingTime.WaitForNextTickAsync(_cts.Token).ConfigureAwait(false)) {
                 bool hasMessage = false;
                 hasMessage = _outbox.TryDequeue(out var m);
                 try {
@@ -125,8 +127,6 @@ namespace Server {
                         } else {
                             await _socketServer.Send(m.RecipientId, m.Message);
                         }
-                    } else {
-                        await yield;
                     }
                 } catch (Exception) {
                     if (hasMessage) Logr.LogError($"A message {m.Message.GetType().Name} was not sent to {m.RecipientId}");
@@ -152,7 +152,7 @@ namespace Server {
 
             UpdateLevelsRefs();
 
-            while (!_cts.Token.IsCancellationRequested) {
+            while (await backupTimer.WaitForNextTickAsync(_cts.Token).ConfigureAwait(false)) {
                 bool hasDirtyChunks = _dirtyChunks.Count > 0;
                 try {
                     if (hasDirtyChunks) {
@@ -187,8 +187,6 @@ namespace Server {
                             await transaction.RollbackAsync();
                             Logr.LogError($"transaction failed. Exception: {ex.Message}");
                         }
-                    } else {
-                        await yield;
                     }
                 } catch (Exception ex) {
                     Logr.LogError($"Could not persist {_dirtyChunks.Count} chunks. Exception: {ex.Message}");

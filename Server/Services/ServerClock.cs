@@ -60,15 +60,14 @@ namespace Server {
 
         public async UniTask TickAsync(CancellationToken cancellationToken, SideEffectManager sideEffectManager, ConcurrentQueue<InputMessage> inbox) {
             if (!_voxelsEngineServer.IsReady) {
-                await Task.Delay(2000, cancellationToken);
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // read and apply message as part of the tick
             bool hasInput;
-            InputMessage m;
             do {
-                hasInput = inbox.TryDequeue(out m);
+                hasInput = inbox.TryDequeue(out var m);
                 if (hasInput) await _voxelsEngineServer.HandleMessageAsync(m);
             } while (hasInput);
 
@@ -82,7 +81,7 @@ namespace Server {
             _voxelsEngineServer.SendScheduledChunks();
 
             // Simulate work being done for a frame for test purpose
-            if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken);
+            if (SimulatedFrameTime > 0) await Task.Delay(SimulatedFrameTime, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (cancellationToken.IsCancellationRequested) return;
 
@@ -96,7 +95,7 @@ namespace Server {
                     // We have time to catch up !
                     if (remaining > _catchUpTime) {
                         // Cover the catchUp immediately and wait the remaining of that
-                        await Task.Delay(remaining - _catchUpTime, cancellationToken);
+                        await Task.Delay(remaining - _catchUpTime, cancellationToken).ConfigureAwait(false);
                         _catchUpTime = 0;
                         // we can cover all processing needs
                         _minimumPriority = PriorityLevel.All;
@@ -114,7 +113,7 @@ namespace Server {
                     }
                 } else {
                     // we are in time, wait for the next tick
-                    await Task.Delay(remaining, cancellationToken);
+                    await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
                 }
             } else {
                 // We're behind schedule (this tick took too long), so skip waiting to catch up
