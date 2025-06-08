@@ -73,7 +73,7 @@ namespace Shared {
 
             foreach (var block in BlockPathById) {
                 if (block != null && block != "Air" && registry.Get(block) == null) {
-                    Logr.Log($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Les instances sont remplacés par des blocks d'air. Si un block nommé {block} est réintroduit plus tard, ils pourront être récupérés.", Tags.PlayerFeedbackRequired);
+                    Logr.Log($"Le block {block} utilisé dans cette save n'est pas présent dans le BlockRegistry. Les instances sont rendus avec l'apparence du premier block trouvé dans le registre. Si un block nommé {block} est réintroduit plus tard, ils pourront être récupérés.", Tags.PlayerFeedbackRequired);
                 }
 
                 if (block == null) break;

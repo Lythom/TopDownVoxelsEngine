@@ -7,7 +7,8 @@ TODO:
       - Si on sélectionne l'outil qui est dans l'aure emplacement quickswap on procède simplement au swap
     - raccourcis clavier bloc E (quick swap entre 2, 3 ou 4)
       - Maintenir 2 pour ouvrir le menu de tous les blocs et choisir celui à utiliser. Il prend l'emplacement quickswap.
-      - 
+    - 
+
 - [ ] Implement UI:
   - [ ] Place tool icon
   - [ ] Replace tool icon
@@ -18,6 +19,9 @@ TODO:
   - [ ] Quick swap tool action
   - [ ] Quick swap item action
   - [ ] UI display and animation
+  - UNDO
+  - meilleur preview sur le mode panneau et ligne
+  - mode de construction = free flight
 
 - [ ] Loading fix:
   - [ ] sort GPU upload

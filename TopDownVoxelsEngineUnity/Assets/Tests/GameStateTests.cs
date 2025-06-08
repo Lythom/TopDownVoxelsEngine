@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
 using Shared;
+using MessagePack;
+using Shared.Signals;
+using VoxelsEngine;
 
 namespace Tests {
     public class GameStateTests {
@@ -8,15 +11,15 @@ namespace Tests {
         public void UpdateBlockMapping_WhenRegistryMatchesBlockPathById_ShouldMapCorrectly() {
             // Arrange
             var blockPathById = new string?[ushort.MaxValue];
-            blockPathById[0] ="Air";
-            blockPathById[1] ="Concrete.json";
-            blockPathById[2] ="Grass.json";
-            blockPathById[3] ="Ground.json";
-            blockPathById[4] ="Sand.json";
-            blockPathById[5] ="Stone.json";
-            blockPathById[6] ="Stone2.json";
-            blockPathById[7] ="Air";
-            blockPathById[8] ="Wood.json";
+            blockPathById[0] = "Air";
+            blockPathById[1] = "Concrete.json";
+            blockPathById[2] = "Grass.json";
+            blockPathById[3] = "Ground.json";
+            blockPathById[4] = "Sand.json";
+            blockPathById[5] = "Stone.json";
+            blockPathById[6] = "Stone2.json";
+            blockPathById[7] = "Air";
+            blockPathById[8] = "Wood.json";
 
             var registry = new MockBlockRegistry();
             var d = registry.Get();
@@ -36,27 +39,27 @@ namespace Tests {
 
             // Assert
             Assert.AreEqual("Air", gameState.BlockPathById[0]);
-            Assert.AreEqual("Stone", gameState.BlockPathById[1]);
-            Assert.AreEqual("Dirt", gameState.BlockPathById[2]);
+            Assert.AreEqual("Concrete.json", gameState.BlockPathById[1]);
+            Assert.AreEqual("Grass.json", gameState.BlockPathById[2]);
 
             Assert.AreEqual(0, gameState.BlockIdByPath["Air"]);
-            Assert.AreEqual(1, gameState.BlockIdByPath["Stone"]);
-            Assert.AreEqual(2, gameState.BlockIdByPath["Dirt"]);
+            Assert.AreEqual(1, gameState.BlockIdByPath["Concrete.json"]);
+            Assert.AreEqual(2, gameState.BlockIdByPath["Grass.json"]);
         }
 
         [Test]
-        public void UpdateBlockMapping_WhenRegistryIsMissingBlock_ShouldReplaceWithAir() {
+        public void UpdateBlockMapping_WhenRegistryIsMissingBlock_ShouldReplaceWithFirstBlock() {
             // Arrange
             var blockPathById = new string?[ushort.MaxValue];
-            blockPathById[0] ="Air";
-            blockPathById[1] ="Concrete.json";
-            blockPathById[2] ="Grass.json";
-            blockPathById[3] ="Ground.json";
-            blockPathById[4] ="Sand.json";
-            blockPathById[5] ="Stone.json";
-            blockPathById[6] ="Stone2.json";
-            blockPathById[7] ="Air";
-            blockPathById[8] ="Wood.json";
+            blockPathById[0] = "Air";
+            blockPathById[1] = "Concrete.json";
+            blockPathById[2] = "Grass.json";
+            blockPathById[3] = "Ground.json";
+            blockPathById[4] = "Sand.json";
+            blockPathById[5] = "Stone.json";
+            blockPathById[6] = "Stone2.json";
+            blockPathById[7] = "Air";
+            blockPathById[8] = "Wood.json";
 
             var registry = new MockBlockRegistry();
             var d = registry.Get();
@@ -76,12 +79,12 @@ namespace Tests {
 
             // Assert
             Assert.AreEqual("Air", gameState.BlockPathById[0]);
-            Assert.AreEqual("Air", gameState.BlockPathById[1]); // Stone should be replaced with Air
-            Assert.AreEqual("Dirt", gameState.BlockPathById[2]);
+            Assert.AreEqual("Concrete.json", gameState.BlockPathById[1]); // Stone should be replaced with Air
+            Assert.AreEqual("Grass.json", gameState.BlockPathById[2]);
 
             Assert.AreEqual(0, gameState.BlockIdByPath["Air"]);
             Assert.IsFalse(gameState.BlockIdByPath.ContainsKey("Stone"));
-            Assert.AreEqual(2, gameState.BlockIdByPath["Dirt"]);
+            Assert.AreEqual(2, gameState.BlockIdByPath["Grass.json"]);
         }
 
         [Test]
@@ -111,6 +114,109 @@ namespace Tests {
             Assert.AreEqual(1, gameState.BlockIdByPath["Stone"]);
             Assert.AreEqual(2, gameState.BlockIdByPath["Dirt"]);
         }
+
+        [Test]
+        public void SerializeDeserialize_GameState_ShouldPreserveAllProperties() {
+            // Arrange - Create a game state with test data
+            var blockPathById = new string?[ushort.MaxValue];
+            blockPathById[0] = "Air";
+            blockPathById[1] = "Stone";
+            blockPathById[2] = "Dirt";
+
+            var blockIdByPath = new Dictionary<string, ushort> {
+                ["Air"] = 0,
+                ["Stone"] = 1,
+                ["Dirt"] = 2
+            };
+
+            // Create a level map
+            var levelMap = new LevelMap("TestWorld", new Vector3(100, 10, 100));
+
+            // Add a chunk to the level
+            var chunk = new Chunk {IsGenerated = true};
+            chunk.Cells = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+
+            // Set some test blocks in the chunk
+            for (int x = 0; x < Chunk.Size; x++) {
+                for (int y = 0; y < Chunk.Height; y++) {
+                    for (int z = 0; z < Chunk.Size; z++) {
+                        chunk.Cells[x, y, z] = new Cell {Block = (ushort) ((y < 5) ? 1 : 0)}; // Stone below y=5, Air above
+                    }
+                }
+            }
+
+            levelMap.Chunks[10, 10] = chunk;
+
+            // Create a character
+            var character = new Character(
+                "TestPlayer",
+                new Vector3(100, 15, 100),
+                Vector3.zero,
+                1,
+                new("TestWorld"),
+                null, null, null, null, null, null, null, null, null
+            );
+
+            // Create the game state
+            var originalState = new GameState(new(), new(), blockPathById);
+            originalState.Levels.Add("TestWorld", levelMap);
+            originalState.Characters.Add(1, character);
+
+            // Act - Serialize and deserialize
+            var serializedData = MessagePackSerializer.Serialize(originalState, Configurator.MessagePackOptions);
+            var deserializedState = MessagePackSerializer.Deserialize<GameState>(serializedData, Configurator.MessagePackOptions);
+
+            // Assert - Verify all properties were correctly preserved
+
+            // Check block mappings
+            Assert.AreEqual(originalState.BlockPathById[0], deserializedState.BlockPathById[0]);
+            Assert.AreEqual(originalState.BlockPathById[1], deserializedState.BlockPathById[1]);
+            Assert.AreEqual(originalState.BlockPathById[2], deserializedState.BlockPathById[2]);
+
+            Assert.AreEqual(originalState.BlockIdByPath["Air"], deserializedState.BlockIdByPath["Air"]);
+            Assert.AreEqual(originalState.BlockIdByPath["Stone"], deserializedState.BlockIdByPath["Stone"]);
+            Assert.AreEqual(originalState.BlockIdByPath["Dirt"], deserializedState.BlockIdByPath["Dirt"]);
+
+            // Check levels
+            Assert.IsTrue(deserializedState.Levels.ContainsKey("TestWorld"));
+            var deserializedLevel = deserializedState.Levels["TestWorld"];
+            Assert.AreEqual(levelMap.LevelId, deserializedLevel.LevelId);
+            Assert.AreEqual(levelMap.SpawnPosition, deserializedLevel.SpawnPosition);
+
+            // Check chunk data
+            var deserializedChunk = deserializedLevel.Chunks[10, 10];
+            Assert.IsTrue(originalState.Levels["TestWorld"].Chunks[10, 10].IsGenerated);
+            Assert.IsTrue(deserializedChunk.IsGenerated);
+            Assert.IsNotNull(deserializedChunk.Cells);
+
+            // Sample check a few blocks
+            Assert.AreEqual(1, deserializedChunk.Cells[5, 3, 5].Block); // Should be Stone (1)
+            Assert.AreEqual(0, deserializedChunk.Cells[5, 10, 5].Block); // Should be Air (0)
+
+            // Check character data
+            Assert.IsTrue(deserializedState.Characters.ContainsKey(1));
+            var deserializedCharacter = deserializedState.Characters[1];
+            Assert.AreEqual("TestPlayer", deserializedCharacter.Name);
+            Assert.AreEqual(new Vector3(100, 15, 100), deserializedCharacter.Position);
+            Assert.AreEqual("TestWorld", deserializedCharacter.Level.Value);
+        }
+
+        [Test]
+        public void SerializeDeserialize_EmptyGameState_ShouldWork() {
+            // Arrange - Create an empty game state
+            var emptyState = new GameState(null, null, null);
+
+            // Act - Serialize and deserialize
+            var serializedData = MessagePackSerializer.Serialize(emptyState, Configurator.MessagePackOptions);
+            var deserializedState = MessagePackSerializer.Deserialize<GameState>(serializedData, Configurator.MessagePackOptions);
+
+            // Assert - Just verify it doesn't throw and returns a valid object
+            Assert.IsNotNull(deserializedState);
+            Assert.IsNotNull(deserializedState.BlockIdByPath);
+            Assert.IsNotNull(deserializedState.BlockPathById);
+            Assert.IsNotNull(deserializedState.Levels);
+            Assert.IsNotNull(deserializedState.Characters);
+        }
     }
 
     // Mock implementation of the registry
@@ -135,5 +241,4 @@ namespace Tests {
             return null;
         }
     }
-
 }

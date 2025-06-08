@@ -1,1 +1,1 @@
-{"Name":"PlaceBlock","ToolSpritePath":"ToolPlace.png","SortOrder":0}
+{"Name":"PlaceBlock","SortOrder":0,"Placement":0,"Purpose":1,"ToolSpritePath":"ToolPlace.png"}

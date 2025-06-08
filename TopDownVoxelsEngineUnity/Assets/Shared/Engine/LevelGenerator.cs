@@ -10,7 +10,7 @@ namespace Shared {
         private ushort _woodBlockId;
         private ushort _grassBlockId;
         private ushort _groundBlockId;
-        private Dictionary<string, ushort> _blockIdByPath;
+        private readonly Dictionary<string, ushort> _blockIdByPath;
 
         public LevelGenerator(Dictionary<string, ushort> blockIdByPath) {
             _blockIdByPath = blockIdByPath;
@@ -34,8 +34,6 @@ namespace Shared {
                 }
 
                 LevelBuilder.GenerateTestChunk(key.ChX, key.ChZ, key.LevelId, ref levels[key.LevelId].Chunks[key.ChX, key.ChZ], _woodBlockId, _grassBlockId, _groundBlockId);
-                ChunkKeyPool.Return(key);
-                // Logr.Log($"Generated {key.ChX}, {key.ChZ}", "LevelGenerator");
             }
         }
 
@@ -43,14 +41,12 @@ namespace Shared {
             var levelMap = levels[levelId];
             for (int x = -range; x <= range; x++) {
                 for (int z = -range; z <= range; z++) {
-                    var key = ChunkKeyPool.Get(levelId, chX + x, chZ + z);
+                    var key = new ChunkKey(levelId, chX + x, chZ + z);
                     if (!ToBeGeneratedQueue.Contains(key)) {
                         if (key.ChX + x < 0 || key.ChX + x >= LevelMap.LevelChunkSize || key.ChZ + z < 0 || key.ChZ + z >= LevelMap.LevelChunkSize
                             || levelMap.Chunks[key.ChX, key.ChZ].IsGenerated) continue;
                         // prioritize by distance to interest point
                         ToBeGeneratedQueue.Enqueue(key, Math.Abs(x) + Math.Abs(z));
-                    } else {
-                        ChunkKeyPool.Return(key);
                     }
                 }
             }

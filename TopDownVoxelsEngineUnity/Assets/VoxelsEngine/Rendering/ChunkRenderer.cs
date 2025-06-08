@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Text;
 using LoneStoneStudio.Tools;
 using Shared;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace VoxelsEngine {
     /// The rendered cells are centered, which means cell at (0,0,0) boundaries are visually at (-0.5,-0.5,-0.5)->(0.5,0.5,0.5).
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
-    public class ChunkRenderer : MonoBehaviour {
+    public class ChunkRenderer : MonoBehaviour, IChunkRenderer {
         public const string MissingBlockPath = "Ground.json";
 
         private Mesh _mesh = null!;
@@ -25,9 +26,9 @@ namespace VoxelsEngine {
         private Transform _propsContainer = null!;
 
         // used for rendering by ChunkGPUSynchronizer
-        public int GpuSlotID = -1;
+        public int GpuSlotID { get; set; } = -1;
 
-        public uint[] BlockData = new uint[Chunk.Size * Chunk.Height * Chunk.Size];
+        public uint[] BlockData { get; set; } = new uint[Chunk.Size * Chunk.Height * Chunk.Size];
         private bool _arraysRented;
 
         private void Awake() {
@@ -72,22 +73,30 @@ namespace VoxelsEngine {
             _verticesCount = 0;
             _uvsCount = 0;
 
+            StringBuilder sb = new();
+            sb.AppendLine("Updating mesh for chunk " + chunkKey);
+            var updatedCount = 0;
+            var blockDataPackedCount = 0;
+            var skippedAirOrNull = 0;
+            var skippedException = 0;
+            var skippedNoSides = 0;
             foreach (var (x, y, z) in chunk.GetCellPositions()) {
                 var cell = chunk.Cells[x, y, z];
                 var blockPath = blockPathById[cell.Block];
-                if (cell.Block != BlockId.Air
-                    && blockPath != null) {
+                if (cell.Block != BlockId.Air && blockPath != null) {
                     var isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var blockDef);
                     if (!isBlockDefLoaded) isBlockDefLoaded = Configurator.Instance.BlocksRenderingLibrary.TryGetValue(MissingBlockPath, out blockDef);
                     if (!isBlockDefLoaded) throw new Exception($"Block definition {blockPath} or {MissingBlockPath} not found");
                     if (blockDef.Sides.Count == 0) {
                         // no texture, the important flag is the last one that indicated it's an air block
                         BlockData[GetLocalBlockId(x, y, z)] = 0;
+                        skippedNoSides++;
                         continue;
                     }
 
                     try {
                         MakeCube(x, y, z, chunkKey, blockDef, cell.Block, level);
+                        updatedCount++;
                         BlockRenderingSide? up = null;
                         BlockRenderingSide? side = null;
                         foreach (var s in blockDef.Sides) {
@@ -118,16 +127,20 @@ namespace VoxelsEngine {
                             (hasFrame << 1) |
                             1u; // hasTexture
                         BlockData[GetLocalBlockId(x, y, z)] = packedData;
+                        blockDataPackedCount++;
                     } catch (Exception e) {
                         Logr.LogException(e);
                         BlockData[GetLocalBlockId(x, y, z)] = 0;
+                        skippedException++;
                     }
                 } else {
                     BlockData[GetLocalBlockId(x, y, z)] = 0;
+                    skippedAirOrNull++;
                 }
             }
 
             UpdateMesh();
+            // Debug.Log($"[ChunkRenderer] Chuck mesh updated: {updatedCount} blocks, {blockDataPackedCount} packed, {skippedAirOrNull} air or null blocks, {skippedException} errors, {skippedNoSides} blocks without sides, {_trianglesCount} triangles, {_verticesCount} vertices, {_uvsCount} uvs");
             ChunkGPUSynchronizer.Instance.UploadChunkData(this);
             ReleaseArrays();
             return true;
@@ -212,6 +225,13 @@ namespace VoxelsEngine {
         public int GetFlatIndex() {
             return Chunk.GetFlatIndex((int) transform.position.x / Chunk.Size, (int) transform.position.z / Chunk.Size);
         }
+    }
+
+    public interface IChunkRenderer {
+        Transform transform { get; }
+        int GpuSlotID { get; set; }
+        uint[] BlockData { get; set; }
+        int GetFlatIndex();
     }
 
 }

@@ -2,10 +2,15 @@
     "name": "Tests1",
     "rootNamespace": "",
     "references": [
+        "MessagePack",
+        "MessagePack.Annotations",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "TopDownVoxelsEngine",
-        "Shared"
+        "Shared",
+        "MessagePack.Unity",
+        "Nadako.TinkState",
+        "Nadako.TinkState.Unity"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,7 +19,10 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "MessagePack.dll",
+        "MessagePack.Annotations.dll",
+        "ZLinq.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

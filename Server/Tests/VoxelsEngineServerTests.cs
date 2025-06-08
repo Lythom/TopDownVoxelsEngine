@@ -238,7 +238,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key = ChunkKeyPool.Get(levelId, i, j);
+                    var key =new  ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }
@@ -283,7 +283,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key = ChunkKeyPool.Get(levelId, i, j);
+                    var key =new  ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }
@@ -328,7 +328,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key = ChunkKeyPool.Get(levelId, i, j);
+                    var key =new  ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }

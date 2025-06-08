@@ -121,12 +121,14 @@ namespace Server {
                 bool hasMessage = false;
                 hasMessage = _outbox.TryDequeue(out var m);
                 try {
-                    if (hasMessage) {
+                    while (hasMessage) {
                         if (m.IsBroadcast) {
                             await _socketServer.Broadcast(m.Message);
                         } else {
                             await _socketServer.Send(m.RecipientId, m.Message);
                         }
+
+                        hasMessage = _outbox.TryDequeue(out m);
                     }
                 } catch (Exception) {
                     if (hasMessage) Logr.LogError($"A message {m.Message.GetType().Name} was not sent to {m.RecipientId}");
@@ -230,9 +232,8 @@ namespace Server {
                         if (levelId == null) return false;
                         if (!_userSessionData.TryGetValue(e.CharacterShortId, out var userSessionData)) return false;
                         var (chX, chZ) = LevelTools.GetChunkPosition(e.X, e.Z);
-                        var chunkKey = ChunkKeyPool.Get(levelId, chX, chZ);
+                        var chunkKey = new ChunkKey(levelId, chX, chZ);
                         var shouldSend = userSessionData.UploadedChunks.Contains(chunkKey);
-                        ChunkKeyPool.Return(chunkKey);
                         return shouldSend;
                     }, placeBlocksGameEvent);
                     break;

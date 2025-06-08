@@ -7,11 +7,12 @@ namespace Shared {
     [MessagePackObject(true)]
     public class LevelMap : IDisposable, IUpdatable<LevelMap>, ILevelMap {
         public const int LevelChunkSize = 128;
+
+        public readonly string LevelId = "";
+        public Vector3 SpawnPosition;
+        public readonly SignalList<NPC> Npcs = new();
         private readonly Chunk[,] _chunks = new Chunk[LevelChunkSize, LevelChunkSize];
         public Chunk[,] Chunks => _chunks;
-        public SignalList<NPC> Npcs = new();
-        public string LevelId = "";
-        public Vector3 SpawnPosition;
 
         private readonly CancellationTokenSource _cts = new();
 
@@ -21,6 +22,14 @@ namespace Shared {
         public LevelMap(string levelId, Vector3 spawnPosition) {
             LevelId = levelId;
             SpawnPosition = spawnPosition;
+        }
+
+        [SerializationConstructor]
+        public LevelMap(string levelId, Vector3 spawnPosition, SignalList<NPC> npcs, Chunk[,] chunks) {
+            LevelId = levelId;
+            SpawnPosition = spawnPosition;
+            _chunks = chunks;
+            Npcs = npcs;
         }
 
         public void Dispose() {
