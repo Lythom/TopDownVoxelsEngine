@@ -1,0 +1,137 @@
+{
+    "name": "Inputs",
+    "maps": [
+        {
+            "name": "Building",
+            "id": "14d9a955-ec7a-4ce2-9b5e-774e9cbc797a",
+            "actions": [
+                {
+                    "name": "UseTool",
+                    "type": "Button",
+                    "id": "abc6ba77-d674-4927-8c1a-eb4bc8bacff5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ChangeTool",
+                    "type": "Button",
+                    "id": "ed6827d4-16b6-4567-a36c-f7d3a1f3b83a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ChangeItem",
+                    "type": "Button",
+                    "id": "c4bda080-4422-49f6-b86b-07217cbd1dcc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Jump",
+                    "type": "Button",
+                    "id": "cd2a6d1d-b3ad-4e46-b922-2b0d7c283054",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Move",
+                    "type": "Value",
+                    "id": "acee1746-3521-4f22-a217-a1a89e57a0df",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "f48284a0-c954-45c5-8800-d8d45a308209",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";KeyboardScheme",
+                    "action": "UseTool",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d54a97bc-e686-415f-b44a-aae69459c4c0",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";KeyboardScheme",
+                    "action": "ChangeTool",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b30633dc-e1ca-4ca8-b458-b81fcde07617",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";KeyboardScheme",
+                    "action": "ChangeItem",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "291880bd-7087-4f4e-bc2b-9d64a72cb69d",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";KeyboardScheme",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "06ea25fc-af39-4829-b725-5563cbbb9ca6",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "KeyboardScheme",
+            "bindingGroup": "KeyboardScheme",
+            "devices": [
+                {
+                    "devicePath": "<Keyboard>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        },
+        {
+            "name": "GamepadScheme",
+            "bindingGroup": "GamepadScheme",
+            "devices": [
+                {
+                    "devicePath": "<Gamepad>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
+}
