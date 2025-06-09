@@ -40,7 +40,7 @@ namespace VoxelsEngine {
         protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
             _character = Observable.Auto(() => state.Characters.TryGetValue(CharacterId.Value, out var value) ? value : null);
             Observable.AutoRun(() => {
-                this.SmartActive(_character.Value?.Level.Value != null && Selectors.CurrentLevel.Value == _character.Value?.Level.Value);
+                this.SmartActive(_character.Value?.Level.Value != null && Selectors.CurrentLevelId.Value == _character.Value?.Level.Value);
             });
         }
 

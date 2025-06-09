@@ -108,8 +108,8 @@ namespace VoxelsEngine {
 
         void Update() {
             if (_character == null) return;
-            if (Selectors.CurrentLevel.Value == null || !ClientEngine.State.Levels.ContainsKey(Selectors.CurrentLevel.Value)) return;
-            if (!ClientEngine.State.Levels.TryGetValue(Selectors.CurrentLevel.Value, out var level)) return;
+            if (Selectors.CurrentLevelId.Value == null || !ClientEngine.State.Levels.ContainsKey(Selectors.CurrentLevelId.Value)) return;
+            if (!ClientEngine.State.Levels.TryGetValue(Selectors.CurrentLevelId.Value, out var level)) return;
 
             var selectedToolIdx = _character.SelectedTool.Value;
             var playerTools = Configurator.Instance.PlayerTools;

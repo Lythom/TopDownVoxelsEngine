@@ -45,7 +45,7 @@ namespace VoxelsEngine {
         }
 
         protected override void OnSetup(GameState state, Selectors clientEngineSelectors) {
-            Selectors.CurrentLevel.Bind(levelId => {
+            Selectors.CurrentLevelId.Bind(levelId => {
                 if (levelId == null) return;
 
                 // Clean up existing renderers
@@ -87,7 +87,7 @@ namespace VoxelsEngine {
                 warmupList.Add(_chunkRendererPool.Get());
             }
 
-            // Return all warmed up renderers to the pool
+            // Return all warmed-up renderers to the pool
             foreach (var r in warmupList) {
                 _chunkRendererPool.Release(r);
             }

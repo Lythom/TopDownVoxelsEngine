@@ -155,7 +155,7 @@ namespace VoxelsEngine {
         void Update() {
             if (!_initialized) return;
             if (_character == null) return;
-            var _currentLevel = ClientEngine.Selectors.CurrentLevel.Value;
+            var _currentLevel = ClientEngine.Selectors.CurrentLevelId.Value;
             if (_currentLevel == null) return;
             if (!ClientEngine.State.Levels.TryGetValue(_currentLevel, out var level)) return;
 
@@ -292,6 +292,7 @@ namespace VoxelsEngine {
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolIdx));
             }
 
+            // Find next or previous block ignoring air
             if (_inputs.Building.ChangeItem.WasPressedThisFrame() && !_inputs.Building.AltFunction.IsPressed()) {
                 BlockId nextBlockId = selectedBlock + 1;
                 // beyond limit: loop

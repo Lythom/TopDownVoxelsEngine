@@ -10,10 +10,12 @@ using UnityEngine.UI;
 using Vector3 = UnityEngine.Vector3;
 
 namespace VoxelsEngine.UI {
-    public class ToolPreview : ConnectedBehaviour {
-        public TextMeshProUGUI? Text;
 
+    public class ToolPreview : ConnectedBehaviour {
         public int QueueElementOffset = 0;
+
+        [Title("Bindings")]
+        public TextMeshProUGUI? Text;
 
         [Required]
         public RawImage Sprite = null!;
@@ -34,15 +36,18 @@ namespace VoxelsEngine.UI {
             Observable.AutoRun(() => {
                 var toolsQueue = selectors.ToolQueue;
                 if (toolsQueue.Count == 0) return;
-                while (QueueElementOffset < 0) QueueElementOffset += toolsQueue.Count;
-                QueueElementOffset %= toolsQueue.Count;
-                var tool = toolsQueue[QueueElementOffset];
+
+                var offset = QueueElementOffset;
+                while (offset < 0) offset += toolsQueue.Count;
+                offset %= toolsQueue.Count;
+                var tool = toolsQueue[offset];
+                
                 if (Text is not null) Text.SmartActive(tool != null);
                 Sprite.SmartActive(tool != null);
                 if (tool == null) return;
 
                 // if selecting next tool, animate from there
-                var nextToolId = (QueueElementOffset + 1) % toolsQueue.Count;
+                var nextToolId = (offset + 1) % toolsQueue.Count;
                 var nextTool = toolsQueue[nextToolId];
                 // last displayed tool became next tool, it means we moved selection forward → animate from Previous
                 if (_lastToolName == nextTool.Name) {
@@ -61,7 +66,7 @@ namespace VoxelsEngine.UI {
                     }
                 } else {
 
-                    var prevToolId = QueueElementOffset - 1 < 0 ? toolsQueue.Count - 1 : QueueElementOffset - 1;
+                    var prevToolId = offset - 1 < 0 ? toolsQueue.Count - 1 : offset - 1;
                     var prevTool = toolsQueue[prevToolId];
                     // last displayed tool became previous tool, it means we moved selection backward → animate from Next
                     if (_lastToolName == prevTool.Name) {
