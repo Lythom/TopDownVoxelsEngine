@@ -1,5 +1,4 @@
-﻿using System;
-using LoneStoneStudio.Tools;
+﻿using LoneStoneStudio.Tools;
 using Popcron;
 using Shared;
 using Shared.Net;
@@ -72,7 +71,7 @@ namespace VoxelsEngine {
 
         public float Speed = 5.0f;
 
-        private Controls _controls = null!;
+        private Inputs _inputs = null!;
         private Camera _cam = null!;
         private float _jumpChargeStart;
 
@@ -101,12 +100,12 @@ namespace VoxelsEngine {
         private bool _initialized;
 
         void Awake() {
-            _controls = new Controls();
+            _inputs = new Inputs();
         }
 
         protected override void OnEnable() {
             base.OnEnable();
-            _controls.Enable();
+            _inputs.Enable();
             _vel = Vector3.zero;
         }
 
@@ -150,7 +149,7 @@ namespace VoxelsEngine {
         }
 
         public void OnDisable() {
-            _controls.Disable();
+            _inputs.Disable();
         }
 
         void Update() {
@@ -256,7 +255,7 @@ namespace VoxelsEngine {
                     Vector3.one
                 );
 
-                if (_controls.Gameplay.Place.IsPressed()) {
+                if (_inputs.Building.UseTool.IsPressed()) {
                     var blockToSet = selectedTool.Purpose switch {
                         PlayerToolPurpose.None => BlockId.Air,
                         PlayerToolPurpose.PlaceBlock => selectedBlock,
@@ -277,28 +276,28 @@ namespace VoxelsEngine {
                     }
                 }
 
-                if (_controls.Gameplay.Place.WasReleasedThisFrame()) {
+                if (_inputs.Building.UseTool.WasReleasedThisFrame()) {
                     _isPlacing = false;
                 }
             }
         }
 
         private void UpdateTools(byte selectedTool, BlockId selectedBlock) {
-            Vector2 scrollDelta = _controls.Gameplay.SelectTool.ReadValue<Vector2>();
-            if (scrollDelta.y > 0) {
+            bool doChangeTool = _inputs.Building.ChangeTool.WasPerformedThisFrame();
+            if (doChangeTool && _inputs.Building.AltFunction.IsPressed()) {
                 byte nextToolIdx = (byte) M.Mod(selectedTool + 1, Configurator.Instance.PlayerTools.Count);
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, nextToolIdx));
-            } else if (scrollDelta.y < 0) {
+            } else if (doChangeTool && !_inputs.Building.AltFunction.IsPressed()) {
                 byte prevToolIdx = (byte) M.Mod(selectedTool - 1, Configurator.Instance.PlayerTools.Count);
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolIdx));
             }
 
-            if (_controls.Gameplay.SelectNextItem.WasPressedThisFrame()) {
+            if (_inputs.Building.ChangeItem.WasPressedThisFrame() && !_inputs.Building.AltFunction.IsPressed()) {
                 BlockId nextBlockId = selectedBlock + 1;
                 // beyond limit: loop
                 if (nextBlockId >= ushort.MaxValue || ClientEngine.State.BlockPathById[nextBlockId] == null) nextBlockId = 1;
                 SendBlindMessageOptimistic(new ChangeBlockGameEvent(0, CharacterId, nextBlockId));
-            } else if (_controls.Gameplay.SelectPrevItem.WasPressedThisFrame()) {
+            } else if (_inputs.Building.ChangeItem.WasPressedThisFrame() && _inputs.Building.AltFunction.IsPressed()) {
                 BlockId prevBlockId = selectedBlock - 1;
                 if (prevBlockId == BlockId.Air) {
                     while (ClientEngine.State.BlockPathById[prevBlockId] != null) prevBlockId++;
@@ -318,7 +317,7 @@ namespace VoxelsEngine {
         /// <param name="groundY"></param>
         /// <returns>Velocity and Horizontal direction in which the character moves.</returns>
         private (Vector3, Vector3) UpdateMove(LevelMap level, Vector3 vel, bool isInAir, float groundY) {
-            Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();
+            Vector2 moveInput = _inputs.Building.Move.ReadValue<Vector2>();
             Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
             Vector3 moveDirection = (CameraTransform.rotation * move).WithY(0).normalized;
 
@@ -341,10 +340,10 @@ namespace VoxelsEngine {
                 _position.y = groundY;
             }
 
-            if (_controls.Gameplay.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !isInAir) {
+            if (_inputs.Building.Jump.WasPressedThisFrame() && _jumpCooldown.TryPerform() && !isInAir) {
                 _jumpChargeStart = Time.time;
                 vel.y = JumpForce;
-            } else if (_controls.Gameplay.Jump.IsPressed()) {
+            } else if (_inputs.Building.Jump.IsPressed()) {
                 var jumpCharge = (Time.time - _jumpChargeStart) * 2;
                 vel.y += JumpChargeIntensity * Time.deltaTime * (1 - Mathf.Clamp01(jumpCharge));
             }

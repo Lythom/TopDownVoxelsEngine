@@ -12,7 +12,7 @@ public class TilesetGeneratorEditor : OdinEditorWindow {
     private List<string> _dirty = new();
     private double _nextAutoSave;
 
-    [MenuItem("DreamBuilder/TilesetGenerator")]
+    [MenuItem("💭 DreamBuilder/TilesetGenerator")]
     private static void OpenWindow() {
         GetWindow<TilesetGeneratorEditor>().Show();
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Shared;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -9,17 +10,18 @@ using VoxelsEngine;
 using VoxelsEngine.UI;
 
 // ConnectedMonoBehaviour triggers "OnSetup" and provides the game state
-[RequireComponent(typeof(Image))]
-public class KeyInputDisplay : ConnectedBehaviour {
+public class KeyInputWithText : ConnectedBehaviour {
     [Title("Bindings")]
 
     // The Input action we want to visualize
     [Required]
     public InputActionReference InputActionRef = null!;
 
-    // Target Image component
     [Required]
     public Image Image = null!;
+
+    [Required]
+    public TextMeshProUGUI Text = null!;
 
     // The currently displayed scheme (Keyboard or Gamepad)
     public ControlSchemeId SchemeId = ControlSchemeId.Keyboard;
@@ -45,6 +47,8 @@ public class KeyInputDisplay : ConnectedBehaviour {
 
     [Button]
     private void UpdateVisual() {
+        Text.text = InputActionRef.action.name;
+
         // Gamepad sprites are prefixed with XboxSeriesX_
         var prefix = SchemeId == ControlSchemeId.Gamepad ? "XboxSeriesX_" : "";
         // Keyboard sprites are suffixed with _Key_Dark
@@ -120,4 +124,11 @@ public class KeyInputDisplay : ConnectedBehaviour {
         return (rawKeyName, rawKeyName);
     }
 
+#if UNITY_EDITOR
+    [Button]
+    public void RenameGameObject() {
+        var newName = InputActionRef.action.name.Replace(" ", "_");
+        gameObject.name = newName;
+    }
+#endif
 }

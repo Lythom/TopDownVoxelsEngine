@@ -4,7 +4,7 @@ using VoxelsEngine;
 
 public class BlockConfigEditor : JsonConfigEditor<BlockConfigJson> {
 
-    [MenuItem("DreamBuilder/PlayerTool JSON Editor")]
+    [MenuItem("💭 DreamBuilder/BlockConfig JSON Editor")]
     private static void OpenWindow() {
         GetWindow<BlockConfigEditor>().Show();
     }
