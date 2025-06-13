@@ -153,10 +153,10 @@ namespace VoxelsEngine {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
             if (_isPlacing && _draggingPlane.HasValue) {
-                (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
+                (collidingBlockPos, facingCursorPos, _) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
             } else {
                 Plane? plane;
-                (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
+                (collidingBlockPos, facingCursorPos, plane, _) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
                 if (plane.HasValue) _draggingPlane = plane.Value;
             }
 

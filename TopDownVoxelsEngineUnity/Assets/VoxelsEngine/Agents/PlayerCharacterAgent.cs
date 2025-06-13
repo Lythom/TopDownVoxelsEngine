@@ -2,9 +2,9 @@
 using Popcron;
 using Shared;
 using Shared.Net;
+using Shared.Signals;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using VoxelsEngine.Tools;
 using VoxelsEngine.VoxelsEngine.Tools;
 using Gizmos = Popcron.Gizmos;
@@ -78,6 +78,7 @@ namespace VoxelsEngine {
         public float JumpForce = 0.2f;
         public float JumpChargeIntensity = 1f;
         public float Gravity = 0.4f;
+        public Color BlockPreviewColor = new(0.8f, 0.8f, 0.8f, 0.8f);
 
         private readonly Cooldown _jumpCooldown = new(0.05f);
         private Vector3 _position;
@@ -98,6 +99,7 @@ namespace VoxelsEngine {
         private Plane? _draggingPlane;
         private Vector3Int? _draggingStartPosition;
         private bool _initialized;
+        private readonly Signal<PlacementGuide> _placementGuide = new(PlacementGuide.Linear);
 
         void Awake() {
             _inputs = new Inputs();
@@ -176,14 +178,14 @@ namespace VoxelsEngine {
             var groundCell4 = level.TryGetExistingCell(groundPosition4);
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
-            var isPlanar = Keyboard.current.altKey.isPressed;
-            var (collidingBlockPos, facingCursorPos) = GetMouseTargets(level, mouseRay, isPlanar);
+            var (collidingBlockPos, facingCursorPos, colPosition) = GetMouseTargets(level, mouseRay, _placementGuide.Value);
 
+            var isPlanar = _placementGuide.Value is PlacementGuide.Planar;
             PreviewPlane.SmartActive(isPlanar);
             if (collidingBlockPos != null && facingCursorPos != null) {
                 if (isPlanar) {
-                    PreviewPlane.transform.position = Vector3.Lerp(collidingBlockPos.Value, facingCursorPos.Value, 0.51f);
                     var fw = (facingCursorPos.Value - collidingBlockPos.Value);
+                    PreviewPlane.transform.position = colPosition.HasValue ? colPosition.Value + (Vector3) fw * 0.001f : Vector3.Lerp(collidingBlockPos.Value, facingCursorPos.Value, 0.51f);
                     PreviewPlane.transform.rotation = Quaternion.LookRotation(fw, Vector3.up);
                 } else {
                     Vector3 axis = (facingCursorPos.Value - collidingBlockPos.Value);
@@ -222,25 +224,27 @@ namespace VoxelsEngine {
             FaceController.CurrentFace = movement.magnitude > 0.001f ? FaceController.Faces.Angry : FaceController.Faces.SmileBlink;
         }
 
-        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos) GetMouseTargets(LevelMap level, Ray mouseRay, bool isPlanar) {
+        private (Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, Vector3? position) GetMouseTargets(LevelMap level, Ray mouseRay, PlacementGuide placementGuide) {
             Vector3Int? collidingBlockPos;
             Vector3Int? facingCursorPos;
+            Vector3? position = null;
+
             if (_isPlacing && _draggingPlane.HasValue && _draggingStartPosition.HasValue) {
-                if (isPlanar) {
-                    (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
+                if (placementGuide is PlacementGuide.Planar) {
+                    (collidingBlockPos, facingCursorPos, position) = mouseRay.GetBlocksOnPlane(_draggingPlane.Value);
                 } else {
                     (collidingBlockPos, facingCursorPos) = mouseRay.GetBlocksOnLine(_draggingPlane.Value, _draggingStartPosition.Value);
                 }
             } else {
                 Plane? plane;
-                (collidingBlockPos, facingCursorPos, plane) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
+                (collidingBlockPos, facingCursorPos, plane, position) = mouseRay.GetCollidedBlockPosition(level, _position, PlacementRadius);
                 if (facingCursorPos.HasValue && collidingBlockPos.HasValue) {
                     _draggingPlane = plane;
                     _draggingStartPosition = facingCursorPos;
                 }
             }
 
-            return (collidingBlockPos, facingCursorPos);
+            return (collidingBlockPos, facingCursorPos, position);
         }
 
         private void UpdateAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, PlayerTool selectedTool, BlockId selectedBlock) {
@@ -252,7 +256,8 @@ namespace VoxelsEngine {
                 BCubeDrawer.Cube(
                     target,
                     Quaternion.identity,
-                    Vector3.one
+                    Vector3.one,
+                    BlockPreviewColor
                 );
 
                 if (_inputs.Building.UseTool.IsPressed()) {
@@ -278,6 +283,10 @@ namespace VoxelsEngine {
 
                 if (_inputs.Building.UseTool.WasReleasedThisFrame()) {
                     _isPlacing = false;
+                }
+
+                if (_inputs.Building.TogglePlacementMode.WasPressedThisFrame()) {
+                    _placementGuide.Value = _placementGuide.Value == PlacementGuide.Planar ? PlacementGuide.Linear : PlacementGuide.Planar;
                 }
             }
         }

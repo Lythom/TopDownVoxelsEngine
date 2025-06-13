@@ -7,18 +7,19 @@ using Vector3Int = UnityEngine.Vector3Int;
 
 namespace VoxelsEngine.VoxelsEngine.Tools {
     public static class DreamBuilderClientTools {
-        public static (Vector3Int?, Vector3Int?) GetBlocksOnPlane(this Ray mouseRay, Plane plane) {
+        public static (Vector3Int?, Vector3Int?, UnityEngine.Vector3? collisionPos) GetBlocksOnPlane(this Ray mouseRay, Plane plane) {
             Vector3Int? facingCursorPos = null;
             Vector3Int? collidingBlockPos = null;
+            Vector3 collisionPos = Vector3.zero;
             Vector3 axis = plane.normal;
             int dir = Vector3.Dot(mouseRay.direction, axis) > 0 ? 1 : -1;
             if (plane.Raycast(mouseRay, out var enter)) {
-                Vector3 collisionPos = mouseRay.GetPoint(enter);
-                collidingBlockPos = LevelTools.WorldToCell((collisionPos + axis * (0.5f * dir)));
-                facingCursorPos = LevelTools.WorldToCell((collisionPos - axis * (0.5f * dir)));
+                collisionPos = mouseRay.GetPoint(enter);
+                collidingBlockPos = LevelTools.WorldToCell(collisionPos + axis * (0.5f * dir));
+                facingCursorPos = LevelTools.WorldToCell(collisionPos - axis * (0.5f * dir));
             }
 
-            return (collidingBlockPos, facingCursorPos);
+            return (collidingBlockPos, facingCursorPos, collisionPos);
         }
 
         public static Vector3 ClosestPointToRay(Vector3Int point, Ray ray) {
@@ -54,20 +55,20 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
         }
 
 
-        public static (Shared.Vector3Int? collidingBlock, Shared.Vector3Int? facingBloc0k, Plane? plane) GetCollidedBlockPosition(
+        public static (Shared.Vector3Int? collidingBlock, Shared.Vector3Int? facingBloc0k, Plane? plane, Vector3? position) GetCollidedBlockPosition(
             this Ray mouseRay,
             LevelMap level,
             Vector3 position,
             int radius = 4
         ) {
-            var (up, upC, upF, upPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.up, Mathf.RoundToInt(position.y), radius);
-            var (right, rightC, rightF, rightPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.right, Mathf.RoundToInt(position.x), radius);
-            var (forward, forwardC, forwardF, forwardPlane) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.forward, Mathf.RoundToInt(position.z), radius);
+            var (up, upC, upF, upPlane, upPos) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.up, Mathf.RoundToInt(position.y), radius);
+            var (right, rightC, rightF, rightPlane, rightPos) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.right, Mathf.RoundToInt(position.x), radius);
+            var (forward, forwardC, forwardF, forwardPlane, forwardPos) = GetCollidedBlockPositionOnPlane(level, mouseRay, Vector3.forward, Mathf.RoundToInt(position.z), radius);
             var min = Mathf.Min(up, right, forward);
-            if (up > 0 && up == min) return (upC, upF, upPlane);
-            if (right > 0 && right == min) return (rightC, rightF, rightPlane);
-            if (forward > 0 && forward == min) return (forwardC, forwardF, forwardPlane);
-            return (null, null, null);
+            if (up > 0 && up == min) return (upC, upF, upPlane, upPos);
+            if (right > 0 && right == min) return (rightC, rightF, rightPlane, rightPos);
+            if (forward > 0 && forward == min) return (forwardC, forwardF, forwardPlane, forwardPos);
+            return (null, null, null, null);
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
         /// <param name="playerPosition">The position of the player in the level.</param>
         /// <param name="radius">The radius within which to check for collisions. Default is 4.</param>
         /// <returns>The distance at which the ray enters the block, the position of the block that the ray collides with, and the position of the block that faces the colliding face.</returns>
-        public static (float rayEnter, Shared.Vector3Int? collidingBlock, Shared.Vector3Int? facingBloc, Plane? p) GetCollidedBlockPositionOnPlane(
+        public static (float rayEnter, Shared.Vector3Int? collidingBlock, Shared.Vector3Int? facingBloc, Plane? p, Vector3? position) GetCollidedBlockPositionOnPlane(
             LevelMap level,
             Ray mouseRay,
             Vector3 axis,
@@ -105,12 +106,12 @@ namespace VoxelsEngine.VoxelsEngine.Tools {
                     var insidePosition = LevelTools.WorldToCell(position + axis * (0.5f * dir));
                     var inside = level.TryGetExistingCell(insidePosition);
                     if (!inside.IsAir()) {
-                        return (enter, insidePosition, LevelTools.WorldToCell(position - axis * (0.5f * dir)), plane);
+                        return (enter, insidePosition, LevelTools.WorldToCell(position - axis * (0.5f * dir)), plane, position);
                     }
                 }
             }
 
-            return (float.MaxValue, null, null, null);
+            return (float.MaxValue, null, null, null, null);
         }
     }
 }
