@@ -65,6 +65,12 @@ namespace VoxelsEngine {
             }
         }
 
+        private void Awake() {
+            Configurator.Instance.IsReady().ContinueWith(() => {
+                _engine = gameObject.AddComponent<ClientEngine>();
+            }).Forget();
+        }
+
         private void Start() {
             _otherPlayersAgents.Container = gameObject;
             _otherPlayersAgents.Prefab = CharacterPrefab;
@@ -130,8 +136,8 @@ namespace VoxelsEngine {
         public async UniTask StartRemotePlay() {
             DisplayLoading(LoadingStage.Initializing, 0.1f);
 
-            _engine = gameObject.AddComponent<ClientEngine>();
-            _engine.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
+            await UniTask.WaitUntil(this, clientMain => clientMain._engine != null);
+            _engine!.SideEffectManager.For<CharacterJoinGameEvent>().StartListening(HandlePlayerJoin);
             _engine.SideEffectManager.For<CharacterLeaveGameEvent>().StartListening(HandlePlayerLeave);
 
             DisplayLoading(LoadingStage.ClientConnectingToServer, 0.3f);
@@ -158,6 +164,9 @@ namespace VoxelsEngine {
             await Configurator.Instance.IsReady();
             _engine.State.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
 
+            DisplayLoading(LoadingStage.EnteringGame, 0.9f);
+            await UniTask.Delay(1000);
+
             DisplayLoading(LoadingStage.Complete, 1.0f);
         }
 
@@ -166,7 +175,6 @@ namespace VoxelsEngine {
             DisplayLoading(LoadingStage.Initializing, 0.05f);
 
             GameState? state = null;
-            Configurator.Instance.IsReady().Forget();
 
             DisplayLoading(LoadingStage.LocalCheckingSaveFile, 0.1f);
 
@@ -230,12 +238,12 @@ namespace VoxelsEngine {
                     throw new Exception("No world");
                 }
 
-                _engine = gameObject.AddComponent<ClientEngine>();
+                await UniTask.WaitUntil(this, clientMain => clientMain._engine != null);
 
                 // bootup local engine
                 DisplayLoading(LoadingStage.LocalGeneratingChunks, 0.4f);
 
-                _engine.State.UpdateValue(state);
+                _engine!.State.UpdateValue(state);
                 state = null;
                 _engine.State.LevelGenerator.EnqueueUninitializedChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
                 _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
@@ -253,7 +261,6 @@ namespace VoxelsEngine {
                 ConnectionModal.Instance.SmartActive(false);
             } catch (Exception e) {
                 Logr.LogException(e, $"Couldn't read from {LocalSavePath}");
-                return;
             }
         }
 

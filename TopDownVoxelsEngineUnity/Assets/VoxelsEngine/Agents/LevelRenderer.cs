@@ -181,7 +181,7 @@ namespace VoxelsEngine {
 #if UNITY_EDITOR
         private void OnDrawGizmos() {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (ClientEngine is null || Selectors.CurrentCharacter.Value == null) return;
+            if (!Application.isPlaying || ClientEngine == null || Selectors.CurrentCharacter.Value == null) return;
             var playerPos = Selectors.CurrentCharacter.Value.Position;
             var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
             var center = new Vector3(chX * Chunk.Size + Chunk.Size / 2f - 0.5f, 0, chZ * Chunk.Size + Chunk.Size / 2f - 0.5f);

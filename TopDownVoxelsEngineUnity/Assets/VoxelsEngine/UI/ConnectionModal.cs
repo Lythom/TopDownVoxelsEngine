@@ -29,11 +29,12 @@ namespace VoxelsEngine.UI {
             PlayButton.onClick.AddListener(async () => {
                 try {
                     if (String.IsNullOrEmpty(NameInputField.text)) return;
+                    this.SmartActive(false);
                     LocalState.Instance.CurrentPlayerName = NameInputField.text;
                     await Main.StartRemotePlay();
-                    this.SmartActive(false);
                 } catch (Exception e) {
                     Logr.LogException(e);
+                    this.SmartActive(true);
                 }
             });
 
@@ -41,9 +42,11 @@ namespace VoxelsEngine.UI {
             // ReSharper disable once AsyncVoidLambda - Try catch OK
             PlayOfflineButton.onClick.AddListener(async () => {
                 try {
+                    this.SmartActive(false);
                     await Main.StartLocalPlay();
                 } catch (Exception e) {
                     Logr.LogException(e);
+                    this.SmartActive(true);
                 }
             });
 

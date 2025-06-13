@@ -256,10 +256,21 @@
                 {
                     "name": "",
                     "id": "14f3e28f-5b09-4b27-8b98-0cc9c09e25c1",
-                    "path": "<Keyboard>/capsLock",
+                    "path": "<Keyboard>/alt",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard",
+                    "action": "TogglePlacementMode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "04f32509-1369-4ca9-892a-84ce49dcacd6",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "TogglePlacementMode",
                     "isComposite": false,
                     "isPartOfComposite": false

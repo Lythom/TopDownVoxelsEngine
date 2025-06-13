@@ -153,6 +153,7 @@ MonoBehaviour:
   VisualSnappingStrength: 2
   WallCollisionProximity: 0.9
   CharacterThickness: 0.38
+  CollisionScale: 0.87
   CameraHeightOffset: 2.5
   RotationSensivityX: 3
   RotationSensivityZ: 0.35
@@ -3757,6 +3758,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 8489939079019780024}
     m_Modifications:
     - target: {fileID: 330848553798271717, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 330848553798271717, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 330848553798271717, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 330848553798271717, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.5
       objectReference: {fileID: 0}
@@ -3796,13 +3809,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 330848553798271717, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7864379159937259484, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
       propertyPath: m_Name
       value: PreviewPlane
       objectReference: {fileID: 0}
     - target: {fileID: 7864379159937259484, guid: 9249a84d241991a4e98775b4561f50ea, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

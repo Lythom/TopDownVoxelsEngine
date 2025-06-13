@@ -93,7 +93,7 @@ namespace VoxelsEngine.UI {
                 var blockPath = state.BlockPathById[block.Id];
                 if (blockPath != null && Configurator.Instance.BlocksRenderingLibrary.TryGetValue(blockPath, out var b)) {
                     Sprite.texture = b.ItemPreview!;
-                    if (Text is not null) Text.text = $"<+spread>{blockPath}";
+                    if (Text is not null) Text.text = $"<+spread>{blockPath.Replace(".json", "")}";
                 } else {
                     Sprite.texture = null;
                 }
