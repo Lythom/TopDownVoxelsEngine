@@ -1,0 +1,6 @@
+<sbspresets count="1" formatversion="1.1">
+  <sbspreset pkgurl="pkg://cliff_rocks_01" label="Default" >
+  <presetinput identifier="$outputsize" uid="144627600" type="8" value="9,9" />
+  <presetinput identifier="height_depth" uid="1793870809" type="0" value="1" />
+ </sbspreset>
+</sbspresets>

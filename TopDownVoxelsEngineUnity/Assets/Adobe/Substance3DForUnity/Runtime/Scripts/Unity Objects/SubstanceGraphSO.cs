@@ -108,12 +108,6 @@ namespace Adobe.Substance
         public byte[] Thumbnail = default;
 
         /// <summary>
-        /// True if sbsar file has thumbnail.
-        /// </summary>
-        [SerializeField]
-        public bool HasThumbnail = false;
-
-        /// <summary>
         /// Preset that holds the current state of the inputs. (Editor only)
         /// </summary>
         [SerializeField]
@@ -171,6 +165,11 @@ namespace Adobe.Substance
         public List<SubstanceEditorPreset> Presets;
 
         /// <summary>
+        /// True if sbsar file has thumbnail.
+        /// </summary>
+        public bool HasThumbnail { get { return (Thumbnail != null) && (Thumbnail.Length != 0); } }
+
+        /// <summary>
         /// Initialized the substance graph. Uses the native handle to set all the input parameters, configure output textures, create Unity Texture2D objects for each output and properly assign them to the target material.
         /// This must be called if the substance graph was flagged as Runtime only and will require its assets be generated at runtime.
         /// </summary>
@@ -222,7 +221,6 @@ namespace Adobe.Substance
 
                     if (data.ValueType != ValueType.SBSARIO_VALUE_IMAGE)
                     {
-                        Debug.LogError($"Skiping render index #{index} of {output.Description.Channel} because it was not an image");
                         continue;
                     }
 

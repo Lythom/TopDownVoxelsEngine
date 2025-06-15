@@ -163,8 +163,9 @@ namespace VoxelsEngine {
 
             var selectedToolIdx = _character.SelectedTool.Value;
             var playerTools = Configurator.Instance.PlayerTools;
-            var selectedTool = playerTools[0];
+            PlayerTool? selectedTool = null;
             if (selectedToolIdx < playerTools.Count) selectedTool = playerTools[selectedToolIdx];
+            else if (playerTools.Count > 0) selectedTool = playerTools[0];
             var selectedBlock = _character.SelectedBlock.Value;
 
             UpdateTools(selectedToolIdx, selectedBlock);

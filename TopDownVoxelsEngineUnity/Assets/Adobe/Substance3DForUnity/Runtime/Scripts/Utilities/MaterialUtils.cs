@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Adobe.Substance
 {
@@ -272,6 +273,9 @@ namespace Adobe.Substance
 
         public static Shader GetStandardShader()
         {
+            if (GraphicsSettings.renderPipelineAsset?.defaultMaterial != null)
+                return GraphicsSettings.renderPipelineAsset.defaultMaterial.shader;
+
             if (PluginPipelines.IsHDRP())
                 return Shader.Find(HDRPShaderName);
             else if (PluginPipelines.IsURP())

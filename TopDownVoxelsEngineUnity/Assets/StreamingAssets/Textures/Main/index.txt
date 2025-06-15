@@ -3,6 +3,7 @@ Grass.json
 Ground.json
 Handcraftedplanks.json
 Cliff\Cliff.json
+cliff_rocks_01\cliff_rocks_01.json
 Sand\sand.json
 Sand2\sand2.json
 Stone\Stone.json

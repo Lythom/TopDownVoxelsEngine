@@ -1,3 +1,4 @@
+cliff_rocks_01.json
 Concrete.json
 Grass.json
 Ground.json

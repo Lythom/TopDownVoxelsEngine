@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Adobe.Substance
 {
@@ -78,18 +79,14 @@ namespace Adobe.Substance
             public static bool IsHDRP()
             {
 #if UNITY_2019_3_OR_NEWER
-                bool bActive = false;
+                var asset = GraphicsSettings.renderPipelineAsset?.GetType()?.ToString();
 
-                UnityEngine.Rendering.RenderPipelineAsset asset;
-                asset = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;
-
-                if ((asset != null) &&
-                    (asset.GetType().ToString().EndsWith(".HDRenderPipelineAsset")))
+                if ((asset != null) && (asset.Contains("HDRenderPipelineAsset")))
                 {
-                    bActive = true;
+                    return true;
                 }
 
-                return bActive;
+                return false;
 #else
                 return false;
 #endif
@@ -98,18 +95,14 @@ namespace Adobe.Substance
             public static bool IsURP()
             {
 #if UNITY_2019_3_OR_NEWER
-                bool bActive = false;
+                var asset = GraphicsSettings.renderPipelineAsset?.GetType()?.ToString();
 
-                UnityEngine.Rendering.RenderPipelineAsset asset;
-                asset = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;
-
-                if ((asset != null) &&
-                    (asset.GetType().ToString().EndsWith("UniversalRenderPipelineAsset")))
+                if ((asset != null) && (asset.Contains("UniversalRenderPipelineAsset") || asset.Contains("LightweightRenderPipelineAsset")))
                 {
-                    bActive = true;
+                    return true;
                 }
 
-                return bActive;
+                return false;
 #else
                 return false;
 #endif

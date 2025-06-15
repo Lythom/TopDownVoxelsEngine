@@ -33,7 +33,7 @@ public struct BlockRendering {
             List<UniTask<Texture2D>> tasks = new();
             var mainJson = mainTextures.Get(side.MainTextureConfig);
             var frameJson = side.FrameTextureConfig == null ? null : frameTextures.Get(side.FrameTextureConfig);
-            if (mainJson == null) throw new OperationCanceledException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block.");
+            if (mainJson == null) throw new ApplicationException($"La mainTextureConfig {side.MainTextureConfig} n'a pas été trouvé pour le side {side.Directions} du block. Path should looks like `texturename\\texturename.json`");
             tasks.Clear();
             tasks.Add(streamAssets.LoadTexture2DAsync(mainJson.MainAlbedoTexture));
             tasks.Add(streamAssets.LoadTexture2DAsync(mainJson.MainNormalsTexture));

@@ -254,9 +254,13 @@ namespace VoxelsEngine {
                 LocalState.Instance.CurrentPlayerId.Value = 0;
                 LocalState.Instance.CurrentPlayerName = "Local";
 
-                DisplayLoading(LoadingStage.EnteringGame, 0.9f);
 
                 _engine.StartLocal();
+                DisplayLoading(LoadingStage.EnteringGame, 0.9f);
+
+                await UniTask.Delay(500);
+                await UniTask.WaitWhile(ChunkGPUSynchronizer.Instance, s => s.IsUploadInProgress());
+                
                 DisplayLoading(LoadingStage.Complete, 1f);
                 ConnectionModal.Instance.SmartActive(false);
             } catch (Exception e) {

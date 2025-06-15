@@ -7,7 +7,6 @@ using MessagePack;
 using UnityEditor;
 using UnityEditor.Build.Player;
 using UnityEngine;
-using UnityEngine.Windows;
 using VoxelsEngine.Data;
 using Debug = UnityEngine.Debug;
 
@@ -53,8 +52,139 @@ public class EditorScripts : MonoBehaviour {
     // Ajoute une entrée au menu contextuel de la vue Projet
     [MenuItem("Assets/CreateTextureConfig", true)]
     private static bool ValidateCreateTextureConfigAction() {
-        // Valide que exactement trois éléments sont sélectionnés
+        // Valide qu'exactement trois éléments sont sélectionnés
         return Selection.objects.Length == 3;
+    }
+
+    // Ajoute une entrée au menu contextuel de la vue Projet
+    [MenuItem("Assets/Create Block", true)]
+    private static bool ValidateCreateBlock() {
+        // Valide qu'exactement quatre éléments sont sélectionnés
+        return Selection.objects.Length == 4;
+    }
+
+    [MenuItem("Assets/Create Block")]
+    private static void CreateBlock() {
+        string? baseColor = null;
+        string? ambientOcclusion = null;
+        string? normal = null;
+        string? height = null;
+
+        // Ensure that four textures are selected
+        if (Selection.objects.Length == 4) {
+            var files = Selection.objects.Select(AssetDatabase.GetAssetPath).ToList();
+
+            // Identify each texture type based on their file names
+            foreach (var selectedObject in files) {
+                if (selectedObject.ToLower().Contains("_basecolor") || selectedObject.ToLower().Contains("_color")) baseColor = selectedObject;
+                else if (selectedObject.ToLower().Contains("_ambientocclusion")) ambientOcclusion = selectedObject;
+                else if (selectedObject.ToLower().Contains("_normal")) normal = selectedObject;
+                else if (selectedObject.ToLower().Contains("_height")) height = selectedObject;
+                else throw new Exception($"Could not figure out texture type for {selectedObject}");
+            }
+
+            // Verify all required textures are found
+            if (baseColor == null) throw new Exception($"Couldn't find base color texture in {string.Join(",", files)}.");
+            if (ambientOcclusion == null) throw new Exception($"Couldn't find ambient occlusion texture in {string.Join(",", files)}.");
+            if (normal == null) throw new Exception($"Couldn't find normal texture in {string.Join(",", files)}.");
+            if (height == null) throw new Exception($"Couldn't find height texture in {string.Join(",", files)}.");
+
+            // Extract texture name from base color texture path
+            var slashIdx = baseColor.LastIndexOf("/", StringComparison.Ordinal);
+            var dotIdx = baseColor.LastIndexOf(".", StringComparison.Ordinal);
+            var fullName = baseColor.Substring(slashIdx + 1, dotIdx - slashIdx - 1);
+            var name = fullName.Replace("_baseColor", "");
+
+            // Create output directory
+            var outputFolder = $"Assets/StreamingAssets/Textures/Main/{name}";
+            if (!System.IO.Directory.Exists(outputFolder)) {
+                System.IO.Directory.CreateDirectory(outputFolder);
+            }
+
+            // Load source textures
+            var baseColorTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(baseColor);
+            var aoTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(ambientOcclusion);
+            var normalTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(normal);
+            var heightTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(height);
+
+            if (baseColorTexture == null || aoTexture == null || normalTexture == null || heightTexture == null) {
+                throw new Exception("Failed to load one or more textures");
+            }
+
+            // Process and save output textures
+
+            // 1. Combine baseColor and ambientOcclusion to create albedo texture
+            var albedoTexture = new Texture2D(baseColorTexture.width, baseColorTexture.height, TextureFormat.RGBA32, false);
+            var baseColorPixels = baseColorTexture.GetPixels();
+            var aoPixels = aoTexture.GetPixels();
+            var albedoPixels = new Color[baseColorPixels.Length];
+
+
+            for (int i = 0; i < baseColorPixels.Length; i++) {
+                // Multiply base color by ambient occlusion
+                float occlusion = aoPixels[i].r;
+                albedoPixels[i] = new Color(
+                    baseColorPixels[i].r * occlusion,
+                    baseColorPixels[i].g * occlusion,
+                    baseColorPixels[i].b * occlusion,
+                    baseColorPixels[i].a
+                );
+            }
+
+            albedoTexture.SetPixels(albedoPixels);
+            albedoTexture.Apply();
+
+            // Save processed textures
+            var albedoPath = $"{outputFolder}/{name}_albedo.png";
+            var normalPath = $"{outputFolder}/{name}_normal.png";
+            var heightPath = $"{outputFolder}/{name}_height.png";
+
+            // Convert textures to PNG and save
+            System.IO.File.WriteAllBytes(albedoPath, albedoTexture.EncodeToPNG());
+            System.IO.File.WriteAllBytes(normalPath, normalTexture.EncodeToPNG());
+            System.IO.File.WriteAllBytes(heightPath, heightTexture.EncodeToPNG());
+
+            // Import saved assets to make them available in the project
+            AssetDatabase.ImportAsset(albedoPath);
+            AssetDatabase.ImportAsset(normalPath);
+            AssetDatabase.ImportAsset(heightPath);
+
+            // Create texture config JSON
+            var rootFolder = "Assets/StreamingAssets/";
+            var rootFolderLength = rootFolder.Length;
+
+            MainTextureJson textureConfig = new MainTextureJson();
+            textureConfig.MainAlbedoTexture = albedoPath.Substring(rootFolderLength);
+            textureConfig.MainNormalsTexture = normalPath.Substring(rootFolderLength);
+            textureConfig.MainHeightsTexture = heightPath.Substring(rootFolderLength);
+
+            var textureConfigJson = MessagePackSerializer.SerializeToJson(textureConfig);
+            var textureConfigPath = $"{outputFolder}/{name}.json";
+            System.IO.File.WriteAllText(textureConfigPath, textureConfigJson);
+            AssetDatabase.ImportAsset(textureConfigPath);
+
+            // Create block config JSON
+            var blocksFolder = "Assets/StreamingAssets/Blocks";
+            if (!System.IO.Directory.Exists(blocksFolder)) {
+                System.IO.Directory.CreateDirectory(blocksFolder);
+            }
+
+            BlockConfigJson blockConfig = new BlockConfigJson();
+            blockConfig.Sides.Add(new BlockSideJson {MainTextureConfig = $"{name}\\{name}.json"});
+
+            var blockConfigJson = MessagePackSerializer.SerializeToJson(blockConfig);
+            var blockConfigPath = $"{blocksFolder}/{name}.json";
+            System.IO.File.WriteAllText(blockConfigPath, blockConfigJson);
+            AssetDatabase.ImportAsset(blockConfigPath);
+
+            // Refresh AssetDatabase and update indexes
+            AssetDatabase.Refresh();
+            RegistryIndexGenerator.GenerateIndexes();
+
+            Debug.Log($"Block {name} created successfully!");
+        } else {
+            Debug.LogWarning("Please select exactly four texture files (baseColor, ambientOcclusion, normal, height).");
+        }
     }
 
     [MenuItem("Assets/CreateTextureConfig")]

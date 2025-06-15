@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Shared;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Vector3Int = UnityEngine.Vector3Int;
 
 namespace VoxelsEngine {
@@ -11,7 +13,7 @@ namespace VoxelsEngine {
                 var instance = new ChunkGPUSynchronizer();
                 Application.quitting += () => instance.Dispose();
                 return instance;
-            }, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+            }, LazyThreadSafetyMode.ExecutionAndPublication);
 
         private static bool _isDisposed = false;
 
@@ -44,6 +46,7 @@ namespace VoxelsEngine {
         private HashSet<int> _activeChunks = new();
         private readonly Stack<int> _freeSlotsInSsbo = new();
         private int[] _ssboSlotIdByChunkId;
+        private List<GraphicsFence> _currentFences = new();
 
         private ChunkGPUSynchronizer() {
             (_worldBlockDataSsbo, _ssboSlotIdByChunkIdSsbo, _ssboSlotIdByChunkId) = InitializeBuffers();
@@ -55,6 +58,10 @@ namespace VoxelsEngine {
             SetGlobalShaderProperties();
         }
 
+        public bool IsUploadInProgress() {
+            _currentFences.RemoveAll(f => f.passed);
+            return _currentFences.Count > 0;
+        }
 
         // Shader property IDs
         private static readonly int WorldBlockDataPropID = Shader.PropertyToID("_WorldBlockData");
@@ -63,6 +70,8 @@ namespace VoxelsEngine {
         private static readonly int WorldChunkCountsPropID = Shader.PropertyToID("_WorldChunkCounts"); // Pour l'indirection
 
         (ComputeBuffer, ComputeBuffer, int[]) InitializeBuffers() {
+            var cmd = new CommandBuffer {name = "InitializeBuffers"};
+
             // SSBO pour les données des blocs des chunks actifs
             // Taille : max chunks actifs * voxels par chunk * sizeof(uint)
             _worldBlockDataSsbo = new ComputeBuffer(MaxActiveChunks * VoxelsPerChunk, sizeof(uint), ComputeBufferType.Structured);
@@ -82,6 +91,12 @@ namespace VoxelsEngine {
             for (int i = 0; i < MaxActiveChunks; i++) {
                 _freeSlotsInSsbo.Push(i);
             }
+
+            // Insert a GPU fence.
+            _currentFences.Add(cmd.CreateAsyncGraphicsFence());
+
+            // Execute the command buffer.
+            Graphics.ExecuteCommandBuffer(cmd);
 
             return (_worldBlockDataSsbo, _ssboSlotIdByChunkIdSsbo, _ssboSlotIdByChunkId);
         }
@@ -114,6 +129,8 @@ namespace VoxelsEngine {
 
             // 1. Uploader les données du chunk dans le grand SSBO
             //    Les données de chunk.BlockData sont un uint[] de taille voxelsPerChunk
+            var cmd = new CommandBuffer {name = "UploadChunkData"};
+
             _worldBlockDataSsbo.SetData(chunk.BlockData, 0, chunk.GpuSlotID * VoxelsPerChunk, VoxelsPerChunk);
             // Logr.Log($"[SSBO] ({linearChunkIndex}) Data uploaded at index {chunk.GpuSlotID} ({chunk.GpuSlotID * VoxelsPerChunk}). Count = {VoxelsPerChunk}");
 
@@ -132,6 +149,12 @@ namespace VoxelsEngine {
             }
 
             _activeChunks.Add(linearChunkIndex);
+
+            // Insert a GPU fence.
+            _currentFences.Add(cmd.CreateAsyncGraphicsFence());
+
+            // Execute the command buffer.
+            Graphics.ExecuteCommandBuffer(cmd);
         }
 
         public void UnloadChunkData(IChunkRenderer chunk) {

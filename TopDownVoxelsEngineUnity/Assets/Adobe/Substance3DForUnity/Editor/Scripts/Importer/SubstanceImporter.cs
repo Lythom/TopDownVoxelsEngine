@@ -4,6 +4,8 @@ using UnityEditor;
 using UnityEngine;
 using System.Threading.Tasks;
 using Adobe.Substance;
+using static UnityEngine.Networking.UnityWebRequest;
+
 
 #if UNITY_2020_2_OR_NEWER
 using UnityEditor.AssetImporters;
@@ -85,6 +87,14 @@ namespace Adobe.SubstanceEditor.Importer
             if (Path.GetExtension(from.ToLower()) != ".sbsar")
                 return AssetMoveResult.DidNotMove;
 
+            var oldFileName = Path.GetFileName(from);
+            var newFileName = Path.GetFileName(to);
+
+            if (!oldFileName.Equals(newFileName))
+            {
+                HandleFileNameChange(AssetDatabase.LoadAssetAtPath<SubstanceFileSO>(from), oldFileName, newFileName);
+            }
+
             var importer = AssetImporter.GetAtPath(from) as SubstanceImporter;
 
             if (importer != null)
@@ -137,6 +147,50 @@ namespace Adobe.SubstanceEditor.Importer
 
             return true;
         }
+    
+        private static void HandleFileNameChange(SubstanceFileSO sbsar, string oldFileName, string newFileName)
+        {
+            oldFileName = oldFileName.Replace(".sbsar", "");
+            newFileName = newFileName.Replace(".sbsar", "");
+
+            var graphs = sbsar.GetGraphs();
+
+            foreach (var graph in graphs)
+            {
+                var oldAssetsDirectory = Path.GetDirectoryName(AssetDatabase.GetAssetPath(graph));
+                var newAssetsDirectory = oldAssetsDirectory.Replace(oldFileName, newFileName);             
+                var associatedAssets = Directory.GetFiles(oldAssetsDirectory);
+
+                foreach (var asset in associatedAssets)
+                {
+                    string oldAssetPath = asset;
+
+                    if (asset.Contains(oldFileName) && !asset.EndsWith(".meta"))
+                    {
+                        string newAssetName = Path.GetFileName(oldAssetPath).Replace(oldFileName, newFileName);
+                        var result = AssetDatabase.RenameAsset(oldAssetPath, newAssetName);
+
+                        if (!string.IsNullOrEmpty(result))
+                        {
+                            Debug.LogError(result);
+                            continue;
+                        }
+                    }
+                }
+
+                if (!Directory.Exists(newAssetsDirectory))
+                {
+                    newAssetsDirectory = Path.GetFileName(Path.GetRelativePath(oldAssetsDirectory, newAssetsDirectory));
+                    var renameResult = AssetDatabase.RenameAsset(oldAssetsDirectory, newAssetsDirectory);
+
+                    if (!string.IsNullOrEmpty(renameResult))
+                    {
+                        Debug.LogError(renameResult);
+                        continue;
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -151,7 +205,17 @@ namespace Adobe.SubstanceEditor.Importer
         public override void OnImportAsset(AssetImportContext ctx)
         {
             var rawData = ScriptableObject.CreateInstance<SubstanceFileRawData>();
-            rawData.FileContent = File.ReadAllBytes(ctx.assetPath);
+
+            try
+            {
+                rawData.FileContent = File.ReadAllBytes(ctx.assetPath);
+            }
+            catch (IOException)
+            {
+                Debug.LogWarning($"Unable to load file {ctx.assetPath} because the file is locked by another process.");
+                return;
+            }
+            
             rawData.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector;
             ctx.AddObjectToAsset("Substance Data", rawData);
 

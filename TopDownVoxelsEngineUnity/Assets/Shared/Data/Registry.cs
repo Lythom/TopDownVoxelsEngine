@@ -33,25 +33,29 @@ namespace Shared {
 
         protected async UniTask Load() {
             _data = new Dictionary<string, T>();
+            try {
 
-            Logr.Log($"Loading registry from {Path.Combine(ResourcePath, "index.txt")}", "Registry");
-            var indexContent = await _txtAsset.LoadTxtAsync(Path.Combine(ResourcePath, "index.txt"));
-            var files = indexContent.Split('\n');
-            foreach (var file in files) {
-                if (string.IsNullOrWhiteSpace(file)) continue;
-                var assetPath = file.Replace(ResourcePath + Path.DirectorySeparatorChar, "");
-                var relativePath = Path.Combine(ResourcePath, file);
-                if (file.EndsWith(".json")) {
-                    Logr.Log($"Found file {file}. Loading {Path.Combine(ResourcePath, "index.txt")}", "Registry");
-                    var fetchTxtAsync = await _txtAsset.LoadTxtAsync(relativePath);
-                    _data[assetPath] = MessagePackSerializer.Deserialize<T>(MessagePackSerializer.ConvertFromJson(fetchTxtAsync));
-                } else if (relativePath is T filePath) {
-                    Logr.Log($"Found file {file}. Adding raw reference to registry.", "Registry");
-                    _data[assetPath] = filePath;
+                Logr.Log($"Loading registry from {Path.Combine(ResourcePath, "index.txt")}", "Registry");
+                var indexContent = await _txtAsset.LoadTxtAsync(Path.Combine(ResourcePath, "index.txt"));
+                var files = indexContent.Split('\n');
+                foreach (var file in files) {
+                    if (string.IsNullOrWhiteSpace(file)) continue;
+                    var assetPath = file.Replace(ResourcePath + Path.DirectorySeparatorChar, "");
+                    var relativePath = Path.Combine(ResourcePath, file);
+                    if (file.EndsWith(".json")) {
+                        Logr.Log($"Found file {file}. Loading {Path.Combine(ResourcePath, "index.txt")}", "Registry");
+                        var fetchTxtAsync = await _txtAsset.LoadTxtAsync(relativePath);
+                        _data[assetPath] = MessagePackSerializer.Deserialize<T>(MessagePackSerializer.ConvertFromJson(fetchTxtAsync));
+                    } else if (relativePath is T filePath) {
+                        Logr.Log($"Found file {file}. Adding raw reference to registry.", "Registry");
+                        _data[assetPath] = filePath;
+                    }
                 }
-            }
 
-            _isLoaded = true;
+                _isLoaded = true;
+            } catch (Exception e) {
+                Logr.LogException(e, $"Failed to load {ResourcePath} registry.");
+            }
         }
 
         public Dictionary<string, T> Get() {

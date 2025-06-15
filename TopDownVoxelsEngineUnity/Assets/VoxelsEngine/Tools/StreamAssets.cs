@@ -24,6 +24,7 @@ namespace VoxelsEngine.Tools {
 
     public static class StreamAssetsFiles {
         public static async UniTask<string> LoadTxtAsync(string path) {
+            Logr.Log("Load txt file at " + GetPath(path) + " :" + path);
             return await File.ReadAllTextAsync(GetPath(path));
         }
 

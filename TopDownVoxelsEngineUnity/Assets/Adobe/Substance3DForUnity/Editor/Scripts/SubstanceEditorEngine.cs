@@ -547,7 +547,6 @@ namespace Adobe.SubstanceEditor
             if (thumbnailData != null)
             {
                 instance.Thumbnail = thumbnailData;
-                instance.HasThumbnail = true;
             }
         }
 
@@ -658,18 +657,28 @@ namespace Adobe.SubstanceEditor
             {
                 if (graph.AssetPath == assetPath)
                 {
-                    if(TryGetHandlerFromInstance(graph, out SubstanceNativeGraph nativeGraph))
+                    if(TryGetHandlerFromInstance(graph, out SubstanceNativeGraph oldNativeGraph))
                     {
-                        var currentState = nativeGraph.CreatePresetFromCurrentState();
-                        nativeGraph.Dispose();
-                        _activeSubstanceGraphcs[graph.GUID] = Engine.OpenFile(fileContent, graph.GetNativeID());
-                        _activeSubstanceGraphcs[graph.GUID].ApplyPreset(currentState);
+                        var oldGraphState = oldNativeGraph.CreatePresetFromCurrentState();
+                        oldNativeGraph.Dispose();
+                        
+                        var newNativeGraph = Engine.OpenFile(fileContent, graph.GetNativeID());
+                        _activeSubstanceGraphcs[graph.GUID] = newNativeGraph;
 
-                        graph.Input = GetGraphInputs(_activeSubstanceGraphcs[graph.GUID]);
-                        graph.Output = GetGraphOutputs(_activeSubstanceGraphcs[graph.GUID]);
+                        graph.DefaultPreset = newNativeGraph.CreatePresetFromCurrentState();
+                        newNativeGraph.ApplyPreset(oldGraphState);
 
-                        RenderingUtils.ConfigureOutputTextures(_activeSubstanceGraphcs[graph.GUID], graph);
+                        graph.Input = GetGraphInputs(newNativeGraph);
+                        graph.Output = GetGraphOutputs(newNativeGraph);
+                        graph.Thumbnail = newNativeGraph.GetThumbnail();
 
+                        if (!graph.HasPhysicalSize)
+                        {
+                            graph.PhysicalSize = newNativeGraph.GetPhysicalSize();
+                            graph.HasPhysicalSize = graph.PhysicalSize != Vector3.zero;
+                        }
+
+                        RenderingUtils.ConfigureOutputTextures(newNativeGraph, graph);
                         EditorUtility.SetDirty(graph);
 
                         updatedGraphs.Add(graph);
