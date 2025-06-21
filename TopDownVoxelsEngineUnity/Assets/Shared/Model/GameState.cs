@@ -13,17 +13,40 @@ namespace Shared {
     }
 
     [MessagePackObject(true)]
-    public class GameState : IUpdatable<GameState> {
-        // Public state
-        [IgnoreMember]
-        public bool IsApplyingEvent => _isApplyingEvent;
-
-        public readonly SignalDictionary<ushort, Character> Characters = new();
+    public class GameDataV0 : IGameData {
+        public readonly SignalDictionary<ushort, CharacterV0> Characters = new();
         public readonly SignalDictionary<string, LevelMap> Levels = new();
 
         // Keep the same field name for backward compatibility with existing saves
         [Key("BlockPathById")]
+        public string?[] BlockPathById;
+
+        [SerializationConstructor]
+        public GameDataV0(SignalDictionary<ushort, CharacterV0>? characters, SignalDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
+            if (characters != null) Characters.SynchronizeToTarget(characters);
+            if (levels != null) Levels.SynchronizeToTarget(levels);
+            BlockPathById = blockPathById ?? new string[ushort.MaxValue];
+        }
+    }
+
+    public class GameState : IUpdatable<GameState> {
+        private GameDataV0 _gameData;
+        public GameDataV0 GameData => _gameData;
+
+        #region DATA
+
+        public SignalDictionary<ushort, CharacterV0> Characters => _gameData.Characters;
+        public SignalDictionary<string, LevelMap> Levels => _gameData.Levels;
+
+        // Keep the same field name for backward compatibility with existing saves
+        [Key("BlockPathById")]
         public string?[] BlockPathById => _blockMapping.BlockPathById;
+
+        #endregion
+
+        // Public state
+        [IgnoreMember]
+        public bool IsApplyingEvent => _isApplyingEvent;
 
         [IgnoreMember]
         private readonly BlockPathMapping _blockMapping;
@@ -39,7 +62,7 @@ namespace Shared {
 
         // internal or non serialized properties
         [IgnoreMember]
-        public readonly LevelGenerator LevelGenerator;
+        public readonly LevelGeneratorService LevelGenerator;
 
         [IgnoreMember]
         private readonly HashSet<uint> _dirtyChunks = new();
@@ -47,12 +70,10 @@ namespace Shared {
         [IgnoreMember]
         private bool _isApplyingEvent;
 
-        [SerializationConstructor]
-        public GameState(SignalDictionary<ushort, Character>? characters, SignalDictionary<string, LevelMap>? levels, string?[]? blockPathById) {
-            if (characters != null) Characters.SynchronizeToTarget(characters);
-            if (levels != null) Levels.SynchronizeToTarget(levels);
-            _blockMapping = new BlockPathMapping(blockPathById ?? new string?[ushort.MaxValue]);
-            LevelGenerator = new LevelGenerator(BlockIdByPath);
+        public GameState(GameDataV0? gameData = null) {
+            _gameData = gameData ?? new GameDataV0(null, null, new string[ushort.MaxValue]);
+            _blockMapping = new BlockPathMapping(_gameData.BlockPathById);
+            LevelGenerator = new LevelGeneratorService(BlockIdByPath);
         }
 
         // Access the BlockMapping directly if needed
@@ -93,6 +114,17 @@ namespace Shared {
         }
     }
 
+    [Union(0, typeof(GameDataV0))]
+    public abstract class IGameData {
+        public static GameDataV0 DeserializedUpdated(byte[] raw, MessagePackSerializerOptions? messagePackOptions) {
+            var obj = MessagePackSerializer.Deserialize<IGameData>(raw, messagePackOptions);
 
+            if (obj is GameDataV0 _v1) {
+                return _v1;
+            }
+
+            throw new ApplicationException("Unknown GameData version");
+        }
+    }
     // ReSharper disable once InconsistentNaming
 }

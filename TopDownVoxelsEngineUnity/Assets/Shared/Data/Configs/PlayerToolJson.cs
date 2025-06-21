@@ -13,7 +13,5 @@ namespace VoxelsEngine {
 
         [ValueDropdown("@AssetsHelper.GetSpriteTextures()")]
         public string ToolSpritePath = "";
-
-        
     }
 }

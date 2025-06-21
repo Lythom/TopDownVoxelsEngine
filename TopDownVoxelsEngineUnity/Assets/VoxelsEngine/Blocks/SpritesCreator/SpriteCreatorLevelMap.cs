@@ -1,5 +1,6 @@
 ﻿using Shared;
 
+
 namespace VoxelsEngine {
     /// <summary>
     /// Coordinates from 0,0,0 to 15,63,15
@@ -9,23 +10,23 @@ namespace VoxelsEngine {
 
         public SpriteCreatorLevelMap() {
             var c = _chunks[0, 0];
-            c.Cells = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+            c.Cells = new CellV0[Chunk.Size, Chunk.Height, Chunk.Size];
             foreach (var (x, y, z) in c.GetCellPositions()) {
-                c.Cells![x, y, z] = new Cell(BlockId.Air);
+                c.Cells![x, y, z] = new CellV0(BlockId.Air);
             }
 
             c.IsGenerated = true;
             _chunks[0, 0] = c;
         }
 
-        public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
+        public CellV0? GetNeighbor(int x, int y, int z, Direction dir) {
             var offset = dir.GetOffset();
             var yWithOffset = y + offset.y;
             if (yWithOffset < 0 || yWithOffset >= Chunk.Height) return null;
             return TryGetExistingCell(x + offset.x, yWithOffset, z - offset.z);
         }
 
-        public Cell? TryGetExistingCell(int x, int y, int z) {
+        public CellV0? TryGetExistingCell(int x, int y, int z) {
             var c = _chunks[0, 0];
             if (y < 0 || y >= Chunk.Height || x < 0 || x >= Chunk.Size || z < 0 || z >= Chunk.Size || c.Cells == null) return null;
             return c.Cells[x, y, z];
@@ -50,7 +51,7 @@ namespace VoxelsEngine {
             var c = _chunks[0, 0];
             if (c.Cells == null) return;
             foreach (var (x, y, z) in c.GetCellPositions()) {
-                c.Cells[x, y, z] = new Cell(BlockId.Air);
+                c.Cells[x, y, z] = new CellV0(BlockId.Air);
             }
         }
     }

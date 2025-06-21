@@ -54,6 +54,21 @@ static class SyncInspector {
 //                           TEST-SUITE
 // -----------------------------------------------------------------------------
 public class ChunkGPUSynchronizerTests {
+    [SetUp]
+    public void SetUp()
+    {
+        // Clean setup before each test
+        ChunkGPUSynchronizer.Instance.Dispose();
+        // Initialize fresh instance
+    }
+
+    [TearDown] 
+    public void TearDown()
+    {
+        // Clean up after each test
+        ChunkGPUSynchronizer.Instance.Dispose();
+    }
+    
     // -------------------------------------------------------------------------
     // 2. Upload  N  chunks → slotIds must be unique, free-list length accurate
     // -------------------------------------------------------------------------
@@ -61,9 +76,10 @@ public class ChunkGPUSynchronizerTests {
     public System.Collections.IEnumerator Upload_Many_Chunks_Yields_Unique_Slots() {
         var sync = ChunkGPUSynchronizer.Instance;
         int chunkCount = 128; // arbitrary stress number
-
         var chunks = new List<FakeChunkRenderer>();
         var slots = new HashSet<int>();
+
+        // init
 
         // 2.1 Upload -----------------------------------------------------------
         for (int i = 0; i < chunkCount; i++) {

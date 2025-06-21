@@ -9,9 +9,9 @@ namespace Shared {
             var rng = new Random(seed);
             // Generate a new chunk
             if (chunk.Cells is null) {
-                chunk.Cells = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+                chunk.Cells = new CellV0[Chunk.Size, Chunk.Height, Chunk.Size];
                 foreach (var (x, y, z) in chunk.GetCellPositions()) {
-                    chunk.Cells[x, y, z] = new Cell(BlockId.Air);
+                    chunk.Cells[x, y, z] = new CellV0(BlockId.Air);
                 }
             }
 

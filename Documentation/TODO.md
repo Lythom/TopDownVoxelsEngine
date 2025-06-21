@@ -1,31 +1,6 @@
 TODO:
-
-- Ergonomie outils et blocs
-  - Sélecteurs séparés pour outils et bloc
-    - raccourcis clavier outil A (quick swap entre 2)
-      - Maintenir A pour ouvrir le menu de tous les outils et choisir celui à utiliser. Il prend l'emplacement quickswap.
-      - Si on sélectionne l'outil qui est dans l'aure emplacement quickswap on procède simplement au swap
-    - raccourcis clavier bloc E (quick swap entre 2, 3 ou 4)
-      - Maintenir 2 pour ouvrir le menu de tous les blocs et choisir celui à utiliser. Il prend l'emplacement quickswap.
-    - 
-
-- [ ] Implement UI:
-  - [ ] Place tool icon
-  - [ ] Replace tool icon
-  - [ ] Remove tool icon
-  - [ ] UI Container
-  - [ ] keyboard key container icon
-  - [ ] Input System + Dynamic key display viz (see Neoproxima)
-  - [ ] Quick swap tool action
-  - [ ] Quick swap item action
-  - [ ] UI display and animation
   - UNDO
-  - meilleur preview sur le mode panneau et ligne
   - mode de construction = free flight
-
-- [ ] Loading fix:
-  - [ ] sort GPU upload
-  - [ ] wait self + 8 surrounding chunk load (Ok if empty)
 
 - [ ] Blueprint system:
   - [ ] Place anchor tool
@@ -36,8 +11,10 @@ TODO:
     - [ ] list (load on click)
     - [ ] create new
 
-- https://dee-dee-r.itch.io/dnd-sdk/devlog/939312/crafting-a-paraboloid-camera-controller
+- Level entities
+- Génération de biomes
 
+- https://dee-dee-r.itch.io/dnd-sdk/devlog/939312/crafting-a-paraboloid-camera-controller
 
 - Rendu végétation
   - un renderer dédié par chunk
@@ -119,3 +96,24 @@ Done:
 - Refaire le shader en URP ?
 
 Certbot instructions in proton pass
+
+- Ergonomie outils et blocs
+  - Sélecteurs séparés pour outils et bloc
+    - raccourcis clavier outil A (quick swap entre 2)
+      - Maintenir A pour ouvrir le menu de tous les outils et choisir celui à utiliser. Il prend l'emplacement quickswap.
+      - Si on sélectionne l'outil qui est dans l'aure emplacement quickswap on procède simplement au swap
+    - raccourcis clavier bloc E (quick swap entre 2, 3 ou 4)
+      - Maintenir 2 pour ouvrir le menu de tous les blocs et choisir celui à utiliser. Il prend l'emplacement quickswap.
+
+
+- [ ] Implement UI:
+  - [ ] Place tool icon
+  - [ ] Replace tool icon
+  - [ ] Remove tool icon
+  - [ ] UI Container
+  - [ ] keyboard key container icon
+  - [ ] Input System + Dynamic key display viz (see Neoproxima)
+  - [ ] Quick swap tool action
+  - [ ] Quick swap item action
+  - [ ] UI display and animation
+  - meilleur preview sur le mode panneau et ligne

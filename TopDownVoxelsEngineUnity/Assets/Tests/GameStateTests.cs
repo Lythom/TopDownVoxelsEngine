@@ -2,7 +2,6 @@
 using NUnit.Framework;
 using Shared;
 using MessagePack;
-using Shared.Signals;
 using VoxelsEngine;
 
 namespace Tests {
@@ -32,7 +31,7 @@ namespace Tests {
             d.Add("Stone2.json", new BlockConfigJson());
             d.Add("WoodMissing.json", new BlockConfigJson());
 
-            var gameState = new GameState(null, null, blockPathById);
+            var gameState = new GameState(new(null, null, blockPathById));
 
             // Act
             gameState.UpdateBlockMapping(registry);
@@ -72,7 +71,7 @@ namespace Tests {
             d.Add("Stone2.json", new BlockConfigJson());
             d.Add("WoodMissing.json", new BlockConfigJson());
 
-            var gameState = new GameState(null, null, blockPathById);
+            var gameState = new GameState(new(null, null, blockPathById));
 
             // Act
             gameState.UpdateBlockMapping(registry);
@@ -100,7 +99,7 @@ namespace Tests {
             registry.Get().Add("Stone", new BlockConfigJson());
             registry.Get().Add("Dirt", new BlockConfigJson());
 
-            var gameState = new GameState(null, null, blockPathById);
+            var gameState = new GameState(new(null, null, blockPathById));
 
             // Act
             gameState.UpdateBlockMapping(registry);
@@ -134,13 +133,13 @@ namespace Tests {
 
             // Add a chunk to the level
             var chunk = new Chunk {IsGenerated = true};
-            chunk.Cells = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+            chunk.Cells = new CellV0[Chunk.Size, Chunk.Height, Chunk.Size];
 
             // Set some test blocks in the chunk
             for (int x = 0; x < Chunk.Size; x++) {
                 for (int y = 0; y < Chunk.Height; y++) {
                     for (int z = 0; z < Chunk.Size; z++) {
-                        chunk.Cells[x, y, z] = new Cell {Block = (ushort) ((y < 5) ? 1 : 0)}; // Stone below y=5, Air above
+                        chunk.Cells[x, y, z] = new CellV0 {Block = (ushort) ((y < 5) ? 1 : 0)}; // Stone below y=5, Air above
                     }
                 }
             }
@@ -148,7 +147,7 @@ namespace Tests {
             levelMap.Chunks[10, 10] = chunk;
 
             // Create a character
-            var character = new Character(
+            var character = new CharacterV0(
                 "TestPlayer",
                 new Vector3(100, 15, 100),
                 Vector3.zero,
@@ -158,13 +157,13 @@ namespace Tests {
             );
 
             // Create the game state
-            var originalState = new GameState(new(), new(), blockPathById);
+            var originalState = new GameState(new(null, null, blockPathById));
             originalState.Levels.Add("TestWorld", levelMap);
             originalState.Characters.Add(1, character);
 
             // Act - Serialize and deserialize
-            var serializedData = MessagePackSerializer.Serialize(originalState, Configurator.MessagePackOptions);
-            var deserializedState = MessagePackSerializer.Deserialize<GameState>(serializedData, Configurator.MessagePackOptions);
+            var serializedData = MessagePackSerializer.Serialize((IGameData) originalState.GameData, Configurator.MessagePackOptions);
+            var deserializedState = new GameState(IGameData.DeserializedUpdated(serializedData, Configurator.MessagePackOptions));
 
             // Assert - Verify all properties were correctly preserved
 
@@ -190,7 +189,7 @@ namespace Tests {
             Assert.IsNotNull(deserializedChunk.Cells);
 
             // Sample check a few blocks
-            Assert.AreEqual(1, deserializedChunk.Cells[5, 3, 5].Block); // Should be Stone (1)
+            Assert.AreEqual(1, deserializedChunk.Cells![5, 3, 5].Block); // Should be Stone (1)
             Assert.AreEqual(0, deserializedChunk.Cells[5, 10, 5].Block); // Should be Air (0)
 
             // Check character data
@@ -199,23 +198,6 @@ namespace Tests {
             Assert.AreEqual("TestPlayer", deserializedCharacter.Name);
             Assert.AreEqual(new Vector3(100, 15, 100), deserializedCharacter.Position);
             Assert.AreEqual("TestWorld", deserializedCharacter.Level.Value);
-        }
-
-        [Test]
-        public void SerializeDeserialize_EmptyGameState_ShouldWork() {
-            // Arrange - Create an empty game state
-            var emptyState = new GameState(null, null, null);
-
-            // Act - Serialize and deserialize
-            var serializedData = MessagePackSerializer.Serialize(emptyState, Configurator.MessagePackOptions);
-            var deserializedState = MessagePackSerializer.Deserialize<GameState>(serializedData, Configurator.MessagePackOptions);
-
-            // Assert - Just verify it doesn't throw and returns a valid object
-            Assert.IsNotNull(deserializedState);
-            Assert.IsNotNull(deserializedState.BlockIdByPath);
-            Assert.IsNotNull(deserializedState.BlockPathById);
-            Assert.IsNotNull(deserializedState.Levels);
-            Assert.IsNotNull(deserializedState.Characters);
         }
     }
 

@@ -73,7 +73,7 @@ namespace VoxelsEngine {
         private static readonly int Altitude = Animator.StringToHash("Altitude");
         private Vector3 _vel;
 
-        private Character? _character;
+        private CharacterV0? _character;
 
         private Vector3 _nextPosition;
         private bool _isPlacing;
@@ -98,7 +98,7 @@ namespace VoxelsEngine {
                 _character = c;
                 if (c == null) return;
                 _position = c.Position;
-                _rotation = Quaternion.Euler(0, Character.UncompressAngle(c.Angle), 0);
+                _rotation = Quaternion.Euler(0, CharacterUtils.UncompressAngle(c.Angle), 0);
             });
         }
 
@@ -133,7 +133,7 @@ namespace VoxelsEngine {
             // Wild override of state for client side prediction
             // Child, don't do that at home…
             _character.Velocity = _vel;
-            _character.Angle = Character.CompressAngle(transform.eulerAngles.y);
+            _character.Angle = CharacterUtils.CompressAngle(transform.eulerAngles.y);
 
             BCubeDrawer.Cube(
                 groundPosition,
@@ -227,7 +227,7 @@ namespace VoxelsEngine {
         /// <param name="vel"></param>
         /// <param name="groundCell"></param>
         /// <returns>Velocity and Horizontal direction in which the character moves.</returns>
-        private (Vector3, Vector3) UpdateMove(LevelMap level, Vector3 vel, Cell? groundCell) {
+        private (Vector3, Vector3) UpdateMove(LevelMap level, Vector3 vel, CellV0? groundCell) {
             Vector2 moveInput = _controls.Gameplay.Move.ReadValue<Vector2>();
             Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
             Vector3 moveDirection = (CameraTransform.rotation * move).WithY(0).normalized;

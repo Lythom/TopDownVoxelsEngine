@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using LoneStoneStudio.Tools;
 using MessagePack;
 
 namespace Shared {
@@ -14,7 +13,6 @@ namespace Shared {
         /// <summary>
         /// Array mapping block IDs to their path strings. Index is the block ID.
         /// </summary>
-        [Key(0)]
         public string?[] BlockPathById { get; private set; }
         
         /// <summary>

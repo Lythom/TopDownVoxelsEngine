@@ -21,7 +21,7 @@ namespace VoxelsEngine {
         private static readonly int Altitude = Animator.StringToHash("Altitude");
 
         public Signal<ushort> CharacterId = new(0);
-        private Observable<Character?>? _character;
+        private Observable<CharacterV0?>? _character;
         private Vector3 _lastPosition;
         private Vector3 _calculatedPosition;
         public float VisualSnappingStrength = 0.28f;
@@ -66,7 +66,7 @@ namespace VoxelsEngine {
             // interpolate rendering
             transform.position = Vector3.Lerp(transform.position, _calculatedPosition, VisualSnappingStrength * 50 * Time.deltaTime);
             Vector3 currentRotation = transform.eulerAngles;
-            currentRotation.y = Mathf.LerpAngle(currentRotation.y, Character.UncompressAngle(_character.Value.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
+            currentRotation.y = Mathf.LerpAngle(currentRotation.y, CharacterUtils.UncompressAngle(_character.Value.Angle), VisualSnappingStrength * 50 * Time.deltaTime);
             transform.eulerAngles = currentRotation;
             UpdateAnimation(vel, _character.Value.IsInAir);
         }

@@ -36,7 +36,7 @@ namespace Shared {
             _cts.Cancel(false);
         }
 
-        public Cell? GetNeighbor(int x, int y, int z, Direction dir) {
+        public CellV0? GetNeighbor(int x, int y, int z, Direction dir) {
             var offset = dir.GetOffset();
             var yWithOffset = y + offset.y;
             if (yWithOffset < 0 || yWithOffset >= Chunk.Height) return null;
@@ -99,11 +99,11 @@ namespace Shared {
             }
         }
 
-        public Cell? TryGetExistingCell(Vector3Int wp) {
+        public CellV0? TryGetExistingCell(Vector3Int wp) {
             return TryGetExistingCell(wp.X, wp.Y, wp.Z, out _, out _, out _);
         }
 
-        public Cell? TryGetExistingCell(int x, int y, int z, out uint cx, out uint cy, out uint cz) {
+        public CellV0? TryGetExistingCell(int x, int y, int z, out uint cx, out uint cy, out uint cz) {
             cx = 0;
             cy = 0;
             cz = 0;

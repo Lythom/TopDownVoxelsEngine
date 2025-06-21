@@ -91,7 +91,7 @@ namespace VoxelsEngine {
         private static readonly int Altitude = Animator.StringToHash("Altitude");
         private Vector3 _vel;
 
-        private Character? _character;
+        private CharacterV0? _character;
 
         private Vector3 _nextPosition;
         private string? _levelId;
@@ -126,7 +126,7 @@ namespace VoxelsEngine {
                 _character = c;
                 if (c == null) return;
                 _position = c.Position;
-                _rotation = Quaternion.Euler(0, Character.UncompressAngle(c.Angle), 0);
+                _rotation = Quaternion.Euler(0, CharacterUtils.UncompressAngle(c.Angle), 0);
             });
 
             SubscribeSideEffect<PlaceBlocksGameEvent>(evt => {
@@ -207,7 +207,7 @@ namespace VoxelsEngine {
             // Wild override of state for client side prediction
             // Child, don't do that at home…
             _character.Velocity = _vel;
-            _character.Angle = Character.CompressAngle(t.eulerAngles.y);
+            _character.Angle = CharacterUtils.CompressAngle(t.eulerAngles.y);
             _character.Position = _position;
             _character.IsInAir = isInAir;
 

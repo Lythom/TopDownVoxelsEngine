@@ -26,8 +26,8 @@ namespace Server {
         PeriodicTimer backupTimer = new(TimeSpan.FromSeconds(5));
 
         // Data
-        private readonly GameState _state = new(null, null, null);
-        private readonly GameState _stateBackup = new(null, null, null);
+        private readonly GameState _state = new();
+        private readonly GameState _stateBackup = new();
         private readonly Registry<BlockConfigJson> _blockRegistry;
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
@@ -91,7 +91,7 @@ namespace Server {
             Logr.Log("Server ready!");
             var fixedUpdateTask = _serverClock.StartFixedUpdateAsync(_inbox);
             var networkSendingTask = StartNetworkSendingAsync();
-            await UniTask.WhenAny(fixedUpdateTask, networkSendingTask);
+            await UniTask.WhenAny(fixedUpdateTask, networkSendingTask).AttachExternalCancellation(_cts.Token);
         }
 
         private void SubscribeRemoveSessionOnCharacterLeave(GameState gameState) {
@@ -166,7 +166,7 @@ namespace Server {
                             var dbChunk = context.Chunks.SingleOrDefault(c => c.ChX == chunkKey.ChX && c.ChZ == chunkKey.ChZ && c.LevelId == levelId);
                             if (dbChunk == null) {
                                 dbChunk = new DbChunk {
-                                    Cells = MessagePackSerializer.Serialize(chunk.Cells),
+                                    Cells = CellArrayV0.Serialize(chunk.Cells!),
                                     IsGenerated = chunk.IsGenerated,
                                     LevelId = levelId,
                                     ChX = (short) chunkKey.ChX,
@@ -175,7 +175,7 @@ namespace Server {
                                 context.Chunks.Add(dbChunk);
                                 Logr.Log(context.Entry(dbChunk).State.ToString());
                             } else {
-                                dbChunk.Cells = MessagePackSerializer.Serialize(chunk.Cells);
+                                dbChunk.Cells = CellArrayV0.Serialize(chunk.Cells!);
                                 dbChunk.IsGenerated = chunk.IsGenerated;
                             }
                         }
@@ -300,12 +300,13 @@ namespace Server {
                 var spawnPosition = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
                 var levelMap = new LevelMap(dbLevel.Name, spawnPosition);
                 foreach (var dbChunk in dbLevel.Chunks!.Where(c => c.IsGenerated)) {
+                    var cellArray = CellArrayV0.DeserializeUpdatedOrDefault(dbChunk.Cells);
                     var c = new Chunk {
-                        Cells = MessagePackSerializer.Deserialize<Cell[,,]>(dbChunk.Cells),
-                        IsGenerated = true
+                        Cells = cellArray.Cells,
+                        IsGenerated = cellArray.IsGenerated
                     };
                     if (c.Cells.Length < Chunk.Size * Chunk.Height * Chunk.Size) {
-                        var migrated = new Cell[Chunk.Size, Chunk.Height, Chunk.Size];
+                        var migrated = new CellV0[Chunk.Size, Chunk.Height, Chunk.Size];
                         Array.Copy(c.Cells, migrated, c.Cells.Length);
                         c.Cells = migrated;
                     }
@@ -441,10 +442,10 @@ namespace Server {
         }
 
 
-        private async UniTask<(Character character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
+        private async UniTask<(CharacterV0 character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
             using var scope = _serviceScopeFactory.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-            Character character;
+            CharacterV0 character;
             Vector3 spawnPosition;
             if (user == null) {
                 // create a new user + player + character
@@ -458,7 +459,7 @@ namespace Server {
                             .FirstAsync();
                         var dbLevel = dbSave.Levels!.First();
                         var pos = new Vector3(dbLevel.SpawnPointX, dbLevel.SpawnPointY, dbLevel.SpawnPointZ);
-                        character = new Character(hello.Username, pos, dbLevel.Name);
+                        character = new CharacterV0(hello.Username, pos, dbLevel.Name);
                         var player = new DbPlayer {
                             IdentityUser = user,
                             Characters = new List<DbCharacter> {
@@ -468,7 +469,7 @@ namespace Server {
                                     X = pos.X,
                                     Y = pos.Y,
                                     Z = pos.Z,
-                                    SerializedData = MessagePackSerializer.Serialize(character)
+                                    SerializedData = CharacterV0.Serialize(character)
                                 }
                             }
                         };
@@ -495,7 +496,14 @@ namespace Server {
                 }
 
                 var dbCharacter = player.Characters.First();
-                character = MessagePackSerializer.Deserialize<Character>(dbCharacter.SerializedData);
+                character = CharacterV0.DeserializeUpdatedOrDefault(dbCharacter.SerializedData);
+                if (character.Name == "Fixme") {
+                    character.Name = hello.Username;
+                    character.Level.Value = dbCharacter.Level!.Name;
+                    character.Position = new Vector3(dbCharacter.X, dbCharacter.Y, dbCharacter.Z);
+                    dbCharacter.SerializedData = CharacterV0.Serialize(character);
+                    await context.SaveChangesAsync();
+                }
                 spawnPosition = new Vector3(dbCharacter.Level!.SpawnPointX, dbCharacter.Level!.SpawnPointY, dbCharacter.Level!.SpawnPointZ);
             }
 

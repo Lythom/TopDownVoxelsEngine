@@ -26,7 +26,7 @@ namespace Shared.Net {
             //state.LevelGenerator.GenerateFromQueue(MinPriority, state.Levels);
         }
 
-        private void MoveCharacter(Character character, GameState gameState) {
+        private void MoveCharacter(CharacterV0 character, GameState gameState) {
             var levelId = character.Level.Value;
             if (levelId == null || !gameState.Levels.TryGetValue(levelId, out var level)) return;
             character.Position += character.Velocity;

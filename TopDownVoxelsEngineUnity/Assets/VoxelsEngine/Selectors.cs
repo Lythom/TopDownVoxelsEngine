@@ -10,7 +10,7 @@ namespace VoxelsEngine {
         public readonly ObservableList<PlayerTool> ToolQueue = new SignalList<PlayerTool>(); // 0 is current, 1 is next, 2 is following, etc.
         public readonly ObservableList<BlockId> BlockQueue = new SignalList<BlockId>(); // 0 is current, 1 is next, 2 is following, etc.
         public readonly Observable<BlockId?> SelectedBlock;
-        public readonly Observable<Character?> CurrentCharacter;
+        public readonly Observable<CharacterV0?> CurrentCharacter;
         public readonly Observable<string?> CurrentLevelId;
 
         public Selectors(GameState state) {

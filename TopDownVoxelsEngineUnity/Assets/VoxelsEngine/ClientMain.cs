@@ -182,7 +182,7 @@ namespace VoxelsEngine {
                 try {
                     DisplayLoading(LoadingStage.LocalLoadingGameState, 0.2f);
 
-                    state = MessagePackSerializer.Deserialize<GameState>(await File.ReadAllBytesAsync(LocalSavePath));
+                    state = new(IGameData.DeserializedUpdated(await File.ReadAllBytesAsync(LocalSavePath), null));
 
                     await Configurator.Instance.IsReady();
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
@@ -210,12 +210,12 @@ namespace VoxelsEngine {
                     DisplayLoading(LoadingStage.LocalCreatingGameState, 0.2f);
 
                     Logr.Log("Creating new game", Tags.Standalone);
-                    state = new GameState(null, null, null);
+                    state = new GameState();
                     state.UpdateBlockMapping(Configurator.Instance.BlockRegistry!);
                     var levelMap = new LevelMap("World", spawnPosition);
                     state.Levels.Add("World", levelMap);
                     state.Characters.Add(0,
-                        new Character(
+                        new CharacterV0(
                             "Local",
                             new Vector3(LevelMap.LevelChunkSize * Chunk.Size / 2f + 4, 10f, LevelMap.LevelChunkSize * Chunk.Size / 2f + 4),
                             Vector3.zero,

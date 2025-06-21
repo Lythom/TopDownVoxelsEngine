@@ -6,7 +6,7 @@ namespace Shared {
     public struct Chunk {
         public const int Size = 16;
         public const int Height = 64;
-        public Cell[,,]? Cells;
+        public CellV0[,,]? Cells;
         public bool IsGenerated;
 
         public readonly IEnumerable<CellPosition> GetCellPositions() {

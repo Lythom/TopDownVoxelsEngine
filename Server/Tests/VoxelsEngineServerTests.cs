@@ -43,9 +43,9 @@ namespace Server.Tests {
             _socketServerMock = new Mock<SocketServer>();
             var blockRegistryMock = new Mock<Registry<BlockConfigJson>>();
 
-            var dbChunk0 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 0, ChZ = 0};
-            var dbChunk1 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = true, ChX = 1, ChZ = 0};
-            var dbChunk2 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new Cell[16, 16, 16]), IsGenerated = false, ChX = 1, ChZ = 1};
+            var dbChunk0 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new CellV0[16, 16, 16]), IsGenerated = true, ChX = 0, ChZ = 0};
+            var dbChunk1 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new CellV0[16, 16, 16]), IsGenerated = true, ChX = 1, ChZ = 0};
+            var dbChunk2 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new CellV0[16, 16, 16]), IsGenerated = false, ChX = 1, ChZ = 1};
             var levels = new List<DbLevel>() {
                 new DbLevel() {
                     Name = "Lobby",
@@ -72,14 +72,14 @@ namespace Server.Tests {
             var characters = new List<DbCharacter> {
                 new DbCharacter {
                     Name = TestUsername,
-                    SerializedData = MessagePackSerializer.Serialize(new Character(TestUsername, Vector3.zero, "Lobby")),
+                    SerializedData = MessagePackSerializer.Serialize(new CharacterV0(TestUsername, Vector3.zero, "Lobby")),
                     Level = levels[0],
                 }
             };
             var characters2 = new List<DbCharacter> {
                 new DbCharacter {
                     Name = TestUsername2,
-                    SerializedData = MessagePackSerializer.Serialize(new Character(TestUsername2, Vector3.zero, "Lobby")),
+                    SerializedData = MessagePackSerializer.Serialize(new CharacterV0(TestUsername2, Vector3.zero, "Lobby")),
                     Level = levels[0],
                 }
             };

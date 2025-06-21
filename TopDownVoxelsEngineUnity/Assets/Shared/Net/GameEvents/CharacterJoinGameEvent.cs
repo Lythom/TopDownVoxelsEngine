@@ -12,14 +12,14 @@ namespace Shared.Net {
         public ushort CharacterShortId;
 
         [Key(2)]
-        public Character Character;
+        public CharacterV0 Character;
 
         [Key(3)]
         public Vector3 LevelSpawn;
 
         public override int GetId() => Id;
 
-        public CharacterJoinGameEvent(int id, ushort characterShortId, Character character, Vector3 levelSpawn) {
+        public CharacterJoinGameEvent(int id, ushort characterShortId, CharacterV0 character, Vector3 levelSpawn) {
             Id = id;
             CharacterShortId = characterShortId;
             Character = character;
@@ -33,7 +33,7 @@ namespace Shared.Net {
                 gameState.Levels[levelId] = new LevelMap(levelId, LevelSpawn);
             }
 
-            gameState.Characters.Add(CharacterShortId, new Character(Character.Name, Character.Position, levelId));
+            gameState.Characters.Add(CharacterShortId, new CharacterV0(Character.Name, Character.Position, levelId));
             gameState.Characters[CharacterShortId].UpdateValue(Character);
         }
 

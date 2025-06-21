@@ -28,12 +28,12 @@ namespace Shared {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsAir(this Cell c) {
+        public static bool IsAir(this CellV0 c) {
             return c.Block == 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsAir(this Cell? c) {
+        public static bool IsAir(this CellV0? c) {
             return c == null || IsAir(c.Value);
         }
 
