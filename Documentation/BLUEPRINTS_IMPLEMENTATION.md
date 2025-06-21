@@ -28,13 +28,7 @@ The Blueprint system is implemented across the shared and server components, wit
    - `LoadBlueprintResponseEvent`: Server response with blueprint data
    - `PlaceBlueprintEvent`: Place blueprint in world
 
-3. **Side Effects**:
-   - `SaveBlueprintSideEffect`: Handle blueprint saving
-   - `LoadBlueprintListSideEffect`: Handle blueprint listing
-   - `LoadBlueprintSideEffect`: Handle blueprint loading
-   - `PlaceBlueprintSideEffect`: Handle blueprint placement
-
-4. **Character Extensions**:
+3. **Character Extensions**:
    - Added blueprint anchor position
    - Added blueprint size
    - Added active blueprint reference
@@ -56,8 +50,8 @@ The Blueprint system is implemented across the shared and server components, wit
 
 1. Client creates a `SaveBlueprintEvent` with blueprint data
 2. Event is applied optimistically on client and sent to server
-3. Server processes the event, triggering `SaveBlueprintSideEffect`
-4. `BlueprintService` serializes and saves the blueprint to disk
+3. Server processes the event in HandleMessageAsync
+4. `BlueprintService` serializes and saves the blueprint to database
 5. Server broadcasts confirmation to all clients
 
 ### Loading Blueprint List
@@ -65,7 +59,7 @@ The Blueprint system is implemented across the shared and server components, wit
 1. Client creates a `LoadBlueprintListEvent` with pagination parameters
 2. Event is sent to server
 3. Server processes the event, triggering `LoadBlueprintListSideEffect`
-4. `BlueprintService` retrieves and paginates blueprint metadata
+4. `BlueprintService` retrieves and paginates blueprint metadata from db
 5. Server sends `LoadBlueprintListResponseEvent` to requesting client
 
 ### Loading a Blueprint
@@ -85,10 +79,9 @@ The Blueprint system is implemented across the shared and server components, wit
 5. Service creates individual `PlaceBlockEvent`s for each block
 6. Server broadcasts these events to all clients
 
-## Storage Format
+## Storage
 
-Blueprints are stored as MessagePack-serialized files in the server's `Data/Blueprints` directory.
-Each file is named with the blueprint's GUID and has a `.blueprint` extension.
+Blueprints are stored as MessagePack-serialized data in the server's database.
 
 ## Blueprint Transformation
 
@@ -105,10 +98,3 @@ When placing a blueprint, these transformations can be applied:
 - Full data is only transferred when specifically requested
 - Placement generates individual block events rather than bulk operations
 
-## Future Improvements
-
-1. **Compression**: Add compression for large blueprints
-2. **Incremental Loading**: For very large blueprints, implement chunk-based loading
-3. **Blueprint Tags**: Add tagging and categorization
-4. **Blueprint Permissions**: Add ownership and sharing controls
-5. **Blueprint Versioning**: Track changes to blueprints over time
