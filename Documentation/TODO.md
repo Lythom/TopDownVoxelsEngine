@@ -2,7 +2,13 @@ TODO:
   - UNDO
   - mode de construction = free flight
 
-- [ ] Blueprint system:
+- [x] Blueprint system backend:
+  - [x] Blueprint data models
+  - [x] Blueprint persistence
+  - [x] Server-side blueprint management
+  - [x] Blueprint transformation logic
+
+- [ ] Blueprint system client UI:
   - [ ] Place anchor tool
   - [ ] Offset anchor keys + size + preview
   - [ ] Save key (auto save in area ?)

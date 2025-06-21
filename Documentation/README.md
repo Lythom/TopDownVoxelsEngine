@@ -7,8 +7,8 @@ General documentation of the Dream Builder project.
 ## Prerequisites
 
 - Install .Net core 6.0 (https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-- Install Unity (check the required version of the project in your Unity Hub, after loading VoxelsEngineUnity)
-- Use `dotnet tool restore` in the `VoxelsEngineUnity` folder to enable code generation support for
+- Install Unity (check the required version of the project in your Unity Hub, after loading TopDownVoxelsEngineUnity)
+- Use `dotnet tool restore` in the `TopDownVoxelsEngineUnity` folder to enable code generation support for
   MessagePack. [See MessagePack code generation documentation for more information](https://github.com/neuecc/MessagePack-CSharp#aot-code-generation-support-for-unityxamarin)
 
 ---
@@ -16,8 +16,8 @@ General documentation of the Dream Builder project.
 ## Architecture
 
 - Server project (./Server): Server (.NET core) code
-- VoxelsEngineUnity project (./VoxelsEngineUnity): Client side code
-- Shared project (./VoxelsEngineUnity/Assets/Shared): Shared code
+- TopDownVoxelsEngineUnity project (./TopDownVoxelsEngineUnity): Client side code
+- Shared project (./TopDownVoxelsEngineUnity/Assets/Shared): Shared code
 
 ---
 
@@ -40,12 +40,12 @@ General documentation of the Dream Builder project.
 
 ### Client
 
-- Open the VoxelsEngineUnity project in Unity + IDE (we use Rider)
-- Shared project in located under `VoxelsEngineUnity/Assets/Shared`. Compilation is handled by Unity client-side, and
+- Open the TopDownVoxelsEngineUnity project in Unity + IDE (we use Rider)
+- Shared project in located under `TopDownVoxelsEngineUnity/Assets/Shared`. Compilation is handled by Unity client-side, and
   by netstandard2.1 platform server-side. It must remains compatible in both contexts. Sirenix annotations have been
   added in the server project so that client can use them.
 - Use play mode to run the client
-- Most game files are into `VoxelsEngineUnity/Assets/VoxelsEngine`
+- Most game files are into `TopDownVoxelsEngineUnity/Assets/VoxelsEngine`
 
 ### Nullable
 

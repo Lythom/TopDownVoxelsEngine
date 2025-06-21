@@ -163,8 +163,8 @@ https://sequencediagram.org/index.html#initialData=CoSwLgNgpgBAwgewHZKgDxMmATA5A
 ### Code safety
 
 - Both client and servers are configured with null safety enabled by default
-    - On the client, this is done by settings csc.rsp in the VoxelsEngineUnity/Assets/Shared and
-      VoxelsEngineUnity/Assets/Scripts/VoxelsEngine folder:
+    - On the client, this is done by settings csc.rsp in the TopDownVoxelsEngineUnity/Assets/Shared and
+      TopDownVoxelsEngineUnity/Assets/Scripts/VoxelsEngine folder:
       ``` 
       -nullable
       ```
@@ -197,7 +197,7 @@ https://sequencediagram.org/index.html#initialData=CoSwLgNgpgBAwgewHZKgDxMmATA5A
 ### Files architecture
 
 - VoxelsEngine
-    - VoxelsEngineUnity (client project)
+    - TopDownVoxelsEngineUnity (client project)
         - .config
         - .idea
         - Assets
@@ -210,10 +210,22 @@ https://sequencediagram.org/index.html#initialData=CoSwLgNgpgBAwgewHZKgDxMmATA5A
         - Packages
         - ProjectSettings
         - UserSettings
-    - VoxelsEngineServer (server project)
+    - Server (server project)
 
 ## Rendering (Client side)
 
 ## Networking (Server and client)
 
 ## Gameplay
+
+### Blueprint System
+
+The Blueprint system allows players to save and load collections of blocks, facilitating building and construction in the game world.
+
+**Key Features:**
+- Server-side storage for sharing across all players
+- Support for transformations (rotation, flipping)
+- Blueprint metadata for efficient browsing
+- Integration with existing block placement systems
+
+See [BLUEPRINTS.md](BLUEPRINTS.md) for user-facing documentation and [BLUEPRINTS_IMPLEMENTATION.md](BLUEPRINTS_IMPLEMENTATION.md) for technical implementation details.
