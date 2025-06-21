@@ -45,6 +45,14 @@ namespace Shared {
         public readonly SignalDictionary<BlockId, int> BlocsInventory = new();
         public readonly SignalList<TemplateId> KnownTemplates = new();
 
+        // Blueprint anchor data
+        public readonly Signal<Vector3Int?> BlueprintAnchorPosition = new(new());
+        public readonly Signal<Vector3Int> BlueprintSize = new(new Vector3Int(5, 5, 5));
+        public readonly Signal<Guid?> ActiveBlueprintId = new(null);
+
+        [IgnoreMember]
+        private Signal<BlueprintV0?> _activeBlueprint;
+
         public CharacterV0(string name, Vector3 position, string? levelName) {
             Name = name;
             Position = position;
@@ -68,7 +76,10 @@ namespace Shared {
             Signal<byte>? toolAddFurnitureLevel,
             Signal<byte>? toolReplaceBlockLevel,
             SignalDictionary<BlockId, int>? blocsInventory,
-            SignalList<TemplateId>? knownTemplates
+            SignalList<TemplateId>? knownTemplates,
+            Signal<Vector3Int?>? blueprintAnchorPosition,
+            Signal<Vector3Int>? blueprintSize,
+            Signal<Guid?>? activeBlueprintId
         ) {
             Name = name;
             Position = position;
@@ -84,6 +95,9 @@ namespace Shared {
             ToolReplaceBlockLevel.Value = toolReplaceBlockLevel?.Value ?? 0;
             if (blocsInventory != null) BlocsInventory.SynchronizeToTarget(blocsInventory);
             if (knownTemplates != null) KnownTemplates.SynchronizeToTarget(knownTemplates);
+            BlueprintAnchorPosition.Value = blueprintAnchorPosition?.Value ?? null;
+            BlueprintSize.Value = blueprintSize?.Value ?? new Vector3Int(5, 5, 5);
+            ActiveBlueprintId.Value = activeBlueprintId?.Value ?? null;
         }
 
         public void UpdateValue(CharacterV0 nextState) {

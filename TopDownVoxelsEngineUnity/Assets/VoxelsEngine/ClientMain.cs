@@ -229,6 +229,9 @@ namespace VoxelsEngine {
                             null,
                             null,
                             null,
+                            null,
+                            null,
+                            null,
                             null
                         )
                     );
@@ -244,6 +247,7 @@ namespace VoxelsEngine {
                 DisplayLoading(LoadingStage.LocalGeneratingChunks, 0.4f);
 
                 _engine!.State.UpdateValue(state);
+                // ReSharper disable once RedundantAssignment
                 state = null;
                 _engine.State.LevelGenerator.EnqueueUninitializedChunksAround("World", spawnPositionChX, spawnPositionChZ, 5, _engine.State.Levels);
                 _engine.State.LevelGenerator.GenerateFromQueue(PriorityLevel.LoadingTime, _engine.State.Levels);
@@ -260,7 +264,7 @@ namespace VoxelsEngine {
 
                 await UniTask.Delay(500);
                 await UniTask.WaitWhile(ChunkGPUSynchronizer.Instance, s => s.IsUploadInProgress());
-                
+
                 DisplayLoading(LoadingStage.Complete, 1f);
                 ConnectionModal.Instance.SmartActive(false);
             } catch (Exception e) {
