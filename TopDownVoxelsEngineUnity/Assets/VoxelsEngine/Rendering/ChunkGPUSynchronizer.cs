@@ -185,6 +185,10 @@ namespace VoxelsEngine {
             _ssboSlotIdByChunkIdSsbo.Release();
             _worldBlockDataSsbo = null!;
             _ssboSlotIdByChunkIdSsbo = null!;
+            _freeSlotsInSsbo.Clear();
+            _currentFences.Clear();
+            _activeChunks.Clear();
+            _ssboSlotIdByChunkId = null!;
             _isDisposed = true;
         }
     }
