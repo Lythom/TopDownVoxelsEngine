@@ -107,17 +107,21 @@ namespace Shared {
             return MessagePackSerializer.Serialize(state);
         }
 
-        public static CharacterV0 DeserializeUpdatedOrDefault(byte[]? rawData) {
+        public static bool TryDeserializeUpdatedOrDefault(byte[]? rawData, out CharacterV0? character) {
+            character = null;
             if (rawData != null) {
                 try {
                     var obj = MessagePackSerializer.Deserialize<ICharacter>(rawData);
-                    if (obj is CharacterV0 v0) return v0;
+                    if (obj is CharacterV0 v0) {
+                        character = v0;
+                        return true;
+                    }
                 } catch (Exception _) {
-                    return new("Fixme", Vector3.zero, "");
+                    return false;
                 }
             }
 
-            return new("Player", Vector3.zero, "Level1");
+            return false;
         }
     }
 

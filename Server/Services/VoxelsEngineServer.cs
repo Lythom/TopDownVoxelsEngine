@@ -496,14 +496,14 @@ namespace Server {
                 }
 
                 var dbCharacter = player.Characters.First();
-                character = CharacterV0.DeserializeUpdatedOrDefault(dbCharacter.SerializedData);
-                if (character.Name == "Fixme") {
-                    character.Name = hello.Username;
-                    character.Level.Value = dbCharacter.Level!.Name;
-                    character.Position = new Vector3(dbCharacter.X, dbCharacter.Y, dbCharacter.Z);
+                if (CharacterV0.TryDeserializeUpdatedOrDefault(dbCharacter.SerializedData, out var c)) {
+                    character = c!;
+                } else {
+                    character = new CharacterV0(hello.Username, Vector3.zero, dbCharacter.Level!.Name);
                     dbCharacter.SerializedData = CharacterV0.Serialize(character);
                     await context.SaveChangesAsync();
                 }
+
                 spawnPosition = new Vector3(dbCharacter.Level!.SpawnPointX, dbCharacter.Level!.SpawnPointY, dbCharacter.Level!.SpawnPointZ);
             }
 
