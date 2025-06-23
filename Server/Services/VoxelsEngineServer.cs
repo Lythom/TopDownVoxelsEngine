@@ -303,7 +303,7 @@ namespace Server {
                     var cellArray = CellArrayV0.DeserializeUpdatedOrDefault(dbChunk.Cells);
                     var c = new Chunk {
                         Cells = cellArray.Cells,
-                        IsGenerated = cellArray.IsGenerated
+                        IsGenerated = true
                     };
                     if (c.Cells.Length < Chunk.Size * Chunk.Height * Chunk.Size) {
                         var migrated = new CellV0[Chunk.Size, Chunk.Height, Chunk.Size];

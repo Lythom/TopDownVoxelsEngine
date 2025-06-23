@@ -14,6 +14,7 @@ namespace Server.DbModel {
         public virtual DbSet<DbGame> Games { get; set; }
         public virtual DbSet<DbLevel> Levels { get; set; }
         public virtual DbSet<DbNpc> Npcs { get; set; }
+        public virtual DbSet<DbBlueprint> Blueprints { get; set; }
 
         public GameSavesContext() {
         }
@@ -65,6 +66,15 @@ namespace Server.DbModel {
                 .HasOne(c => c.Level)
                 .WithMany(l => l.Chunks)
                 .HasForeignKey(c => c.LevelId);
+            
+            modelBuilder.Entity<DbBlueprint>()
+                .HasOne(b => b.Creator)
+                .WithMany()
+                .HasForeignKey(b => b.CreatorId);
+
+            modelBuilder.Entity<DbBlueprint>()
+                .HasIndex(b => b.LastModifiedDate);
+
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -189,4 +199,24 @@ namespace Server.DbModel {
         // Navigation property for a list of levels associated with a game
         public ICollection<DbLevel>? Levels { get; set; }
     }
+    
+    public class DbBlueprint
+    {
+        [Key]
+        public Guid Id { get; set; }
+        public string Name { get; set; } = null!;
+        public string CreatorId { get; set; } = null!;
+        public DateTime CreationDate { get; set; }
+        public DateTime LastModifiedDate { get; set; }
+        public int SizeX { get; set; }
+        public int SizeY { get; set; }
+        public int SizeZ { get; set; }
+        public byte[] SerializedData { get; set; } = null!;
+        public int FloorHeight { get; set; }
+        public byte PossibleSymmetries { get; set; }
+        
+        // Navigation property
+        public DbPlayer? Creator { get; set; }
+    }
+
 }

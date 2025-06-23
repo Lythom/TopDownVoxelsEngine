@@ -35,31 +35,39 @@ namespace Shared {
         [Key(9)]
         public Symmetries PossibleSymmetries;
 
-        public BlueprintV0()
-        {
+        public BlueprintV0() {
             Id = Guid.NewGuid();
             CreationDate = DateTime.UtcNow;
             LastModifiedDate = DateTime.UtcNow;
         }
 
-        // Method to create a lightweight metadata version of this blueprint
-        public BlueprintMetadataV0 ToMetadata()
-        {
-            return new BlueprintMetadataV0
-            {
-                Id = Id,
-                Name = Name,
-                CreatorId = CreatorId,
-                CreationDate = CreationDate,
-                LastModifiedDate = LastModifiedDate,
-                Size = Size,
-                FloorHeight = FloorHeight,
-                PossibleSymmetries = PossibleSymmetries
-            };
+        [SerializationConstructor]
+        public BlueprintV0(
+            Guid id,
+            string name,
+            string creatorId,
+            DateTime creationDate,
+            DateTime lastModifiedDate,
+            Vector3Int size,
+            CellArrayV0 cells,
+            BlockPathMapping blockMapping,
+            int floorHeight,
+            Symmetries possibleSymmetries
+        ) {
+            Id = id;
+            Name = name;
+            CreatorId = creatorId;
+            CreationDate = creationDate;
+            LastModifiedDate = lastModifiedDate;
+            Size = size;
+            Cells = cells;
+            BlockMapping = blockMapping;
+            FloorHeight = floorHeight;
+            PossibleSymmetries = possibleSymmetries;
         }
     }
 
     public interface IBlueprint {
     }
-    
+
 }

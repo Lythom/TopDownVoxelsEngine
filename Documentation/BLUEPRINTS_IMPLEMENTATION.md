@@ -49,35 +49,31 @@ The Blueprint system is implemented across the shared and server components, wit
 ### Saving a Blueprint
 
 1. Client creates a `SaveBlueprintEvent` with blueprint data
-2. Event is applied optimistically on client and sent to server
-3. Server processes the event in HandleMessageAsync
-4. `BlueprintService` serializes and saves the blueprint to database
-5. Server broadcasts confirmation to all clients
+2. Server processes the event in HandleMessageAsync, `BlueprintService` serializes and saves the blueprint to database
+3. Server broadcasts confirmation to sender about save state
+4. Client display a short feedback to indicate save success or failure.
 
 ### Loading Blueprint List
 
 1. Client creates a `LoadBlueprintListEvent` with pagination parameters
-2. Event is sent to server
-3. Server processes the event, triggering `LoadBlueprintListSideEffect`
-4. `BlueprintService` retrieves and paginates blueprint metadata from db
-5. Server sends `LoadBlueprintListResponseEvent` to requesting client
+2. Server processes the event in HandleMessageAsync, `BlueprintService` retrieves and paginates blueprint metadata from db
+3. Server sends `LoadBlueprintListResponseEvent` to requesting client
+4. Client displays a selectable list
 
 ### Loading a Blueprint
 
-1. Client creates a `LoadBlueprintEvent` with blueprint ID
-2. Event is sent to server
-3. Server processes the event, triggering `LoadBlueprintSideEffect`
-4. `BlueprintService` retrieves the blueprint data
-5. Server sends `LoadBlueprintResponseEvent` to requesting client
+1. Client creates a `LoadBlueprintEvent` with blueprint ID from select blueprint in the list
+2. Server processes the event in HandleMessageAsync, `BlueprintService` retrieves the blueprint data
+3. Server sends `LoadBlueprintResponseEvent` to requesting client
+4. Client loads blueprint data in memory and merges blueprint area rendering with world rendering
 
 ### Placing a Blueprint
 
 1. Client creates a `PlaceBlueprintEvent` with position and transformations
-2. Event is sent to server
-3. Server processes the event, triggering `PlaceBlueprintSideEffect`
-4. `BlueprintService` loads the blueprint, applies transformations
-5. Service creates individual `PlaceBlockEvent`s for each block
-6. Server broadcasts these events to all clients
+2. Server processes the event in HandleMessageAsync, `BlueprintService` loads the blueprint, applies transformations
+3. Service modify the world accordingly
+4. Server broadcasts BlueprintUpdateEvent to all clients with blockdata and positions required to update the world. 
+Note: BlueprintUpdateEvent and BlueprintService should share the same code to update world from blueprint data.
 
 ## Storage
 
@@ -96,5 +92,3 @@ When placing a blueprint, these transformations can be applied:
 - Blueprints are cached in memory for quick access
 - Only metadata is sent when listing blueprints
 - Full data is only transferred when specifically requested
-- Placement generates individual block events rather than bulk operations
-

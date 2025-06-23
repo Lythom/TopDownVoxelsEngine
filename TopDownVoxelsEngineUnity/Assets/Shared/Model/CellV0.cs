@@ -32,18 +32,13 @@ namespace Shared {
         [Key(0)]
         public CellV0[,,] Cells;
 
-        [IgnoreMember]
-        public bool IsGenerated;
-
         [SerializationConstructor]
         public CellArrayV0(CellV0[,,] cells) {
             Cells = cells;
-            IsGenerated = true;
         }
-        
+
         public CellArrayV0(CellV0[,,] cells, bool isGenerated) {
             Cells = cells;
-            IsGenerated = isGenerated;
         }
 
 
