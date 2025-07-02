@@ -3,27 +3,27 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
-using MessagePack;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Server.DbModel;
+using Server.Services;
 using Shared;
 using Shared.Net;
 
 namespace Server {
     public class VoxelsEngineServer {
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly BlueprintService _blueprintService;
 
         // Configuration
         PeriodicTimer networkingTime = new(TimeSpan.FromMilliseconds(1));
         PeriodicTimer backupTimer = new(TimeSpan.FromSeconds(5));
+        private const int MaxBlueprintSize = 64;
 
         // Data
         private readonly GameState _state = new();
@@ -50,9 +50,11 @@ namespace Server {
             ISocketManager socketServer,
             Registry<BlockConfigJson> blockRegistry
         ) {
-            _blockRegistry = blockRegistry;
-
             _serviceScopeFactory = serviceScopeFactory;
+            _blockRegistry = blockRegistry;
+            using var scope = _serviceScopeFactory.CreateScope();
+            _blueprintService = scope.ServiceProvider.GetRequiredService<BlueprintService>();
+
             try {
                 _cts = new CancellationTokenSource();
                 _socketServer = socketServer;
@@ -237,6 +239,9 @@ namespace Server {
                         return shouldSend;
                     }, placeBlocksGameEvent);
                     break;
+                case BlueprintUpdateEvent blueprintUpdateEvent:
+                    BroadcastBut(blueprintUpdateEvent.CharacterShortId, m);
+                    break;
                 case TickGameEvent:
                 case ChunkUpdateGameEvent:
                     // never send tick event
@@ -385,44 +390,26 @@ namespace Server {
 
                         break;
                     case HelloNetworkMessage hello: {
-                        Console.WriteLine("A client said hello : " + hello.Username);
-                        if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
-                            Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
-                            return;
-                        } else {
-                            _userSessionData[clientShortId].Name = hello.Username;
-                            _userSessionData[clientShortId].Status = SessionStatus.GettingReady;
-                        }
-
-                        using var scope = _serviceScopeFactory.CreateScope();
-                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-                        var user = await userManager.FindByNameAsync(hello.Username);
-                        try {
-                            var (character, levelSpawn) = await GetOrCreateCharacterAsync(user, hello);
-                            var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
-                            characterJoinGameEvent.AssertApplicationConditions(in _state);
-                            characterJoinGameEvent.Apply(State, null);
-
-                            // send the new player infos about the already existing players
-                            foreach (var characterShortId in State.Characters.Keys) {
-                                if (characterShortId != clientShortId) {
-                                    // except for himself
-                                    Send(clientShortId, new CharacterJoinGameEvent(0, characterShortId, State.Characters[characterShortId], Vector3.zero));
-                                }
-                            }
-
-                            // Send all players info about the new players.
-                            // It also confirms last to the new players it's entry
-                            SmartBroadcast(characterJoinGameEvent);
-                            _userSessionData[clientShortId].Status = SessionStatus.Ready;
-                        } catch (Exception e) {
-                            Send(clientShortId, new ErrorNetworkMessage(e.Message));
-                            Console.WriteLine(e.ToString());
-                            return;
-                        }
-
+                        if (await HandleHelloAsync(hello, clientShortId)) return;
                         break;
                     }
+                    case SaveBlueprintEvent saveEvt: {
+                        await HandleSaveBlueprintAsync(clientShortId, saveEvt);
+                        break;
+                    }
+                    case LoadBlueprintListEvent listEvt: {
+                        await HandleLoadBlueprintListAsync(clientShortId, listEvt);
+                        break;
+                    }
+                    case LoadBlueprintEvent loadEvt: {
+                        await HandleLoadBlueprintAsync(clientShortId, loadEvt);
+                        break;
+                    }
+                    case PlaceBlueprintEvent placeEvt: {
+                        await HandlePlaceBlueprintAsync(clientShortId, placeEvt);
+                        break;
+                    }
+
                 }
 
                 // backup the state before applying
@@ -439,6 +426,133 @@ namespace Server {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Init session for player.
+        /// </summary>
+        /// <param name="hello"></param>
+        /// <param name="clientShortId"></param>
+        /// <returns>true if there was an exception, false if everything is ok</returns>
+        private async UniTask<bool> HandleHelloAsync(HelloNetworkMessage hello, ushort clientShortId) {
+            Console.WriteLine("A client said hello : " + hello.Username);
+            if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
+                Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
+                return true;
+            } else {
+                _userSessionData[clientShortId].Name = hello.Username;
+                _userSessionData[clientShortId].Status = SessionStatus.GettingReady;
+            }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var user = await userManager.FindByNameAsync(hello.Username);
+            try {
+                var (character, levelSpawn) = await GetOrCreateCharacterAsync(user, hello);
+                var characterJoinGameEvent = new CharacterJoinGameEvent(0, clientShortId, character, levelSpawn);
+                characterJoinGameEvent.AssertApplicationConditions(in _state);
+                characterJoinGameEvent.Apply(State, null);
+
+                // send the new player infos about the already existing players
+                foreach (var characterShortId in State.Characters.Keys) {
+                    if (characterShortId != clientShortId) {
+                        // except for himself
+                        Send(clientShortId, new CharacterJoinGameEvent(0, characterShortId, State.Characters[characterShortId], Vector3.zero));
+                    }
+                }
+
+                // Send all players info about the new players.
+                // It also confirms last to the new players it's entry
+                SmartBroadcast(characterJoinGameEvent);
+                _userSessionData[clientShortId].Status = SessionStatus.Ready;
+            } catch (Exception e) {
+                Send(clientShortId, new ErrorNetworkMessage(e.Message));
+                Console.WriteLine(e.ToString());
+                return true;
+            }
+
+            return false;
+        }
+
+        // ---------------------------------------------------------------------
+        // BLUEPRINT HELPERS
+        // ---------------------------------------------------------------------
+        private async UniTask HandleSaveBlueprintAsync(ushort senderId, SaveBlueprintEvent e) {
+            if (string.IsNullOrWhiteSpace(e.Name) || e.Name.Length > 100) {
+                Send(senderId, new ServerErrorGameEvent(80, "Can't save blueprint because name must be > 0 and < 100 characters."));
+                return;
+            }
+
+            if (e.Size.X > MaxBlueprintSize || e.Size.Y > MaxBlueprintSize || e.Size.Z > MaxBlueprintSize) {
+                Send(senderId, new ServerErrorGameEvent(80, "Can't save blueprint because size should not exceed maxSize."));
+                return;
+            }
+
+            if (!_userSessionData.TryGetValue(senderId, out var userData)) {
+                Send(senderId, new ServerErrorGameEvent(80, "Can't save blueprint because userData were not found in session."));
+                return;
+            }
+
+            var character = State.Characters[e.CharacterShortId];
+            if (character.Level.Value is null || !State.Levels.TryGetValue(character.Level.Value, out LevelMap? levelMap)) {
+                Send(senderId, new ServerErrorGameEvent(81, "Can't save blueprint because character level information was missing."));
+                return;
+            }
+
+            var (ok, error) = await _blueprintService.SaveBlueprintAsync(
+                creatorId: userData.Name ?? "anonymous",
+                name: e.Name,
+                anchorPosition: e.AnchorPosition,
+                size: e.Size,
+                level: levelMap,
+                levelBlockPathMapping: State.BlockMapping);
+
+            if (!ok) {
+                Send(senderId, new ServerErrorGameEvent(82, "Can't save blueprint because error occured while saving to database."));
+                return;
+            }
+
+            Send(senderId, e); // ACK By returning the same event
+        }
+
+        private async UniTask HandleLoadBlueprintListAsync(ushort senderId, LoadBlueprintListEvent e) {
+            var (items, total) = await _blueprintService.GetBlueprintListAsync(e.Page, e.PageSize);
+            Send(senderId, new LoadBlueprintListResponseEvent(e.Id, e.CharacterShortId, items.ToArray(), total));
+        }
+
+        private async UniTask HandleLoadBlueprintAsync(ushort senderId, LoadBlueprintEvent e) {
+            var blueprint = await _blueprintService.GetBlueprintAsync(e.BlueprintId);
+            if (blueprint == null) {
+                Send(senderId, new ServerErrorGameEvent(83, "Can't load blueprint because provided BlueprintId was not found."));
+                return;
+            }
+
+            Send(senderId, new LoadBlueprintResponseEvent(e.Id, e.CharacterShortId, blueprint));
+        }
+
+        private async UniTask HandlePlaceBlueprintAsync(ushort senderId, PlaceBlueprintEvent e) {
+            var character = State.Characters[e.CharacterShortId];
+            if (character.Level.Value is null || !State.Levels.TryGetValue(character.Level.Value, out LevelMap? levelMap)) {
+                Send(senderId, new ServerErrorGameEvent(84, "Can't place blueprint because character level information was missing."));
+                return;
+            }
+
+            var blueprint = await _blueprintService.GetBlueprintAsync(e.BlueprintId);
+            if (blueprint == null) {
+                Send(senderId, new ServerErrorGameEvent(85, "Can't place blueprint because provided BlueprintId was not found."));
+                return;
+            }
+
+            // Transform & apply – returns the world-space cells to write
+            var placedCells = await _blueprintService.PlaceBlueprintAsync(e.BlueprintId, e.Position, e.Rotation, e.FlipOperations, levelMap);
+
+            if (placedCells == null) {
+                Send(senderId, new ServerErrorGameEvent(86, "Can't place blueprint because placement failed in player current level."));
+                return;
+            }
+
+            // Broadcast visual update so all clients can start showing it immediately
+            SmartBroadcast(new BlueprintUpdateEvent(0, e.CharacterShortId, e.Position, new CellArrayV0(placedCells)));
         }
 
 

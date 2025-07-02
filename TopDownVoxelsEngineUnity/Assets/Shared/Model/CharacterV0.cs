@@ -50,9 +50,6 @@ namespace Shared {
         public readonly Signal<Vector3Int> BlueprintSize = new(new Vector3Int(5, 5, 5));
         public readonly Signal<Guid?> ActiveBlueprintId = new(null);
 
-        [IgnoreMember]
-        private Signal<BlueprintV0?> _activeBlueprint;
-
         public CharacterV0(string name, Vector3 position, string? levelName) {
             Name = name;
             Position = position;
@@ -130,7 +127,7 @@ namespace Shared {
                         character = v0;
                         return true;
                     }
-                } catch (Exception _) {
+                } catch (Exception) {
                     return false;
                 }
             }

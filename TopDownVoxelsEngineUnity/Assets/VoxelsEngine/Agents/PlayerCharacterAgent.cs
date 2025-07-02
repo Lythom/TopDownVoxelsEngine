@@ -1,4 +1,5 @@
-﻿using LoneStoneStudio.Tools;
+﻿using System;
+using LoneStoneStudio.Tools;
 using Popcron;
 using Shared;
 using Shared.Net;
@@ -166,6 +167,7 @@ namespace VoxelsEngine {
             PlayerTool? selectedTool = null;
             if (selectedToolIdx < playerTools.Count) selectedTool = playerTools[selectedToolIdx];
             else if (playerTools.Count > 0) selectedTool = playerTools[0];
+            if (selectedTool == null) throw new ApplicationException("selectedTool should never be null. Ensure Configurator.Instance.PlayerTools is properly configured.");
             var selectedBlock = _character.SelectedBlock.Value;
 
             UpdateTools(selectedToolIdx, selectedBlock);

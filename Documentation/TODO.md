@@ -35,6 +35,7 @@ TODO:
 
 - varier le rendu : voxels decorations / tesselation
   - 1 définition des textures via un JSON. OK
+
 ```C#
         private static void RefreshTextures() {
             var mtextures = Resources.LoadAll<TextAsset>("Textures/Main");
@@ -51,6 +52,7 @@ TODO:
         }
 ```
 
+- Backup automatisé avec https://plakar.io/
 - Clarifier la cible ?
 
 Cas:

@@ -38,11 +38,10 @@ The Blueprint system is implemented across the shared and server components, wit
 1. **Blueprint Service**:
    - Manages blueprint storage and retrieval
    - Handles blueprint transformations
-   - Processes blueprint-related side effects
 
 2. **GameServer Extensions**:
-   - Registers blueprint side effect handlers
    - Configures dependency injection
+   - Handle blueprints related game events
 
 ## Data Flow
 

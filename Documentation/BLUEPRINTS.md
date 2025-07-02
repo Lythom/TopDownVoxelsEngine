@@ -21,11 +21,11 @@ Blueprints are saved server-side and shared between all players, with creator in
 ### Server-Side Implementation
 
 - `BlueprintService`: Manages blueprint storage, retrieval, and manipulation
-  - Stores blueprints in the filesystem using MessagePack serialization
-  - Provides caching for quick access
-  - Handles transformation and placement logic
+    - Stores blueprints in the filesystem using MessagePack serialization
+    - Provides caching for quick access
+    - Handles transformation and placement logic
 
-- `GameServer Extensions`: Process blueprint-related game events and side effects
+- `GameServer Extensions`: Process blueprint-related game events
 
 ### Shared Data Models
 
@@ -33,7 +33,7 @@ Blueprints are saved server-side and shared between all players, with creator in
 - `BlueprintMetadataV0`: Lightweight version for listing without full block data
 - `CharacterV0`: Extended with blueprint anchor position and active blueprint reference
 
-### Events and Side Effects
+### Events
 
 - `SaveBlueprintEvent`: Save a blueprint to the server
 - `LoadBlueprintListEvent` / `LoadBlueprintListResponseEvent`: Get paginated list of available blueprints

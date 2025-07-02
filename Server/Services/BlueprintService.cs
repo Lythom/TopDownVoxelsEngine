@@ -59,7 +59,7 @@ namespace Server.Services {
                     CreationDate = DateTime.UtcNow,
                     LastModifiedDate = DateTime.UtcNow,
                     Size = size,
-                    Cells = new CellArrayV0(cells, true),
+                    Cells = new CellArrayV0(cells),
                     BlockMapping = blockMapping,
                     FloorHeight = 0, // Default value, can be modified later
                     PossibleSymmetries = Symmetries.None // Default value, can be modified later
@@ -131,7 +131,7 @@ namespace Server.Services {
             }
         }
 
-        public async Task<bool> PlaceBlueprintAsync(
+        public async Task<CellV0[,,]?> PlaceBlueprintAsync(
             Guid blueprintId,
             Vector3Int position,
             byte rotation,
@@ -140,7 +140,7 @@ namespace Server.Services {
         ) {
             var blueprint = await GetBlueprintAsync(blueprintId);
             if (blueprint == null)
-                return false;
+                return null;
 
             try {
                 // Apply transformations
@@ -172,48 +172,60 @@ namespace Server.Services {
                         level.TrySetExistingCell(worldPos.X, worldPos.Y, worldPos.Z, cell.Block);
                 }
 
-                return true;
+                return transformed;
             } catch {
-                return false;
+                return null;
             }
         }
 
-
-
+        /// <summary>
+        /// Applies rotation and flip operations to a local blueprint coordinate.
+        /// The rotation is clockwise around the blueprint’s centre and the flips are
+        /// performed afterwards.  Both <paramref name="sizeX"/> and <paramref name="sizeZ"/>
+        /// must be odd so a discrete centre cell exists.
+        /// </summary>
         public static (int x, int z) ApplyTransformations(
-            int x, int z,
-            int sizeX, int sizeZ,
+            int x,
+            int z,
+            int sizeX,
+            int sizeZ,
             byte rotation,
-            Symmetries flipOperations)
-        {
+            Symmetries flipOperations
+        ) {
+            // A unique centre point is required for correct rotation mathematics.
             if (sizeX % 2 == 0 || sizeZ % 2 == 0)
-                throw new ArgumentException("Blueprint size must be odd in both X and Z dimensions");
+                throw new ArgumentException("Only blueprints with an odd size can be transformed.");
 
-            // Calculate center points
-            var centerX = (sizeX - 1) / 2;
-            var centerZ = (sizeZ - 1) / 2;
+            // Translate the point to make the centre the origin (0,0).
+            var originX = sizeX / 2;
+            var originZ = sizeZ / 2;
 
-            // Convert to local coordinates (relative to center)
-            var localX = x - centerX;
-            var localZ = z - centerZ;
+            int dx = x - originX;
+            int dz = z - originZ;
 
-            // Apply flipping first (in local coordinates)
-            if ((flipOperations & Symmetries.XAxis) != 0)
-                localX = -localX;
-            if ((flipOperations & Symmetries.ZAxis) != 0)
-                localZ = -localZ;
+            // Normalise the rotation to 0-3 steps (0°, 90°, 180°, 270° clockwise).
+            int steps = rotation % 4;
 
-            // Apply rotation (in local coordinates)
-            var rotations = rotation % 4;
-            for (int i = 0; i < rotations; i++)
-            {
-                var tempX = localX;
-                localX = localZ;
-                localZ = -tempX;
+            for (var i = 0; i < steps; i++) {
+                // 90° clockwise: (dx, dz) -> (-dz, dx)
+                var oldDx = dx;
+                dx = -dz;
+                dz = oldDx;
             }
 
-            // Convert back to world coordinates
-            return (localX + centerX, localZ + centerZ);
+            // Optional mirror operations.
+            if (flipOperations.HasFlag(Symmetries.XAxis))
+                dx = -dx;
+
+            if (flipOperations.HasFlag(Symmetries.ZAxis))
+                dz = -dz;
+
+            // Translate back to local blueprint coordinates.
+            var transformedX = dx + originX;
+            var transformedZ = dz + originZ;
+
+            return (transformedX, transformedZ);
         }
+
     }
 }

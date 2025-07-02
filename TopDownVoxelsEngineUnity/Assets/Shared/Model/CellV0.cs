@@ -37,11 +37,6 @@ namespace Shared {
             Cells = cells;
         }
 
-        public CellArrayV0(CellV0[,,] cells, bool isGenerated) {
-            Cells = cells;
-        }
-
-
         public static byte[] Serialize(CellV0[,,] cells) {
             return MessagePackSerializer.Serialize(new CellArrayV0(cells));
         }
@@ -56,15 +51,16 @@ namespace Shared {
                         var arr = MessagePackSerializer.Deserialize<CellV0[,,]>(rawData);
                         obj = new CellArrayV0(arr);
                     } catch (Exception e2) {
-                        Console.WriteLine("[ICellArray] Failed to deserialize: ICellArray and CellV0[,,].");
-                        return new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size], false);
+                        Logr.LogException(e, "[ICellArray] Failed to deserialize: ICellArray and CellV0[,,].");
+                        Logr.LogException(e2);
+                        return new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size]);
                     }
                 }
 
                 if (obj is CellArrayV0 v0) return v0;
             }
 
-            return new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size], false);
+            return new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size]);
         }
     }
 }

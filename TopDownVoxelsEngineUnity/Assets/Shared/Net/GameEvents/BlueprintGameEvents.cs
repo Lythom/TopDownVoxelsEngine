@@ -8,7 +8,7 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly string Name;
@@ -20,9 +20,9 @@ namespace Shared.Net {
         public readonly Vector3Int Size;
 
         [SerializationConstructor]
-        public SaveBlueprintEvent(uint id, ushort characterId, string name, Vector3Int anchorPosition, Vector3Int size) {
+        public SaveBlueprintEvent(uint id, ushort characterShortId, string name, Vector3Int anchorPosition, Vector3Int size) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Name = name;
             AnchorPosition = anchorPosition;
             Size = size;
@@ -35,7 +35,7 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly int Page;
@@ -44,9 +44,9 @@ namespace Shared.Net {
         public readonly int PageSize;
 
         [SerializationConstructor]
-        public LoadBlueprintListEvent(uint id, ushort characterId, int page, int pageSize) {
+        public LoadBlueprintListEvent(uint id, ushort characterShortId, int page, int pageSize) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Page = page;
             PageSize = pageSize;
         }
@@ -58,7 +58,7 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly BlueprintMetadataV0[] Blueprints;
@@ -67,9 +67,9 @@ namespace Shared.Net {
         public readonly int TotalCount;
 
         [SerializationConstructor]
-        public LoadBlueprintListResponseEvent(uint id, ushort characterId, BlueprintMetadataV0[] blueprints, int totalCount) {
+        public LoadBlueprintListResponseEvent(uint id, ushort characterShortId, BlueprintMetadataV0[] blueprints, int totalCount) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Blueprints = blueprints;
             TotalCount = totalCount;
         }
@@ -81,15 +81,15 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly Guid BlueprintId;
 
         [SerializationConstructor]
-        public LoadBlueprintEvent(uint id, ushort characterId, Guid blueprintId) {
+        public LoadBlueprintEvent(uint id, ushort characterShortId, Guid blueprintId) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             BlueprintId = blueprintId;
         }
     }
@@ -100,15 +100,15 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly BlueprintV0 Blueprint;
 
         [SerializationConstructor]
-        public LoadBlueprintResponseEvent(uint id, ushort characterId, BlueprintV0 blueprint) {
+        public LoadBlueprintResponseEvent(uint id, ushort characterShortId, BlueprintV0 blueprint) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Blueprint = blueprint;
         }
     }
@@ -119,7 +119,7 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly Guid BlueprintId;
@@ -136,14 +136,14 @@ namespace Shared.Net {
         [SerializationConstructor]
         public PlaceBlueprintEvent(
             uint id,
-            ushort characterId,
+            ushort characterShortId,
             Guid blueprintId,
             Vector3Int position,
             byte rotation,
             Symmetries flipOperations
         ) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             BlueprintId = blueprintId;
             Position = position;
             Rotation = rotation;
@@ -157,7 +157,7 @@ namespace Shared.Net {
         public readonly uint Id;
 
         [Key(1)]
-        public readonly ushort CharacterId;
+        public readonly ushort CharacterShortId;
 
         [Key(2)]
         public readonly Vector3Int Position;
@@ -166,9 +166,9 @@ namespace Shared.Net {
         public readonly CellArrayV0 Cells;
 
         [SerializationConstructor]
-        public BlueprintUpdateEvent(uint id, ushort characterId, Vector3Int position, CellArrayV0 cells) {
+        public BlueprintUpdateEvent(uint id, ushort characterShortId, Vector3Int position, CellArrayV0 cells) {
             Id = id;
-            CharacterId = characterId;
+            CharacterShortId = characterShortId;
             Position = position;
             Cells = cells;
         }
