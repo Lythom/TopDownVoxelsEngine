@@ -53,7 +53,7 @@ namespace Server.DbModel {
 
             modelBuilder.Entity<DbLevel>()
                 .HasIndex(l => l.Name);
-            
+
             modelBuilder.Entity<DbLevel>()
                 .HasOne(l => l.Game)
                 .WithMany(g => g.Levels)
@@ -66,7 +66,7 @@ namespace Server.DbModel {
                 .HasOne(c => c.Level)
                 .WithMany(l => l.Chunks)
                 .HasForeignKey(c => c.LevelId);
-            
+
             modelBuilder.Entity<DbBlueprint>()
                 .HasOne(b => b.Creator)
                 .WithMany()
@@ -199,13 +199,13 @@ namespace Server.DbModel {
         // Navigation property for a list of levels associated with a game
         public ICollection<DbLevel>? Levels { get; set; }
     }
-    
-    public class DbBlueprint
-    {
+
+    public class DbBlueprint {
         [Key]
         public Guid Id { get; set; }
+
         public string Name { get; set; } = null!;
-        public string CreatorId { get; set; } = null!;
+        public Guid CreatorId { get; set; }
         public DateTime CreationDate { get; set; }
         public DateTime LastModifiedDate { get; set; }
         public int SizeX { get; set; }
@@ -214,7 +214,7 @@ namespace Server.DbModel {
         public byte[] SerializedData { get; set; } = null!;
         public int FloorHeight { get; set; }
         public byte PossibleSymmetries { get; set; }
-        
+
         // Navigation property
         public DbPlayer? Creator { get; set; }
     }

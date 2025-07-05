@@ -15,7 +15,7 @@ namespace Server.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -209,6 +209,53 @@ namespace Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Server.DbModel.DbBlueprint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CreatorId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FloorHeight")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte>("PossibleSymmetries")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("SerializedData")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<int>("SizeX")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SizeY")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SizeZ")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
+
+                    b.HasIndex("LastModifiedDate");
+
+                    b.ToTable("Blueprints");
+                });
+
             modelBuilder.Entity("Server.DbModel.DbCharacter", b =>
                 {
                     b.Property<Guid>("CharacterId")
@@ -219,14 +266,12 @@ namespace Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PlayerId")
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("SerializedData")
-                        .IsRequired()
                         .HasColumnType("BLOB");
 
                     b.Property<float>("X")
@@ -256,7 +301,6 @@ namespace Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("Cells")
-                        .IsRequired()
                         .HasColumnType("BLOB");
 
                     b.Property<short>("ChX")
@@ -341,11 +385,9 @@ namespace Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("SerializedData")
-                        .IsRequired()
                         .HasColumnType("BLOB");
 
                     b.Property<int>("X")
@@ -371,7 +413,6 @@ namespace Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("IdentityUserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("PlayerId");
@@ -432,6 +473,17 @@ namespace Server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Server.DbModel.DbBlueprint", b =>
+                {
+                    b.HasOne("Server.DbModel.DbPlayer", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+                });
+
             modelBuilder.Entity("Server.DbModel.DbCharacter", b =>
                 {
                     b.HasOne("Server.DbModel.DbLevel", "Level")
@@ -488,9 +540,7 @@ namespace Server.Migrations
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
                         .WithMany()
-                        .HasForeignKey("IdentityUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IdentityUserId");
 
                     b.Navigation("IdentityUser");
                 });

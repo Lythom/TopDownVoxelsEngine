@@ -5,16 +5,18 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Server.DbModel;
 using Shared;
 
 namespace Server.Services {
     public class BlueprintService : IBlueprintService {
-        private readonly GameSavesContext _context;
-        private readonly ConcurrentDictionary<Guid, BlueprintV0> _cache;
 
-        public BlueprintService(GameSavesContext context) {
-            _context = context;
+        private readonly ConcurrentDictionary<Guid, BlueprintV0> _cache;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+
+        public BlueprintService(IServiceScopeFactory serviceScopeFactory) {
+            _serviceScopeFactory = serviceScopeFactory;
             _cache = new ConcurrentDictionary<Guid, BlueprintV0>();
         }
 
@@ -70,7 +72,7 @@ namespace Server.Services {
                 var dbBlueprint = new DbBlueprint {
                     Id = blueprint.Id,
                     Name = blueprint.Name,
-                    CreatorId = blueprint.CreatorId,
+                    CreatorId = new Guid(blueprint.CreatorId),
                     CreationDate = blueprint.CreationDate,
                     LastModifiedDate = blueprint.LastModifiedDate,
                     SizeX = blueprint.Size.X,
@@ -81,8 +83,10 @@ namespace Server.Services {
                     PossibleSymmetries = (byte) blueprint.PossibleSymmetries
                 };
 
-                _context.Blueprints.Add(dbBlueprint);
-                await _context.SaveChangesAsync();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+                context.Blueprints.Add(dbBlueprint);
+                await context.SaveChangesAsync();
 
                 // Add to cache
                 _cache[blueprint.Id] = blueprint;
@@ -94,16 +98,20 @@ namespace Server.Services {
         }
 
         public async UniTask<(BlueprintMetadataV0[] blueprints, int totalCount)> GetBlueprintListAsync(int page, int pageSize) {
-            var totalCount = await _context.Blueprints.CountAsync();
+            using var scope = _serviceScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
 
-            var blueprints = await _context.Blueprints
+            var totalCount = await context.Blueprints.AsNoTracking().CountAsync();
+
+            var blueprints = await context.Blueprints
+                .AsNoTracking()
                 .OrderByDescending(b => b.LastModifiedDate)
                 .Skip(page * pageSize)
                 .Take(pageSize)
                 .Select(b => new BlueprintMetadataV0 {
                     Id = b.Id,
                     Name = b.Name,
-                    CreatorId = b.CreatorId,
+                    CreatorId = b.CreatorId.ToString(),
                     CreationDate = b.CreationDate,
                     LastModifiedDate = b.LastModifiedDate,
                     Size = new Vector3Int(b.SizeX, b.SizeY, b.SizeZ)
@@ -118,7 +126,10 @@ namespace Server.Services {
             if (_cache.TryGetValue(id, out var cached))
                 return cached;
 
-            var dbBlueprint = await _context.Blueprints.FindAsync(id);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<GameSavesContext>();
+
+            var dbBlueprint = await context.Blueprints.FindAsync(id);
             if (dbBlueprint == null)
                 return null;
 
