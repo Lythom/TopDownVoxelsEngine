@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Server.DbModel;
+using Server.Services;
 using Shared;
 using Shared.Net;
 
@@ -24,6 +25,7 @@ namespace Server {
                 .AddDefaultTokenProviders();
             services.AddDbContext<GameSavesContext>(GameSavesContext.ConfigureOptions);
             services.AddSingleton<ISocketManager>(new SocketServer());
+            services.AddSingleton<IBlueprintService>(sp => new BlueprintService(sp.GetRequiredService<GameSavesContext>()));
             services.AddSingleton<VoxelsEngineServer>(sp => {
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
                 var ss = sp.GetRequiredService<ISocketManager>();

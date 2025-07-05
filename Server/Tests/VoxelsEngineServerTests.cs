@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MessagePack;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ using Moq;
 using Moq.EntityFrameworkCore;
 using NUnit.Framework;
 using Server.DbModel;
+using Server.Services;
 using Shared;
 using Shared.Net;
 
@@ -25,6 +27,7 @@ namespace Server.Tests {
 
         private Mock<GameSavesContext> _contextMock;
         private Mock<SocketServer> _socketServerMock;
+        private Mock<IBlueprintService> _blueprintServiceMock;
         private VoxelsEngineServer _server;
 
         private string TestUsername = "TestUsername";
@@ -41,7 +44,10 @@ namespace Server.Tests {
             _userManagerMock = new UserManager<IdentityUser>(_userStoreMock.Object, null, null, null, null, null, null, null, null);
             _contextMock = new Mock<GameSavesContext>();
             _socketServerMock = new Mock<SocketServer>();
-            var blockRegistryMock = new Mock<Registry<BlockConfigJson>>();
+            _blueprintServiceMock = new Mock<IBlueprintService>();
+            var blockRegistryMock = new Mock<IRegistry<BlockConfigJson>>(MockBehavior.Loose);
+            blockRegistryMock.Setup(r => r.Get(It.IsAny<string>())).Returns(new BlockConfigJson());
+            blockRegistryMock.Setup(r => r.Get()).Returns(new Dictionary<string, BlockConfigJson>());
 
             var dbChunk0 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new CellV0[16, 16, 16]), IsGenerated = true, ChX = 0, ChZ = 0};
             var dbChunk1 = new DbChunk() {Cells = MessagePackSerializer.Serialize(new CellV0[16, 16, 16]), IsGenerated = true, ChX = 1, ChZ = 0};
@@ -108,6 +114,7 @@ namespace Server.Tests {
             var serviceScopeMock = new Mock<IServiceScope>();
             serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(GameSavesContext))).Returns(_contextMock.Object);
             serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(UserManager<IdentityUser>))).Returns(_userManagerMock);
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IBlueprintService))).Returns(_blueprintServiceMock.Object);
             var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
 
@@ -120,7 +127,8 @@ namespace Server.Tests {
             // Arrange
 
             // Act
-            await _server.StartAsync(9004);
+            _server.StartAsync(9004).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             // Assert
             Assert.IsTrue(_server.IsReady);
@@ -140,8 +148,8 @@ namespace Server.Tests {
         [Test]
         public async Task HandleMessageAsync_WhenPassedHelloNetworkMessage_AddsCharacterToConnectedCharacters() {
             // Arrange
-            await _server.StartAsync(9005);
-
+            _server.StartAsync(9005).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
             _server.NotifyConnection(_testShortId);
 
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
@@ -162,7 +170,8 @@ namespace Server.Tests {
             // Arrange
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
             var helloMessage2 = new HelloNetworkMessage {Username = TestUsername2};
-            await _server.StartAsync(9000);
+            _server.StartAsync(9000).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             _server.NotifyConnection(_testShortId);
             _server.NotifyConnection(_testShortId2);
@@ -171,6 +180,7 @@ namespace Server.Tests {
 
             // Act
             await _server.HandleMessageAsync(new InputMessage {Id = _testShortId2, Message = helloMessage2});
+            while (_server.HasOutboxMessages()) await Task.Delay(10);
 
             // Assert
             // Check the player character is registered on server
@@ -189,7 +199,8 @@ namespace Server.Tests {
             // Arrange
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
             var helloMessage2 = new HelloNetworkMessage {Username = TestUsername2};
-            await _server.StartAsync(9000);
+            _server.StartAsync(9000).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             _server.NotifyConnection(_testShortId);
             _server.NotifyConnection(_testShortId2);
@@ -199,6 +210,7 @@ namespace Server.Tests {
 
             // Act
             _server.NotifyDisconnection(_testShortId);
+            while (_server.HasOutboxMessages()) await Task.Delay(10);
 
             // Assert
             // Check the player character is unregistered
@@ -213,7 +225,8 @@ namespace Server.Tests {
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
             var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
-            await _server.StartAsync(9001);
+            _server.StartAsync(9001).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
@@ -238,7 +251,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key =new  ChunkKey(levelId, i, j);
+                    var key = new ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }
@@ -258,7 +271,8 @@ namespace Server.Tests {
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
             var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
-            await _server.StartAsync(9002);
+            _server.StartAsync(9002).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
@@ -283,7 +297,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key =new  ChunkKey(levelId, i, j);
+                    var key = new ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }
@@ -303,7 +317,8 @@ namespace Server.Tests {
             var userSessionDataField = _server.GetType().GetField("_userSessionData", BindingFlags.NonPublic | BindingFlags.Instance);
             var userSessionData = userSessionDataField?.GetValue(_server) as ConcurrentDictionary<ushort, UserSessionData>;
 
-            await _server.StartAsync(9003);
+            _server.StartAsync(9003).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
 
             _server.NotifyConnection(_testShortId);
             var helloMessage = new HelloNetworkMessage {Username = TestUsername};
@@ -328,7 +343,7 @@ namespace Server.Tests {
                     var i = chX + x;
                     var j = chZ + z;
                     if (i < 0 || i >= LevelMap.LevelChunkSize || j < 0 || j >= LevelMap.LevelChunkSize) continue;
-                    var key =new  ChunkKey(levelId, i, j);
+                    var key = new ChunkKey(levelId, i, j);
                     expectedList.Add(key);
                 }
             }
@@ -341,5 +356,6 @@ namespace Server.Tests {
 
             Assert.IsEmpty(expectedList);
         }
+
     }
 }

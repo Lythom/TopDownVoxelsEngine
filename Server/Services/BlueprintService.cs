@@ -2,14 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MessagePack;
 using Microsoft.EntityFrameworkCore;
 using Server.DbModel;
 using Shared;
 
 namespace Server.Services {
-    public class BlueprintService {
+    public class BlueprintService : IBlueprintService {
         private readonly GameSavesContext _context;
         private readonly ConcurrentDictionary<Guid, BlueprintV0> _cache;
 
@@ -18,7 +18,7 @@ namespace Server.Services {
             _cache = new ConcurrentDictionary<Guid, BlueprintV0>();
         }
 
-        public async Task<(bool success, string? error)> SaveBlueprintAsync(
+        public async UniTask<(bool success, string? error)> SaveBlueprintAsync(
             string creatorId,
             string name,
             Vector3Int anchorPosition,
@@ -93,7 +93,7 @@ namespace Server.Services {
             }
         }
 
-        public async Task<(BlueprintMetadataV0[] blueprints, int totalCount)> GetBlueprintListAsync(int page, int pageSize) {
+        public async UniTask<(BlueprintMetadataV0[] blueprints, int totalCount)> GetBlueprintListAsync(int page, int pageSize) {
             var totalCount = await _context.Blueprints.CountAsync();
 
             var blueprints = await _context.Blueprints
@@ -113,7 +113,7 @@ namespace Server.Services {
             return (blueprints, totalCount);
         }
 
-        public async Task<BlueprintV0?> GetBlueprintAsync(Guid id) {
+        public async UniTask<BlueprintV0?> GetBlueprintAsync(Guid id) {
             // Try get from cache first
             if (_cache.TryGetValue(id, out var cached))
                 return cached;
@@ -131,7 +131,7 @@ namespace Server.Services {
             }
         }
 
-        public async Task<CellV0[,,]?> PlaceBlueprintAsync(
+        public async UniTask<CellV0[,,]?> PlaceBlueprintAsync(
             Guid blueprintId,
             Vector3Int position,
             byte rotation,
@@ -228,4 +228,5 @@ namespace Server.Services {
         }
 
     }
+
 }

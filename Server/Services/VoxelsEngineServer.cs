@@ -18,7 +18,7 @@ using Shared.Net;
 namespace Server {
     public class VoxelsEngineServer {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly BlueprintService _blueprintService;
+        private readonly IBlueprintService _blueprintService;
 
         // Configuration
         PeriodicTimer networkingTime = new(TimeSpan.FromMilliseconds(1));
@@ -28,7 +28,7 @@ namespace Server {
         // Data
         private readonly GameState _state = new();
         private readonly GameState _stateBackup = new();
-        private readonly Registry<BlockConfigJson> _blockRegistry;
+        private readonly IRegistry<BlockConfigJson> _blockRegistry;
 
         private readonly ConcurrentDictionary<ushort, UserSessionData> _userSessionData = new();
 
@@ -48,12 +48,12 @@ namespace Server {
         public VoxelsEngineServer(
             IServiceScopeFactory serviceScopeFactory,
             ISocketManager socketServer,
-            Registry<BlockConfigJson> blockRegistry
+            IRegistry<BlockConfigJson> blockRegistry
         ) {
             _serviceScopeFactory = serviceScopeFactory;
             _blockRegistry = blockRegistry;
             using var scope = _serviceScopeFactory.CreateScope();
-            _blueprintService = scope.ServiceProvider.GetRequiredService<BlueprintService>();
+            _blueprintService = scope.ServiceProvider.GetRequiredService<IBlueprintService>();
 
             try {
                 _cts = new CancellationTokenSource();
@@ -292,6 +292,10 @@ namespace Server {
             while (tmpQueue.TryDequeue(out var e)) {
                 _outbox.Enqueue(e);
             }
+        }
+
+        public bool HasOutboxMessages() {
+            return _outbox.Count > 0;
         }
 
         public void NotifyConnection(ushort shortId) {
