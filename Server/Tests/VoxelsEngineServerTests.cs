@@ -1,7 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,6 +156,8 @@ namespace Server.Tests {
 
             // Act
             await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await WaitOutboxProcessed();
+
             // Assert
             // Check the player character is registered as connected
             Assert.IsTrue(_server.State.Characters.ContainsKey(_testShortId));
@@ -180,7 +182,7 @@ namespace Server.Tests {
 
             // Act
             await _server.HandleMessageAsync(new InputMessage {Id = _testShortId2, Message = helloMessage2});
-            while (_server.HasOutboxMessages()) await Task.Delay(10);
+            await WaitOutboxProcessed();
 
             // Assert
             // Check the player character is registered on server
@@ -210,7 +212,7 @@ namespace Server.Tests {
 
             // Act
             _server.NotifyDisconnection(_testShortId);
-            while (_server.HasOutboxMessages()) await Task.Delay(10);
+            await WaitOutboxProcessed();
 
             // Assert
             // Check the player character is unregistered
@@ -357,5 +359,306 @@ namespace Server.Tests {
             Assert.IsEmpty(expectedList);
         }
 
+        [Test]
+        public async Task HandleMessageAsync_SaveBlueprintEvent_CallsBlueprintService() {
+            // Arrange
+            _server.StartAsync(9100).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+
+            var saveBlueprintEvent = new SaveBlueprintEvent(
+                1,
+                _testShortId,
+                "Test Blueprint",
+                new Vector3Int(10, 5, 10),
+                new Vector3Int(3, 3, 3)
+            );
+
+            // Configure mock to return success using Returns instead of ReturnsAsync
+            _blueprintServiceMock.Setup(s => s.SaveBlueprintAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Vector3Int>(),
+                It.IsAny<Vector3Int>(),
+                It.IsAny<LevelMap>(),
+                It.IsAny<BlockPathMapping>()
+            )).Returns(new UniTask<(bool success, string? error)>((true, null)));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = saveBlueprintEvent});
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.SaveBlueprintAsync(
+                TestUsername,
+                "Test Blueprint",
+                new Vector3Int(10, 5, 10),
+                new Vector3Int(3, 3, 3),
+                It.IsAny<LevelMap>(),
+                It.IsAny<BlockPathMapping>()
+            ), Times.Once);
+        }
+
+        [Test]
+        public async Task HandleMessageAsync_LoadBlueprintListEvent_SendsResponseWithBlueprintList() {
+            // Arrange
+            _server.StartAsync(9101).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+
+            var loadBlueprintListEvent = new LoadBlueprintListEvent(1, _testShortId, 0, 10);
+
+            var blueprintList = new BlueprintMetadataV0[] {
+                new BlueprintMetadataV0 {
+                    Id = Guid.NewGuid(),
+                    Name = "Test Blueprint 1",
+                    CreatorId = TestUsername,
+                    CreationDate = DateTime.UtcNow,
+                    LastModifiedDate = DateTime.UtcNow,
+                    Size = new Vector3Int(3, 3, 3)
+                },
+                new BlueprintMetadataV0 {
+                    Id = Guid.NewGuid(),
+                    Name = "Test Blueprint 2",
+                    CreatorId = TestUsername,
+                    CreationDate = DateTime.UtcNow,
+                    LastModifiedDate = DateTime.UtcNow,
+                    Size = new Vector3Int(5, 3, 5)
+                }
+            };
+
+            // Configure mock to return blueprints using Returns
+            _blueprintServiceMock.Setup(s => s.GetBlueprintListAsync(0, 10))
+                .Returns(new UniTask<(BlueprintMetadataV0[] blueprints, int totalCount)>((blueprintList, blueprintList.Length)));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = loadBlueprintListEvent});
+            await WaitOutboxProcessed();
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.GetBlueprintListAsync(0, 10), Times.Once);
+            _socketServerMock.Verify(s => s.Send(_testShortId, It.Is<LoadBlueprintListResponseEvent>(e =>
+                e.Id == 1 &&
+                e.CharacterShortId == _testShortId &&
+                e.Blueprints.Length == 2 &&
+                e.TotalCount == 2)), Times.Once);
+        }
+
+        [Test]
+        public async Task HandleMessageAsync_LoadBlueprintEvent_SendsResponseWithBlueprint() {
+            // Arrange
+            _server.StartAsync(9102).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await WaitOutboxProcessed();
+
+            var blueprintId = Guid.NewGuid();
+            var loadBlueprintEvent = new LoadBlueprintEvent(1, _testShortId, blueprintId);
+
+            var blueprint = new BlueprintV0 {
+                Id = blueprintId,
+                Name = "Test Blueprint",
+                CreatorId = TestUsername,
+                CreationDate = DateTime.UtcNow,
+                LastModifiedDate = DateTime.UtcNow,
+                Size = new Vector3Int(3, 3, 3),
+                Cells = new CellArrayV0(new CellV0[3, 3, 3]),
+                BlockMapping = new BlockPathMapping(),
+                FloorHeight = 0,
+                PossibleSymmetries = Symmetries.None
+            };
+
+            // Configure mock to return blueprint using Returns
+            _blueprintServiceMock.Setup(s => s.GetBlueprintAsync(blueprintId))
+                .Returns(new UniTask<BlueprintV0?>(blueprint));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = loadBlueprintEvent});
+            await WaitOutboxProcessed();
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.GetBlueprintAsync(blueprintId), Times.Once);
+            _socketServerMock.Verify(s => s.Send(_testShortId, It.Is<LoadBlueprintResponseEvent>(e =>
+                e.Id == 1 &&
+                e.CharacterShortId == _testShortId &&
+                e.Blueprint.Id == blueprintId)), Times.Once);
+        }
+
+        [Test]
+        public async Task HandleMessageAsync_PlaceBlueprintEvent_UpdatesLevelAndSendsUpdate() {
+            // Arrange
+            _server.StartAsync(9103).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+            _server.NotifyConnection(_testShortId2);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            var helloMessage2 = new HelloNetworkMessage {Username = TestUsername2};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId2, Message = helloMessage2});
+            await WaitOutboxProcessed();
+
+            var blueprintId = Guid.NewGuid();
+            var placeBlueprintEvent = new PlaceBlueprintEvent(
+                1,
+                _testShortId,
+                blueprintId,
+                new Vector3Int(10, 5, 10),
+                0,
+                Symmetries.None
+            );
+
+            var transformedCells = new CellV0[3, 3, 3];
+            for (int x = 0; x < 3; x++)
+            for (int y = 0; y < 3; y++)
+            for (int z = 0; z < 3; z++) {
+                transformedCells[x, y, z] = new CellV0 {Block = 1}; // Some non-air block
+            }
+
+            // Configure mock to return transformed cells using Returns
+            _blueprintServiceMock.Setup(s => s.PlaceBlueprintAsync(
+                blueprintId,
+                new Vector3Int(10, 5, 10),
+                0,
+                Symmetries.None,
+                It.IsAny<LevelMap>()
+            )).Returns(new UniTask<CellV0[,,]?>(transformedCells));
+
+            _blueprintServiceMock.Setup(s => s.GetBlueprintAsync(
+                blueprintId
+            )).Returns(new UniTask<BlueprintV0?>(new BlueprintV0()));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = placeBlueprintEvent});
+            await WaitOutboxProcessed();
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.PlaceBlueprintAsync(
+                blueprintId,
+                new Vector3Int(10, 5, 10),
+                0,
+                Symmetries.None,
+                It.IsAny<LevelMap>()
+            ), Times.Once);
+
+            // Verify that the server sent a BlueprintUpdateEvent to all clients
+            _socketServerMock.Verify(s => s.Send(
+                    It.IsAny<ushort>(),
+                    It.Is<BlueprintUpdateEvent>(e =>
+                        e.CharacterShortId == _testShortId &&
+                        e.Position.X == 10 &&
+                        e.Position.Y == 5 &&
+                        e.Position.Z == 10)),
+                Times.AtLeastOnce());
+        }
+
+        [Test]
+        public async Task HandleMessageAsync_SaveBlueprintEvent_HandlesFailure() {
+            // Arrange
+            _server.StartAsync(9104).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await WaitOutboxProcessed();
+
+            var saveBlueprintEvent = new SaveBlueprintEvent(
+                1,
+                _testShortId,
+                "Test Blueprint",
+                new Vector3Int(10, 5, 10),
+                new Vector3Int(2, 3, 2) // Even sizes - should fail
+            );
+
+            // Configure mock to return failure using Returns
+            _blueprintServiceMock.Setup(s => s.SaveBlueprintAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Vector3Int>(),
+                It.IsAny<Vector3Int>(),
+                It.IsAny<LevelMap>(),
+                It.IsAny<BlockPathMapping>()
+            )).Returns(new UniTask<(bool success, string? error)>((false, "Blueprint size must be odd in X and Z dimensions")));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = saveBlueprintEvent});
+            await WaitOutboxProcessed();
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.SaveBlueprintAsync(
+                TestUsername,
+                "Test Blueprint",
+                new Vector3Int(10, 5, 10),
+                new Vector3Int(2, 3, 2),
+                It.IsAny<LevelMap>(),
+                It.IsAny<BlockPathMapping>()
+            ), Times.Once);
+
+            // We would expect some error notification to be sent to the client here
+            // The exact implementation depends on how the server handles errors
+        }
+
+        [Test]
+        public async Task HandleMessageAsync_PlaceBlueprintEvent_HandlesNonExistentBlueprint() {
+            // Arrange
+            _server.StartAsync(9105).Forget();
+            while (!_server.IsReady) await Task.Delay(10);
+            _server.NotifyConnection(_testShortId);
+
+            var helloMessage = new HelloNetworkMessage {Username = TestUsername};
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = helloMessage});
+            await WaitOutboxProcessed();
+
+            var nonExistentBlueprintId = Guid.NewGuid();
+            var placeBlueprintEvent = new PlaceBlueprintEvent(
+                1,
+                _testShortId,
+                nonExistentBlueprintId,
+                new Vector3Int(10, 5, 10),
+                0,
+                Symmetries.None
+            );
+
+            // Configure mock to return null (blueprint not found) using Returns
+            _blueprintServiceMock.Setup(s => s.PlaceBlueprintAsync(
+                nonExistentBlueprintId,
+                It.IsAny<Vector3Int>(),
+                It.IsAny<byte>(),
+                It.IsAny<Symmetries>(),
+                It.IsAny<LevelMap>()
+            )).Returns(new UniTask<CellV0[,,]?>(null));
+
+            // Act
+            await _server.HandleMessageAsync(new InputMessage {Id = _testShortId, Message = placeBlueprintEvent});
+            await WaitOutboxProcessed();
+
+            // Assert
+            _blueprintServiceMock.Verify(s => s.PlaceBlueprintAsync(
+                nonExistentBlueprintId,
+                new Vector3Int(10, 5, 10),
+                0,
+                Symmetries.None,
+                It.IsAny<LevelMap>()
+            ), Times.Never);
+
+            // No update should be sent since the blueprint doesn't exist
+            _socketServerMock.Verify(s => s.Send(
+                    It.IsAny<ushort>(),
+                    It.IsAny<ServerErrorGameEvent>()),
+                Times.Once);
+        }
+
+        private async Task WaitOutboxProcessed() {
+            while (_server.HasOutboxMessages()) await Task.Delay(2);
+        }
     }
 }
