@@ -26,7 +26,7 @@ namespace VoxelsEngine.UI {
         }
 
         private void HandleAltFunctionPerformed(InputAction.CallbackContext obj) {
-            DOTween.Kill(this);
+            DOTween.Kill(Target);
             Target.DORotate(new Vector3(
                     Target.eulerAngles.x,
                     Target.eulerAngles.y,
@@ -34,8 +34,8 @@ namespace VoxelsEngine.UI {
                 ),
                 0.1f,
                 RotateMode.FastBeyond360
-            ).SetTarget(this);
-            Target.DOScale(AltFunctionInputActionRef.action.IsPressed() ? ScaleTargetOnAlt : _initialScale, 0.1f).SetTarget(this);
+            ).SetTarget(Target);
+            Target.DOScale(AltFunctionInputActionRef.action.IsPressed() ? ScaleTargetOnAlt : _initialScale, 0.1f).SetTarget(Target);
         }
     }
 }

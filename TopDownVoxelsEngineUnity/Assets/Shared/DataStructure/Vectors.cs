@@ -144,6 +144,10 @@ namespace Shared {
             return new Vector3(a.X * scalar, a.Y * scalar, a.Z * scalar);
         }
 
+        public override string ToString() {
+            return $"({X}, {Y}, {Z})";
+        }
+
 
 #if UNITY_2020_3_OR_NEWER
         public static implicit operator UnityEngine.Vector3(Vector3 v) => new(v.X, v.Y, v.Z);

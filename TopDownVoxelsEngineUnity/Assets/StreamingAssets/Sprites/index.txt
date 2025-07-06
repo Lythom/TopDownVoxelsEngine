@@ -1,3 +1,4 @@
+cliff_rocks_01.png
 Concrete.png
 Grass.png
 Ground.png

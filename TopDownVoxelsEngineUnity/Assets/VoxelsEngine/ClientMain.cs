@@ -263,7 +263,6 @@ namespace VoxelsEngine {
                 DisplayLoading(LoadingStage.EnteringGame, 0.9f);
 
                 await UniTask.Delay(500);
-                await UniTask.WaitWhile(ChunkGPUSynchronizer.Instance, s => s.IsUploadInProgress());
 
                 DisplayLoading(LoadingStage.Complete, 1f);
                 ConnectionModal.Instance.SmartActive(false);
