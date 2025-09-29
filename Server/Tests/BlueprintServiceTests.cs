@@ -50,7 +50,7 @@ namespace Server.Tests {
             int expectedZ
         ) {
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 x, z, sizeX, sizeZ, 0, flipOperation);
 
             // Assert
@@ -70,7 +70,7 @@ namespace Server.Tests {
             int expectedZ
         ) {
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 x, z, sizeX, sizeZ, rotation, Symmetries.None);
 
             // Assert
@@ -91,7 +91,7 @@ namespace Server.Tests {
             int expectedZ
         ) {
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 x, z, sizeX, sizeZ, rotation, flipOperation);
 
             // Assert
@@ -108,9 +108,9 @@ namespace Server.Tests {
             const byte rotation = 5; // Should be equivalent to rotation = 1
 
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 x, z, size, size, rotation, Symmetries.None);
-            var (expectedX, expectedZ) = BlueprintService.ApplyTransformations(
+            var (expectedX, expectedZ) = LevelMap.ApplyTransformations(
                 x, z, size, size, 1, Symmetries.None);
 
             // Assert
@@ -128,7 +128,7 @@ namespace Server.Tests {
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() =>
-                BlueprintService.ApplyTransformations(x, z, sizeX, sizeZ, 0, Symmetries.None));
+                LevelMap.ApplyTransformations(x, z, sizeX, sizeZ, 0, Symmetries.None));
         }
 
         [Test]
@@ -138,7 +138,7 @@ namespace Server.Tests {
             var center = (size - 1) / 2;
 
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 center, center, size, size, 1, Symmetries.XAxis);
 
             // Assert
@@ -153,7 +153,7 @@ namespace Server.Tests {
             var center = (size - 1) / 2;
 
             // Act
-            var (actualX, actualZ) = BlueprintService.ApplyTransformations(
+            var (actualX, actualZ) = LevelMap.ApplyTransformations(
                 center, center, size, size, 1, Symmetries.ZAxis);
 
             // Assert

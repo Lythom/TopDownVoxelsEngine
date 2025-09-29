@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using MessagePack;
 
 namespace Shared {
-
     [MessagePackObject()]
     public struct CellV0 {
         [Key(0)]
@@ -29,6 +29,8 @@ namespace Shared {
 
     [MessagePackObject]
     public struct CellArrayV0 : ICellArray {
+        public static readonly CellArrayV0 Empty = new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size]);
+
         [Key(0)]
         public CellV0[,,] Cells;
 
@@ -62,5 +64,15 @@ namespace Shared {
 
             return new(new CellV0[Chunk.Size, Chunk.Height, Chunk.Size]);
         }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort GetSize(CellArrayV0 a) => (ushort) a.Cells.GetUpperBound(0);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort GetRadius(CellArrayV0 a) => (ushort) ((a.Cells.GetUpperBound(0) - 1) / 2);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort GetHeight(CellArrayV0 a) => (ushort) a.Cells.GetUpperBound(1);
     }
 }

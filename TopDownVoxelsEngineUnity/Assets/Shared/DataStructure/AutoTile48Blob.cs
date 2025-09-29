@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Shared;
 
 namespace Shared {
     public static class AutoTile48Blob {

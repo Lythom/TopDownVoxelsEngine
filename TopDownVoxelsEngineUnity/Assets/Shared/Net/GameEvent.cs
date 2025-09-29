@@ -8,7 +8,7 @@ namespace Shared.Net {
             gameState.ApplyEvent(DoApply, sideEffectManager);
         }
 
-        protected internal abstract void DoApply(GameState gameState, SideEffectManager? sideEffectManager);
+        protected abstract void DoApply(GameState gameState, SideEffectManager? sideEffectManager);
         public abstract void AssertApplicationConditions(in GameState gameState);
     }
 }

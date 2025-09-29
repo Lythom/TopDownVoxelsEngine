@@ -233,14 +233,11 @@ namespace Server {
                         var levelId = c.Level.Value;
                         if (levelId == null) return false;
                         if (!_userSessionData.TryGetValue(e.CharacterShortId, out var userSessionData)) return false;
-                        var (chX, chZ) = LevelTools.GetChunkPosition(e.X, e.Z);
+                        LevelTools.GetChunkPosition(e.X, e.Z, out var chX, out var chZ);
                         var chunkKey = new ChunkKey(levelId, chX, chZ);
                         var shouldSend = userSessionData.UploadedChunks.Contains(chunkKey);
                         return shouldSend;
                     }, placeBlocksGameEvent);
-                    break;
-                case BlueprintUpdateEvent blueprintUpdateEvent:
-                    BroadcastBut(blueprintUpdateEvent.CharacterShortId, m);
                     break;
                 case TickGameEvent:
                 case ChunkUpdateGameEvent:
@@ -324,7 +321,7 @@ namespace Server {
                 }
 
                 _state.Levels.Add(dbLevel.Name, levelMap);
-                var (chX, chZ) = LevelTools.GetChunkPosition(spawnPosition);
+                LevelTools.GetChunkPosition(spawnPosition, out var chX, out var chZ);
                 _state.LevelGenerator.EnqueueUninitializedChunksAround(levelMap.LevelId, chX, chZ, 6, _state.Levels);
             }
 
@@ -387,33 +384,32 @@ namespace Server {
                         SmartBroadcast(evt);
 
                         if (evt is PlaceBlocksGameEvent pbgm) {
-                            var (chX, chZ) = LevelTools.GetChunkPosition(pbgm.X, pbgm.Z);
+                            LevelTools.GetChunkPosition(pbgm.X, pbgm.Z, out var chX, out var chZ);
                             var level = _state.Characters[pbgm.CharacterShortId].Level.Value;
                             if (level != null) _dirtyChunks[new ChunkKey(level, chX, chZ)] = _state.Levels[level].Chunks[chX, chZ];
                         }
 
                         break;
-                    case HelloNetworkMessage hello: {
+                    case RegisterPlayerCommand hello: {
                         if (await HandleHelloAsync(hello, clientShortId)) return;
                         break;
                     }
-                    case SaveBlueprintEvent saveEvt: {
+                    case SaveBlueprintCommand saveEvt: {
                         await HandleSaveBlueprintAsync(clientShortId, saveEvt);
                         break;
                     }
-                    case LoadBlueprintListEvent listEvt: {
+                    case LoadBlueprintListQuery listEvt: {
                         await HandleLoadBlueprintListAsync(clientShortId, listEvt);
                         break;
                     }
-                    case LoadBlueprintEvent loadEvt: {
+                    case LoadBlueprintQuery loadEvt: {
                         await HandleLoadBlueprintAsync(clientShortId, loadEvt);
                         break;
                     }
-                    case PlaceBlueprintEvent placeEvt: {
+                    case PlaceBlueprintCommand placeEvt: {
                         await HandlePlaceBlueprintAsync(clientShortId, placeEvt);
                         break;
                     }
-
                 }
 
                 // backup the state before applying
@@ -438,7 +434,7 @@ namespace Server {
         /// <param name="hello"></param>
         /// <param name="clientShortId"></param>
         /// <returns>true if there was an exception, false if everything is ok</returns>
-        private async UniTask<bool> HandleHelloAsync(HelloNetworkMessage hello, ushort clientShortId) {
+        private async UniTask<bool> HandleHelloAsync(RegisterPlayerCommand hello, ushort clientShortId) {
             Console.WriteLine("A client said hello : " + hello.Username);
             if (_userSessionData.Any(d => d.Value.Name == hello.Username)) {
                 Send(clientShortId, new ErrorNetworkMessage($"A player named {hello.Username} is already logged in."));
@@ -481,13 +477,13 @@ namespace Server {
         // ---------------------------------------------------------------------
         // BLUEPRINT HELPERS
         // ---------------------------------------------------------------------
-        private async UniTask HandleSaveBlueprintAsync(ushort senderId, SaveBlueprintEvent e) {
+        private async UniTask HandleSaveBlueprintAsync(ushort senderId, SaveBlueprintCommand e) {
             if (string.IsNullOrWhiteSpace(e.Name) || e.Name.Length > 100) {
                 Send(senderId, new ServerErrorGameEvent(80, "Can't save blueprint because name must be > 0 and < 100 characters."));
                 return;
             }
 
-            if (e.Size.X > MaxBlueprintSize || e.Size.Y > MaxBlueprintSize || e.Size.Z > MaxBlueprintSize) {
+            if (e.SizeX > MaxBlueprintSize || e.SizeY > MaxBlueprintSize || e.SizeZ > MaxBlueprintSize) {
                 Send(senderId, new ServerErrorGameEvent(80, "Can't save blueprint because size should not exceed maxSize."));
                 return;
             }
@@ -506,8 +502,8 @@ namespace Server {
             var (ok, error) = await _blueprintService.SaveBlueprintAsync(
                 creatorId: userData.Name ?? "anonymous",
                 name: e.Name,
-                anchorPosition: e.AnchorPosition,
-                size: e.Size,
+                anchorPosition: new Vector3Int(e.AnchorX, e.AnchorY, e.AnchorZ),
+                size: new Vector3Int(e.SizeX, e.SizeY, e.SizeZ),
                 level: levelMap,
                 levelBlockPathMapping: State.BlockMapping);
 
@@ -519,22 +515,22 @@ namespace Server {
             Send(senderId, e); // ACK By returning the same event
         }
 
-        private async UniTask HandleLoadBlueprintListAsync(ushort senderId, LoadBlueprintListEvent e) {
+        private async UniTask HandleLoadBlueprintListAsync(ushort senderId, LoadBlueprintListQuery e) {
             var (items, total) = await _blueprintService.GetBlueprintListAsync(e.Page, e.PageSize);
-            Send(senderId, new LoadBlueprintListResponseEvent(e.Id, e.CharacterShortId, items.ToArray(), total));
+            Send(senderId, new LoadBlueprintListResponse(e.Id, e.CharacterShortId, items.ToArray(), total));
         }
 
-        private async UniTask HandleLoadBlueprintAsync(ushort senderId, LoadBlueprintEvent e) {
+        private async UniTask HandleLoadBlueprintAsync(ushort senderId, LoadBlueprintQuery e) {
             var blueprint = await _blueprintService.GetBlueprintAsync(e.BlueprintId);
             if (blueprint == null) {
                 Send(senderId, new ServerErrorGameEvent(83, "Can't load blueprint because provided BlueprintId was not found."));
                 return;
             }
 
-            Send(senderId, new LoadBlueprintResponseEvent(e.Id, e.CharacterShortId, blueprint));
+            Send(senderId, new LoadBlueprintResponse(e.Id, e.CharacterShortId, blueprint));
         }
 
-        private async UniTask HandlePlaceBlueprintAsync(ushort senderId, PlaceBlueprintEvent e) {
+        private async UniTask HandlePlaceBlueprintAsync(ushort senderId, PlaceBlueprintCommand e) {
             var character = State.Characters[e.CharacterShortId];
             if (character.Level.Value is null || !State.Levels.TryGetValue(character.Level.Value, out LevelMap? levelMap)) {
                 Send(senderId, new ServerErrorGameEvent(84, "Can't place blueprint because character level information was missing."));
@@ -548,19 +544,21 @@ namespace Server {
             }
 
             // Transform & apply – returns the world-space cells to write
-            var placedCells = await _blueprintService.PlaceBlueprintAsync(e.BlueprintId, e.Position, e.Rotation, e.FlipOperations, levelMap);
+            var modifiedChunks = await _blueprintService.PlaceBlueprintAsync(e.BlueprintId, e.X, e.Y, e.Z, e.Rotation, e.FlipOperations, levelMap);
 
-            if (placedCells == null) {
+            if (modifiedChunks.Count == 0) {
                 Send(senderId, new ServerErrorGameEvent(86, "Can't place blueprint because placement failed in player current level."));
                 return;
             }
 
             // Broadcast visual update so all clients can start showing it immediately
-            SmartBroadcast(new BlueprintUpdateEvent(0, e.CharacterShortId, e.Position, new CellArrayV0(placedCells)));
+            foreach (var c in modifiedChunks) {
+                SmartBroadcast(new ChunkUpdateGameEvent(0, levelMap.LevelId, levelMap.Chunks[c.ChX, c.ChZ], c.ChX, c.ChZ));
+            }
         }
 
 
-        private async UniTask<(CharacterV0 character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, HelloNetworkMessage hello) {
+        private async UniTask<(CharacterV0 character, Vector3 spawnPosition)> GetOrCreateCharacterAsync(IdentityUser? user, RegisterPlayerCommand hello) {
             using var scope = _serviceScopeFactory.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
             CharacterV0 character;
@@ -652,10 +650,10 @@ namespace Server {
 
         public void TryGenerateChunks(PriorityLevel priority) {
             foreach (var (key, c) in State.Characters) {
-                var (chx, chz) = LevelTools.GetChunkPosition(c.Position);
+                LevelTools.GetChunkPosition(c.Position, out var chX, out var chZ);
                 if (c.Level.Value != null && State.Levels.ContainsKey(c.Level.Value)) {
-                    State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chx, chz, 4, State.Levels);
-                    ScheduleChunkUpload(key, c.Level.Value, chx, chz);
+                    State.LevelGenerator.EnqueueUninitializedChunksAround(c.Level.Value, chX, chZ, 4, State.Levels);
+                    ScheduleChunkUpload(key, c.Level.Value, chX, chZ);
                 }
             }
 

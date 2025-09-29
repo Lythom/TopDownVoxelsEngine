@@ -35,9 +35,9 @@ namespace Shared.Net {
             : this(id, levelId, chunk, Chunk.GetFlatIndex(chX, chZ)) {
         }
 
-        protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            var (chX, chZ) = Chunk.GetCoordsFromIndex(ChunkPosition);
+            Chunk.GetCoordsFromIndex(ChunkPosition, out var chX, out var chZ);
             gameState.Levels[LevelId].Chunks[chX, chZ] = Chunk;
             sideEffectManager?.For<ChunkUpdateGameEvent>().Trigger(this);
             sideEffectManager?.For<ChunkDirtySEffect>().Trigger(new(LevelId, chX, chZ));

@@ -2,7 +2,7 @@ namespace Shared {
     public enum SessionStatus {
         Disconnected,
 
-        /// needs HelloNetworkMessage → characterJoinGameEvent
+        /// needs RegisterPlayerCommand → characterJoinGameEvent
         NeedAuthentication,
 
         /// needs all characterJoinGameEvent and ChunkUpdateGameEvents

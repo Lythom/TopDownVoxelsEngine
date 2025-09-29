@@ -204,7 +204,7 @@ namespace VoxelsEngine {
                     8.5f,
                     LevelMap.LevelChunkSize * Chunk.Size / 2f + 4
                 );
-                var (spawnPositionChX, spawnPositionChZ) = LevelTools.GetChunkPosition(spawnPosition);
+                LevelTools.GetChunkPosition(spawnPosition, out var spawnPositionChX, out var spawnPositionChZ);
 
                 if (state == null) {
                     DisplayLoading(LoadingStage.LocalCreatingGameState, 0.2f);
@@ -221,6 +221,9 @@ namespace VoxelsEngine {
                             Vector3.zero,
                             0,
                             new("World"),
+                            null,
+                            null,
+                            null,
                             null,
                             null,
                             null,

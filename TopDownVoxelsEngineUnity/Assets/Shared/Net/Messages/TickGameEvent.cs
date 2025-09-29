@@ -15,7 +15,7 @@ namespace Shared.Net {
 
         public override int GetId() => Id;
 
-        protected internal override void DoApply(GameState state, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState state, SideEffectManager? sideEffectManager) {
             if (!state.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             // Generate missing chunks
             // foreach (var (key, c) in state.Characters) {

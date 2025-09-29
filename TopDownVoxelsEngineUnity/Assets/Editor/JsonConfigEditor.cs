@@ -24,6 +24,10 @@ public abstract class JsonConfigEditor<T> : OdinMenuEditorWindow where T : class
 
             if (SirenixEditorGUI.ToolbarButton("Update indexes")) {
                 RegistryIndexGenerator.GenerateIndexes();
+                Configurator.Instance.MainTextureRegistry?.Reload();
+                Configurator.Instance.FrameTextureRegistry?.Reload();
+                Configurator.Instance.SpriteRegistry?.Reload();
+                Configurator.Instance.BlockRegistry?.Reload();
             }
 
             if (SirenixEditorGUI.ToolbarButton("Create new")) {

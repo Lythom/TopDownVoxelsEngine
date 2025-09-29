@@ -34,7 +34,7 @@ namespace Shared.Net {
             IsInAir = isInAir;
         }
 
-        protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             gameState.Characters[CharacterShortId].Position = Position;
             gameState.Characters[CharacterShortId].Velocity = Velocity;

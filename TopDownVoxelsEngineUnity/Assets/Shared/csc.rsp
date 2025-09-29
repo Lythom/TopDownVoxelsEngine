@@ -1,2 +1,2 @@
--nullable
+-nullable:enable
 -nowarn:8524

@@ -3,7 +3,6 @@ using LoneStoneStudio.Tools;
 using Popcron;
 using Shared;
 using Shared.Net;
-using Shared.Signals;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VoxelsEngine.Tools;
@@ -100,7 +99,7 @@ namespace VoxelsEngine {
         private Plane? _draggingPlane;
         private Vector3Int? _draggingStartPosition;
         private bool _initialized;
-        private readonly Signal<PlacementGuide> _placementGuide = new(PlacementGuide.Linear);
+        private PlacementGuide _placementGuide = PlacementGuide.Linear;
 
         void Awake() {
             _inputs = new Inputs();
@@ -158,9 +157,9 @@ namespace VoxelsEngine {
         void Update() {
             if (!_initialized) return;
             if (_character == null) return;
-            var _currentLevel = ClientEngine.Selectors.CurrentLevelId.Value;
-            if (_currentLevel == null) return;
-            if (!ClientEngine.State.Levels.TryGetValue(_currentLevel, out var level)) return;
+            var currentLevel = ClientEngine.Selectors.CurrentLevelId.Value;
+            if (currentLevel == null) return;
+            if (!ClientEngine.State.Levels.TryGetValue(currentLevel, out var level)) return;
 
             var selectedToolIdx = _character.SelectedTool.Value;
             var playerTools = Configurator.Instance.PlayerTools;
@@ -170,7 +169,6 @@ namespace VoxelsEngine {
             if (selectedTool == null) throw new ApplicationException("selectedTool should never be null. Ensure Configurator.Instance.PlayerTools is properly configured.");
             var selectedBlock = _character.SelectedBlock.Value;
 
-            UpdateTools(selectedToolIdx, selectedBlock);
             var groundPosition = new Shared.Vector3(_position.x + CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
             var groundCell = level.TryGetExistingCell(groundPosition);
             var groundPosition2 = new Shared.Vector3(_position.x - CharacterThickness, _position.y - 0.001f, _position.z + CharacterThickness).WorldToCell();
@@ -181,23 +179,11 @@ namespace VoxelsEngine {
             var groundCell4 = level.TryGetExistingCell(groundPosition4);
             var isInAir = groundCell.IsAir() && groundCell2.IsAir() && groundCell3.IsAir() && groundCell4.IsAir();
             var mouseRay = _cam.ScreenPointToRay(Input.mousePosition);
-            var (collidingBlockPos, facingCursorPos, colPosition) = GetMouseTargets(level, mouseRay, _placementGuide.Value);
+            var (collidingBlockPos, facingCursorPos, colPosition) = GetMouseTargets(level, mouseRay, _placementGuide);
 
-            var isPlanar = _placementGuide.Value is PlacementGuide.Planar;
-            PreviewPlane.SmartActive(isPlanar);
-            if (collidingBlockPos != null && facingCursorPos != null) {
-                if (isPlanar) {
-                    var fw = (facingCursorPos.Value - collidingBlockPos.Value);
-                    PreviewPlane.transform.position = colPosition.HasValue ? colPosition.Value + (Vector3) fw * 0.001f : Vector3.Lerp(collidingBlockPos.Value, facingCursorPos.Value, 0.51f);
-                    PreviewPlane.transform.rotation = Quaternion.LookRotation(fw, Vector3.up);
-                } else {
-                    Vector3 axis = (facingCursorPos.Value - collidingBlockPos.Value);
-                    if (_isPlacing) axis *= 2f;
-                    Gizmos.Line(collidingBlockPos.Value, collidingBlockPos.Value + axis, Color.white);
-                }
-            }
-
-            UpdateAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock);
+            UpdatePlacementPreview(collidingBlockPos, facingCursorPos, colPosition);
+            UpdateToolSelection(selectedToolIdx, selectedBlock);
+            UpdateToolAction(level, collidingBlockPos, facingCursorPos, selectedTool, selectedBlock, _character.ActiveBlueprintId.Value);
             UpdateCamera();
             Vector3 movement;
             (_vel, movement) = UpdateMove(level, _vel, isInAir, groundPosition.Y + 0.5f);
@@ -218,6 +204,22 @@ namespace VoxelsEngine {
                 BCubeDrawer.Cube(groundPosition2, Quaternion.identity, Vector3.one, Color.gray);
                 BCubeDrawer.Cube(groundPosition3, Quaternion.identity, Vector3.one, Color.gray);
                 BCubeDrawer.Cube(groundPosition4, Quaternion.identity, Vector3.one, Color.gray);
+            }
+        }
+
+        private void UpdatePlacementPreview(Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, Vector3? colPosition) {
+            var isPlanar = _placementGuide is PlacementGuide.Planar;
+            PreviewPlane.SmartActive(isPlanar);
+            if (collidingBlockPos != null && facingCursorPos != null) {
+                if (isPlanar) {
+                    var fw = (facingCursorPos.Value - collidingBlockPos.Value);
+                    PreviewPlane.transform.position = colPosition.HasValue ? colPosition.Value + (Vector3) fw * 0.001f : Vector3.Lerp(collidingBlockPos.Value, facingCursorPos.Value, 0.51f);
+                    PreviewPlane.transform.rotation = Quaternion.LookRotation(fw, Vector3.up);
+                } else {
+                    Vector3 axis = (facingCursorPos.Value - collidingBlockPos.Value);
+                    if (_isPlacing) axis *= 2f;
+                    Gizmos.Line(collidingBlockPos.Value, collidingBlockPos.Value + axis, Color.white);
+                }
             }
         }
 
@@ -250,7 +252,7 @@ namespace VoxelsEngine {
             return (collidingBlockPos, facingCursorPos, position);
         }
 
-        private void UpdateAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, PlayerTool selectedTool, BlockId selectedBlock) {
+        private void UpdateToolAction(LevelMap level, Vector3Int? collidingBlockPos, Vector3Int? facingCursorPos, PlayerTool selectedTool, BlockId selectedBlock, Guid? blueprintId) {
             if (facingCursorPos != null && collidingBlockPos != null) {
                 var target = selectedTool.Placement switch {
                     PlacementMode.FacingBlock => facingCursorPos.Value,
@@ -268,18 +270,56 @@ namespace VoxelsEngine {
                         PlayerToolPurpose.None => BlockId.Air,
                         PlayerToolPurpose.PlaceBlock => selectedBlock,
                         PlayerToolPurpose.RemoveBlock => BlockId.Air,
+                        PlayerToolPurpose.Blueprint => BlockId.Air
                     };
-                    if (selectedTool.Purpose is PlayerToolPurpose.PlaceBlock or PlayerToolPurpose.RemoveBlock) {
-                        _isPlacing = true;
-                        var succeeded = level.CanSet(target, blockToSet);
-                        if (succeeded) {
-                            var (x, y, z) = target;
-                            SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
-                            if (blockToSet == BlockId.Air) {
-                                DoFXRemove(target);
-                            } else {
-                                DoFXPlace(target);
+                    switch (selectedTool.Purpose) {
+                        case PlayerToolPurpose.PlaceBlock or PlayerToolPurpose.RemoveBlock: {
+                            _isPlacing = true;
+                            var succeeded = level.CanSet(target, blockToSet);
+                            if (succeeded) {
+                                var (x, y, z) = target;
+                                SendBlindMessageOptimistic(new PlaceBlocksGameEvent(0, CharacterId, (short) x, (short) y, (short) z, blockToSet));
+                                if (blockToSet == BlockId.Air) {
+                                    DoFXRemove(target);
+                                } else {
+                                    DoFXPlace(target);
+                                }
                             }
+
+                            break;
+                        }
+                        case PlayerToolPurpose.Blueprint: {
+                            switch (_character!.BlueprintMode.Value) {
+                                case BlueprintMode.None:
+                                    break;
+                                case BlueprintMode.Save:
+                                    // in Save mode, UseTool action to move anchor position
+                                    var size = _character.BlueprintSize.Value;
+                                    SendBlindMessageOptimistic(new ConfigureBlueprintGameEvent(0,
+                                        CharacterId,
+                                        blueprintId,
+                                        (short) target.X, (short) target.Y, (short) target.Z,
+                                        (short) size.X, (short) size.Y, (short) size.Z,
+                                        BlueprintMessages.GetRotationCompressed(_character.BlueprintRotation.Value),
+                                        _character.BlueprintFlip.Value));
+                                    break;
+                                case BlueprintMode.Brush:
+                                    // In Brush mode, UseTool action to place a blueprint
+                                    if (blueprintId.HasValue) {
+                                        SocketClient.Send(new PlaceBlueprintCommand(0,
+                                            CharacterId,
+                                            blueprintId.Value,
+                                            (short) target.X,
+                                            (short) target.Y,
+                                            (short) target.Z,
+                                            BlueprintMessages.GetRotationCompressed(_character.BlueprintRotation.Value),
+                                            _character.BlueprintFlip.Value));
+                                    }
+
+                                    break;
+                            }
+
+                            break;
                         }
                     }
                 }
@@ -289,12 +329,12 @@ namespace VoxelsEngine {
                 }
 
                 if (_inputs.Building.TogglePlacementMode.WasPressedThisFrame()) {
-                    _placementGuide.Value = _placementGuide.Value == PlacementGuide.Planar ? PlacementGuide.Linear : PlacementGuide.Planar;
+                    _placementGuide = _placementGuide == PlacementGuide.Planar ? PlacementGuide.Linear : PlacementGuide.Planar;
                 }
             }
         }
 
-        private void UpdateTools(byte selectedTool, BlockId selectedBlock) {
+        private void UpdateToolSelection(byte selectedTool, BlockId selectedBlock) {
             bool doChangeTool = _inputs.Building.ChangeTool.WasPerformedThisFrame();
             if (doChangeTool && _inputs.Building.AltFunction.IsPressed()) {
                 byte nextToolIdx = (byte) M.Mod(selectedTool + 1, Configurator.Instance.PlayerTools.Count);
@@ -304,7 +344,7 @@ namespace VoxelsEngine {
                 SendBlindMessageOptimistic(new ChangeToolGameEvent(0, CharacterId, prevToolIdx));
             }
 
-            // Find next or previous block ignoring air
+            // Find the next or previous block ignoring air
             if (_inputs.Building.ChangeItem.WasPressedThisFrame() && !_inputs.Building.AltFunction.IsPressed()) {
                 BlockId nextBlockId = selectedBlock + 1;
                 // beyond limit: loop

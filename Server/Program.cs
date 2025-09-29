@@ -62,7 +62,7 @@ namespace Server {
                     webBuilder.UseStartup(_ => new Startup(blockConfigJsonRegistry))
                         .UseKestrel(options => {
                             options.Listen(IPAddress.Any, 443, listenOptions => {
-                                listenOptions.UseHttps("C:\\Certbot\\live\\dreambuilder.sametmagda.fr\\certificate.pfx", "");
+                                listenOptions.UseHttps("C:\\Certbot\\live\\dreambuilder.sametmagda.fr\\Configuration", "");
                             });
                         });
                 });

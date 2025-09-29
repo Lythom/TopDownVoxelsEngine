@@ -1,6 +1,5 @@
 ﻿using System;
 using MessagePack;
-using Sirenix.OdinInspector;
 
 namespace VoxelsEngine.Data {
     [Serializable, MessagePackObject(true)]

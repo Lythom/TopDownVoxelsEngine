@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using MessagePack;
 using Shared.Signals;
@@ -81,7 +82,7 @@ namespace Shared {
 
         public bool TrySetExistingCell(int x, int y, int z, BlockId block) {
             if (y < 0 || y >= Chunk.Height) return false;
-            var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
+            LevelTools.GetChunkPosition(x, z, out var chX, out var chZ);
             var chunk = _chunks[chX, chZ];
             if (chunk.IsGenerated) {
                 LevelTools.WorldToCellInChunk(x, y, z, out var cx, out var cy, out var cz);
@@ -109,7 +110,7 @@ namespace Shared {
             cz = 0;
 
             if (y < 0 || y >= Chunk.Height) return null;
-            var (chX, chZ) = LevelTools.GetChunkPosition(x, z);
+            LevelTools.GetChunkPosition(x, z, out var chX, out var chZ);
             if (chX < 0 || chX >= _chunks.GetLength(0) || chZ < 0 || chZ >= _chunks.GetLength(1)) return null;
 
             var chunk = _chunks[chX, chZ];
@@ -135,6 +136,88 @@ namespace Shared {
                     if (nextChunk.IsGenerated) _chunks[i, j] = nextChunk;
                 }
             }
+        }
+
+        public void PlaceBlueprint(short anchorX, short anchorY, short anchorZ, byte rotation, Symmetries flipOperations, BlueprintV0 blueprint, HashSet<ChunkKey> modifiedChunks) {
+            // Apply transformations
+            var cells = blueprint.Cells.Cells;
+            var size = blueprint.Size;
+
+            // Create transformed array
+            var transformed = new CellV0[size.X, size.Y, size.Z];
+
+            for (int x = 0; x < size.X; x++)
+            for (int y = 0; y < size.Y; y++)
+            for (int z = 0; z < size.Z; z++) {
+                var (tx, tz) = ApplyTransformations(x, z, size.X, size.Z, rotation, flipOperations);
+                transformed[x, y, z] = cells[tx, y, tz];
+            }
+
+            // Place in world
+            for (int x = 0; x < size.X; x++)
+            for (int y = 0; y < size.Y; y++)
+            for (int z = 0; z < size.Z; z++) {
+                var worldPos = new Vector3Int(
+                    anchorX + x - (size.X - 1) / 2,
+                    anchorY + y,
+                    anchorZ + z - (size.Z - 1) / 2
+                );
+                LevelTools.GetChunkPosition(worldPos.X, worldPos.Z, out var chX, out var chZ);
+                modifiedChunks.Add(new ChunkKey(this.LevelId, chX, chZ));
+
+                var cell = transformed[x, y, z];
+                if (cell.Block != BlockId.Air)
+                    this.TrySetExistingCell(worldPos.X, worldPos.Y, worldPos.Z, cell.Block);
+            }
+        }
+
+        /// <summary>
+        /// Applies rotation and flip operations to a local blueprint coordinate.
+        /// The rotation is clockwise around the blueprint’s centre and the flips are
+        /// performed afterwards.  Both <paramref name="sizeX"/> and <paramref name="sizeZ"/>
+        /// must be odd so a discrete centre cell exists.
+        /// </summary>
+        public static (int x, int z) ApplyTransformations(
+            int x,
+            int z,
+            int sizeX,
+            int sizeZ,
+            byte rotation,
+            Symmetries flipOperations
+        ) {
+            // A unique centre point is required for correct rotation mathematics.
+            if (sizeX % 2 == 0 || sizeZ % 2 == 0)
+                throw new ArgumentException("Only blueprints with an odd size can be transformed.");
+
+            // Translate the point to make the centre the origin (0,0).
+            var originX = sizeX / 2;
+            var originZ = sizeZ / 2;
+
+            int dx = x - originX;
+            int dz = z - originZ;
+
+            // Normalise the rotation to 0-3 steps (0°, 90°, 180°, 270° clockwise).
+            int steps = rotation % 4;
+
+            for (var i = 0; i < steps; i++) {
+                // 90° clockwise: (dx, dz) -> (-dz, dx)
+                var oldDx = dx;
+                dx = -dz;
+                dz = oldDx;
+            }
+
+            // Optional mirror operations.
+            if (flipOperations.HasFlag(Symmetries.XAxis))
+                dx = -dx;
+
+            if (flipOperations.HasFlag(Symmetries.ZAxis))
+                dz = -dz;
+
+            // Translate back to local blueprint coordinates.
+            var transformedX = dx + originX;
+            var transformedZ = dz + originZ;
+
+            return (transformedX, transformedZ);
         }
     }
 

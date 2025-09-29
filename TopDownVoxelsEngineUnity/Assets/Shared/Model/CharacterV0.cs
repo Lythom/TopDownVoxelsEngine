@@ -48,7 +48,10 @@ namespace Shared {
         // Blueprint anchor data
         public readonly Signal<Vector3Int?> BlueprintAnchorPosition = new(new());
         public readonly Signal<Vector3Int> BlueprintSize = new(new Vector3Int(5, 5, 5));
+        [Unit("Degrees")] public readonly Signal<int> BlueprintRotation = new(0);
+        public readonly Signal<Symmetries> BlueprintFlip = new(0);
         public readonly Signal<Guid?> ActiveBlueprintId = new(null);
+        public readonly Signal<BlueprintMode> BlueprintMode = new(Shared.BlueprintMode.Save);
 
         public CharacterV0(string name, Vector3 position, string? levelName) {
             Name = name;
@@ -76,7 +79,10 @@ namespace Shared {
             SignalList<TemplateId>? knownTemplates,
             Signal<Vector3Int?>? blueprintAnchorPosition,
             Signal<Vector3Int>? blueprintSize,
-            Signal<Guid?>? activeBlueprintId
+            Signal<int>? blueprintRotation,
+            Signal<Symmetries>? blueprintFlip,
+            Signal<Guid?>? activeBlueprintId,
+            Signal<BlueprintMode>? blueprintMode
         ) {
             Name = name;
             Position = position;
@@ -94,7 +100,10 @@ namespace Shared {
             if (knownTemplates != null) KnownTemplates.SynchronizeToTarget(knownTemplates);
             BlueprintAnchorPosition.Value = blueprintAnchorPosition?.Value ?? null;
             BlueprintSize.Value = blueprintSize?.Value ?? new Vector3Int(5, 5, 5);
+            BlueprintRotation.Value = blueprintRotation?.Value ?? 0;
+            BlueprintFlip.Value = blueprintFlip?.Value ?? 0;
             ActiveBlueprintId.Value = activeBlueprintId?.Value ?? null;
+            BlueprintMode.Value = blueprintMode?.Value ?? Shared.BlueprintMode.Save;
         }
 
         public void UpdateValue(CharacterV0 nextState) {
@@ -112,6 +121,12 @@ namespace Shared {
             ToolReplaceBlockLevel.Value = nextState.ToolReplaceBlockLevel.Value;
             BlocsInventory.SynchronizeToTarget(nextState.BlocsInventory);
             KnownTemplates.SynchronizeToTarget(nextState.KnownTemplates);
+            BlueprintAnchorPosition.Value = nextState.BlueprintAnchorPosition.Value;
+            BlueprintSize.Value = nextState.BlueprintSize.Value;
+            BlueprintRotation.Value = nextState.BlueprintRotation.Value;
+            BlueprintFlip.Value = nextState.BlueprintFlip.Value;
+            ActiveBlueprintId.Value = nextState.ActiveBlueprintId.Value;
+            BlueprintMode.Value = nextState.BlueprintMode.Value;
         }
 
         public static byte[] Serialize(ICharacter state) {
@@ -137,7 +152,6 @@ namespace Shared {
     }
 
     public class CharacterEqualityComparer : IEqualityComparer<CharacterV0?> {
-
         public static readonly CharacterEqualityComparer Instance = new();
 
         public bool Equals(CharacterV0? x, CharacterV0? y) {

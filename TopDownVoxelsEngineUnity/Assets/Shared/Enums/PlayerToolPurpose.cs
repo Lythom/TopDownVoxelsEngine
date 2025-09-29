@@ -2,6 +2,7 @@
     public enum PlayerToolPurpose {
         None,
         PlaceBlock,
-        RemoveBlock
+        RemoveBlock,
+        Blueprint
     }
 }

@@ -10,6 +10,7 @@ StoneFloor02.png
 ThatchedRoof.png
 Tiles01.png
 Tiles02.png
+ToolBlueprint.png
 ToolPlace.png
 ToolRemove.png
 ToolReplace.png

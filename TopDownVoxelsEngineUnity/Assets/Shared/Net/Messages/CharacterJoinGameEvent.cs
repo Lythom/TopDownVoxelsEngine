@@ -26,7 +26,7 @@ namespace Shared.Net {
             LevelSpawn = levelSpawn;
         }
 
-        protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
             var levelId = Character.Level.Value;
             if (levelId != null && !gameState.Levels.ContainsKey(levelId)) {

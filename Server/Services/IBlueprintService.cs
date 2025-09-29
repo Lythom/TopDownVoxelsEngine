@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Shared;
 
@@ -18,9 +19,22 @@ public interface IBlueprintService {
 
     public UniTask<BlueprintV0?> GetBlueprintAsync(Guid id);
 
-    public UniTask<CellV0[,,]?> PlaceBlueprintAsync(
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="blueprintId"></param>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <param name="rotation"></param>
+    /// <param name="flipOperations"></param>
+    /// <param name="level">from State, LevelMap to be updated</param>
+    /// <returns>Modified chunks</returns>
+    public UniTask<IReadOnlySet<ChunkKey>> PlaceBlueprintAsync(
         Guid blueprintId,
-        Vector3Int position,
+        short x,
+        short y,
+        short z,
         byte rotation,
         Symmetries flipOperations,
         LevelMap level

@@ -35,53 +35,93 @@ Blueprints are saved server-side and shared between all players, with creator in
 
 ### Events
 
-- `SaveBlueprintEvent`: Save a blueprint to the server
-- `LoadBlueprintListEvent` / `LoadBlueprintListResponseEvent`: Get paginated list of available blueprints
-- `LoadBlueprintEvent` / `LoadBlueprintResponseEvent`: Get a specific blueprint by ID
-- `PlaceBlueprintEvent`: Place a blueprint in the world with transformations
+- `SaveBlueprintCommand`: Save a blueprint to the server
+- `LoadBlueprintListQuery` / `LoadBlueprintListResponse`: Get paginated list of available blueprints
+- `LoadBlueprintQuery` / `LoadBlueprintResponse`: Get a specific blueprint by ID
+- `PlaceBlueprintCommand`: Place a blueprint in the world with transformations
+
+## Tool Modes and Controls
+
+The Blueprint tool has two modes. The player experience is built around a single main action and one mode switch:
+
+- Main action: UseTool (typically left-click / press; supports press, press-and-hold, and drag)
+- Mode switch: ChangeItem (key at the E layout position) toggles between modes
+
+Modes:
+1) Blueprint Save mode
+2) Blueprint Place mode
+
+On-screen gizmos and diegetic UI appear contextually and are operated exclusively with UseTool.
+
+Notes:
+- A short press is referred to as “UseTool press”.
+- A press-and-hold followed by movement is referred to as “UseTool drag”.
 
 ## Use Cases
 
-### Place Anchor
+### Blueprint Save mode (ChangeItem to enter/exit)
 
-1. Select blueprint tool
-2. Left click a block: place/move the anchor using PlacementMode.CollidingBlock on aimed block
-3. Change tool: remove anchor
-4. The blueprint area is visualized when the anchor is placed: the anchor is the block below and centered from the area = ((size.x-1)/2,-1,(size.z-1)/2).
+Goal: Capture a region of the world and save it as a shared blueprint.
 
-Design notes: Anchor position and blueprint configured size are stored and shared between client and server. Stored on CharacterV0.
+1) Place or move anchor
+   - UX: Aim at any world block and UseTool press.
+   - Result: An anchor is placed at the aimed block using PlacementMode.CollidingBlock. The configurable area is visualized as a box centered so that the anchor is the block at offset ((size.x-1)/2, -1, (size.z-1)/2) from the area.
+   - Persistence: Anchor position and current size are stored on the character and synchronized.
 
-### Change Blueprint Size
+2) Adjust capture size
+   - UX: UseTool press on any visible resize handle to select it, then UseTool drag to push/pull.
+   - Behavior: Size changes in steps of 2 blocks. The anchor auto-shifts to preserve the opposite sides’ positions.
+   - Feedback: Live update of the box with dimensions;
 
-1. Place anchor
-2. The area is visualized as a blue&white box. Handles on the sides makes it possible to extend the area.
-3. Player can drag handles using left click to push or pull the side by steps of 2 blocks. Each step extends the area by 2 and moves the anchor to preserve the other sides' positions.
+3) Save the blueprint
+   - UX: UseTool press on the floating “Save” control near the anchor (or inside the area HUD).
+   - Flow:
+     - A modal appears with a Name input field (prefilled with last used name). Confirm and cancel are UseTool press on their respective buttons.
+     - On confirm, a Save action is sent to the server. A toast shows success or error feedback.
+   - Result: The server saves and timestamps the blueprint, associated with the creator.
 
-### Save Blueprint
+4) Exit Save mode
+   - UX: ChangeItem to switch to Blueprint Place mode or another tool. When the tool is inactive, any temporary gizmos are hidden.
 
-1. Select the blueprint tool, place anchor
-2. Use the save controller button
-3. A modal asks for the name. Last used name is prefilled if any.
-4. The server saves the blueprint with that name and associates it with the player. It updates the save date.
+Design notes:
+- The anchor position and blueprint size are stored and shared between client and server (on CharacterV0).
+- The area is always centered to maintain odd X/Z so a center block exists.
 
-### Load Blueprint
+### Blueprint Brush mode (ChangeItem to enter/exit)
 
-1. Select the blueprint tool, place anchor
-2. Use the load controller button
-3. A window appears with the list of the 20 most recent blueprints, paginated by save date
-4. When selecting a blueprint, it's loaded and ready to be placed at the anchor
+Goal: Browse/select a saved blueprint, preview it at the anchor, transform, and place it.
 
-### Place Blueprint
+1) Place or move anchor for placement
+   - UX: Aim a world block and UseTool press to set/move the anchor. The preview will align to this anchor when a blueprint is selected.
 
-1. After loading a blueprint, it's previewed at the anchor position
-2. Optional: Rotate the blueprint (0°, 90°, 180°, 270°) or apply symmetry operations (flip X, flip Z)
-3. Confirm placement to apply all blocks to the world
+2) Open catalog and select a blueprint
+   - UX: UseTool press on the floating “Catalog” control near the anchor (or a dedicated HUD button).
+   - Flow:
+     - A panel opens listing the 20 most recent blueprints by save date, with pagination controls operated by UseTool press.
+     - UseTool press on an item selects and downloads it if needed, then closes the panel and enters preview.
+   - Result: The chosen blueprint is set as active and shown as a ghosted preview at the anchor.
+
+3) Adjust transformations (preview)
+   - Rotate: UseTool press on on-screen Rotate controls to cycle rotation (0°, 90°, 180°, 270°).
+   - Flip: UseTool press on Flip X / Flip Z controls to toggle symmetry operations.
+   - Elevation snap: If applicable, UseTool press on Up/Down nudge controls to raise/lower the preview; default snaps using FloorHeight when relevant.
+   - Validity: The preview indicates validity (green) or conflicts (red) based on placement rules.
+
+4) Place the blueprint
+   - UX: UseTool press on the “Place” control (appears only when valid).
+   - Result: A place command is sent to the server; the world updates upon server confirmation, and the preview exits.
+
+5) Change or clear the active blueprint
+   - UX: UseTool press on “Change” to reopen the catalog; UseTool press on “Clear” to remove active selection and hide the preview.
+
+6) Exit Place mode
+   - UX: ChangeItem to switch to Blueprint Save mode or another tool.
 
 ## Transformations
 
 Blueprints support the following transformations:
 
-1. Rotation: 0°, 90°, 180°, or 270° around the Y-axis
-2. Flipping: Along X-axis, Z-axis, or both
+1) Rotation: 0°, 90°, 180°, or 270° around the Y-axis
+2) Flipping: Along X-axis, Z-axis, or both
 
 These transformations are applied when placing a blueprint in the world, not when saving.

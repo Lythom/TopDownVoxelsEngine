@@ -4,7 +4,7 @@ using MessagePack;
 
 namespace Shared.Net {
     [MessagePackObject]
-    public class ChangeBlockGameEvent : GameEvent {
+    public class ChangeToolGameEvent : GameEvent {
         [Key(0)]
         public int Id;
 
@@ -12,19 +12,19 @@ namespace Shared.Net {
         public ushort CharacterShortId;
 
         [Key(2)]
-        public BlockId Block;
+        public byte Tool;
 
         public override int GetId() => Id;
 
-        public ChangeBlockGameEvent(int id, ushort characterShortId, BlockId block) {
+        public ChangeToolGameEvent(int id, ushort characterShortId, byte tool) {
             Id = id;
             CharacterShortId = characterShortId;
-            Block = block;
+            Tool = tool;
         }
 
-        protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            gameState.Characters[CharacterShortId].SelectedBlock.Value = Block;
+            gameState.Characters[CharacterShortId].SelectedTool.Value = Tool;
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {

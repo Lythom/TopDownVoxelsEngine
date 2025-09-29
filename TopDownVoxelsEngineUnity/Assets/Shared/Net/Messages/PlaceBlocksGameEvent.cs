@@ -72,9 +72,9 @@ namespace Shared.Net {
         //     }
         // }
 
-        protected internal override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
+        protected override void DoApply(GameState gameState, SideEffectManager? sideEffectManager) {
             if (!gameState.IsApplyingEvent) throw new ApplicationException("Use GameState.ApplyEvent to apply an event. This enables post event side effects on state.");
-            var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
+            LevelTools.GetChunkPosition(X, Z, out var chX, out var chZ);
             var level = gameState.Characters[CharacterShortId].Level.Value;
             var chunk = gameState.Levels[level!].Chunks[chX, chZ];
             LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
@@ -84,14 +84,9 @@ namespace Shared.Net {
         }
 
         public override void AssertApplicationConditions(in GameState gameState) {
-            var (chX, chZ) = LevelTools.GetChunkPosition(X, Z);
             if (!gameState.Characters.TryGetValue(CharacterShortId, out var character)) throw new ApplicationException("Unknown level");
-            var level = character.Level;
-            if (level.Value == null || !gameState.Levels.TryGetValue(level.Value, out var stateLevel)) throw new ApplicationException("Unknown level");
-            var chunk = stateLevel.Chunks[chX, chZ];
-            if (!chunk.IsGenerated) throw new ApplicationException("Can't set blocks in non ready chunks");
-            LevelTools.WorldToCellInChunk(X, Y, Z, out var cx, out var cy, out var cz);
-            chunk.Cells![cx, cy, cz].Block = Block;
+            var level = character.Level.Value;
+            AssertionHelpers.AssertChunkReady(gameState, X, Z, level);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using MessagePack;
 
 namespace Shared {
@@ -19,14 +20,15 @@ namespace Shared {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort GetFlatIndex(int chX, int chZ) {
             return (ushort) (chX + LevelMap.LevelChunkSize * chZ);
         }
 
-        public static (int chX, int chZ) GetCoordsFromIndex(int flatIndex) {
-            var chX = flatIndex % LevelMap.LevelChunkSize;
-            var chZ = flatIndex / LevelMap.LevelChunkSize;
-            return (chX, chZ);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void GetCoordsFromIndex(int flatIndex, out int chX, out int chZ) {
+            chX = flatIndex % LevelMap.LevelChunkSize;
+            chZ = flatIndex / LevelMap.LevelChunkSize;
         }
     }
 }

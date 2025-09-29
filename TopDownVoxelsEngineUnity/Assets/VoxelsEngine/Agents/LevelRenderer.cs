@@ -163,7 +163,7 @@ namespace VoxelsEngine {
 
         private void UpdateAroundPlayer(Shared.Vector3 characterPosition, Chunk[,] levelChunks) {
             var playerPos = characterPosition;
-            var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
+            LevelTools.GetChunkPosition(playerPos, out var chX, out var chZ);
 
             var range = Configurator.Instance.RenderDistance;
             for (int x = -range; x <= range; x++) {
@@ -183,7 +183,7 @@ namespace VoxelsEngine {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (!Application.isPlaying || ClientEngine == null || Selectors.CurrentCharacter.Value == null) return;
             var playerPos = Selectors.CurrentCharacter.Value.Position;
-            var (chX, chZ) = LevelTools.GetChunkPosition(playerPos);
+            LevelTools.GetChunkPosition(playerPos, out var chX, out var chZ);
             var center = new Vector3(chX * Chunk.Size + Chunk.Size / 2f - 0.5f, 0, chZ * Chunk.Size + Chunk.Size / 2f - 0.5f);
             Gizmos.DrawWireCube(center, new Vector3(Chunk.Size, Chunk.Height, Chunk.Size));
             Handles.Label(center, $"({chX}, {chZ})");
@@ -201,7 +201,7 @@ namespace VoxelsEngine {
 
                 // first update visible chunks that requires rerender
                 foreach (var i in _dirtySet) {
-                    var (chX, chZ) = Chunk.GetCoordsFromIndex(i);
+                    Chunk.GetCoordsFromIndex(i, out var chX, out var chZ);
                     UpdateChunk(chX, chZ);
                 }
 
@@ -210,7 +210,7 @@ namespace VoxelsEngine {
                 // dequeue until all is generated
                 while (_toBeRendererQueue.TryDequeue(out int chunkFlatIndex)) {
                     try {
-                        var (chX, chZ) = Chunk.GetCoordsFromIndex(chunkFlatIndex);
+                        Chunk.GetCoordsFromIndex(chunkFlatIndex, out var chX, out var chZ);
                         var chunk = _level.Chunks[chX, chZ];
                         if (!chunk.IsGenerated) {
                             // Not ready to render, put again in the queue and break until next update

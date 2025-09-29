@@ -1,3 +1,4 @@
+BlueprintTool.json
 ExchangeBlock.json
 PlaceBlock.json
 RemoveBlock.json
